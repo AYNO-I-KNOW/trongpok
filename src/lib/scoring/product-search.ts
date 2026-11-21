@@ -1,6 +1,7 @@
 import type { ProductPick } from "../product-search/contract";
 import {
   sourceUrl,
+  matchesProductModel,
   type SearchCandidate,
   type SearchGoal,
 } from "../product-search/domain";
@@ -69,7 +70,7 @@ export function rankProducts(
     )
       continue;
     const title = titles.get(url);
-    if (title && !identity(title).includes(key)) continue;
+    if (title && !matchesProductModel(title, offer.model)) continue;
     const group = models.get(key) ?? [];
     group.push(offer);
     models.set(key, group);

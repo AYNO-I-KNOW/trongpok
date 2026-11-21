@@ -8,7 +8,10 @@ const source = z.union([
 ]);
 const productPickSchema = z.object({
   model: text,
-  image: z.string().refine((value) => sourceUrl(value) !== null).optional(),
+  image: z
+    .string()
+    .refine((value) => sourceUrl(value) !== null)
+    .optional(),
   url: source,
   price: z
     .object({
@@ -27,6 +30,15 @@ export const productSearchResultSchema = z.discriminatedUnion("kind", [
     picks: z.array(productPickSchema).max(3),
     note: z.string(),
     searchCalls: z.number().int().positive(),
+    discovery: z
+      .object({
+        agents: z.literal(3),
+        completed: z.number().int().min(1).max(3),
+        candidates: z.number().int().nonnegative(),
+        sources: z.number().int().nonnegative(),
+        followUp: z.boolean(),
+      })
+      .optional(),
     searchRounds: z.number().int().min(1).max(2),
   }),
   z.object({

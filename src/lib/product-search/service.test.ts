@@ -121,7 +121,7 @@ describe("live search rounds", () => {
         sources,
         searchCalls: 1,
       })
-      .mockRejectedValueOnce(new Error("timeout"));
+      .mockRejectedValue(new Error("timeout"));
     const result = await searchProducts("silent mouse", {
       goal: async () => goal,
       search,
@@ -129,11 +129,12 @@ describe("live search rounds", () => {
     expect(result.kind).toBe("web");
     if (result.kind === "web") expect(result.picks).toHaveLength(1);
     expect(search).toHaveBeenNthCalledWith(
-      2,
+      4,
       "silent mouse",
       goal,
       ["Logitech M240"],
       1,
+      expect.objectContaining({ knownModels: ["Logitech M240"] }),
     );
   });
   it("asks a clarification without searching", async () => {
@@ -278,6 +279,8 @@ it("searches again instead of counting unverified musts toward the top three", a
       sources,
       searchCalls: 2,
     })
+    .mockResolvedValueOnce({ candidates: [], sources, searchCalls: 1 })
+    .mockResolvedValueOnce({ candidates: [], sources, searchCalls: 1 })
     .mockResolvedValueOnce({
       candidates: [candidate()],
       sources,
@@ -290,7 +293,7 @@ it("searches again instead of counting unverified musts toward the top three", a
   expect(result).toMatchObject({
     kind: "web",
     searchRounds: 2,
-    searchCalls: 3,
+    searchCalls: 5,
     picks: [{ model: "Logitech M240" }],
   });
 });
@@ -343,4 +346,98 @@ it("counts two finishes of the same model sold on separate product pages only on
       "now",
     ),
   ).toHaveLength(2);
+});
+
+it("starts three complementary agents before awaiting any and ranks their combined candidates", async () => {
+  const pending: Array<
+    (value: Awaited<ReturnType<SearchBackend["search"]>>) => void
+  > = [];
+  const search = vi
+    .fn<SearchBackend["search"]>()
+    .mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+  const result = searchProducts("silent mouse", {
+    goal: async () => goal,
+    search,
+  });
+  await vi.waitFor(() => expect(search).toHaveBeenCalledTimes(3));
+  expect(search.mock.calls.map((call) => call[4]?.strategy)).toEqual([
+    "retail",
+    "specs",
+    "value",
+  ]);
+  for (const [index, resolve] of pending.entries()) {
+    const item = candidate(`Logitech M${index + 100}`);
+    item.price!.baht = 800 - index * 100;
+    item.url = `${url}${index}`;
+    item.price!.url = item.url;
+    item.stock.url = item.url;
+    item.evidence[0].url = item.url;
+    resolve({
+      candidates: [item],
+      sources: new Set([item.url]),
+      searchCalls: 1,
+    });
+  }
+  expect(await result).toMatchObject({
+    kind: "web",
+    searchRounds: 1,
+    searchCalls: 3,
+    picks: [
+      { model: "Logitech M102" },
+      { model: "Logitech M101" },
+      { model: "Logitech M100" },
+    ],
+    discovery: { agents: 3, completed: 3, candidates: 3, followUp: false },
+  });
+});
+
+it("propagates cancellation after discovery without starting a follow-up", async () => {
+  const controller = new AbortController();
+  const search = vi
+    .fn<SearchBackend["search"]>()
+    .mockImplementation(async () => {
+      controller.abort();
+      return { candidates: [], sources, searchCalls: 1 };
+    });
+  await expect(
+    searchProducts(
+      "silent mouse",
+      { goal: async () => goal, search },
+      controller.signal,
+    ),
+  ).rejects.toThrow();
+  expect(search).toHaveBeenCalledTimes(3);
+});
+
+it("targets missing coverage and avoids blocked domains in the follow-up", async () => {
+  const search = vi.fn<SearchBackend["search"]>().mockResolvedValue({
+    candidates: [candidate()],
+    sources,
+    searchCalls: 1,
+    unavailableDomains: ["www.powerbuy.co.th"],
+  });
+  const result = await searchProducts("silent mouse", {
+    goal: async () => goal,
+    search,
+  });
+  expect(search).toHaveBeenNthCalledWith(
+    4,
+    "silent mouse",
+    goal,
+    ["Logitech M240"],
+    1,
+    {
+      strategy: "retail",
+      avoidDomains: ["www.powerbuy.co.th"],
+      unpricedModels: [],
+      preferredOfferDomains: ["www.jib.co.th"],
+      missingRequirements: ["silent", "wireless"],
+      knownModels: ["Logitech M240"],
+      coveredDomains: ["www.jib.co.th"],
+    },
+  );
+  expect(result).toMatchObject({
+    kind: "web",
+    discovery: { completed: 3, followUp: true },
+  });
 });

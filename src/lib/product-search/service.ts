@@ -60,43 +60,128 @@ export async function searchProducts(
     const candidates: SearchCandidate[] = [];
     const sources = new Set<string>();
     const titles = new Map<string, string>();
+    const unavailableDomains = new Set<string>();
     let searchCalls = 0;
     let expansionFailed = false;
     let picks: ProductPick[] = [];
     let searchRounds = 0;
-    for (let round = 0; round < 2; round++) {
+    let completedAgents = 0;
+    const merge = (result: Awaited<ReturnType<SearchBackend["search"]>>) => {
+      candidates.push(
+        ...result.candidates
+          .filter((candidate) =>
+            result.sources.has(sourceUrl(candidate.url) ?? ""),
+          )
+          .map((candidate): SearchCandidate => ({
+            ...candidate,
+            evidence: candidate.evidence.filter((item) =>
+              result.sources.has(sourceUrl(item.url) ?? ""),
+            ),
+            price:
+              candidate.price &&
+              result.sources.has(sourceUrl(candidate.price.url) ?? "")
+                ? candidate.price
+                : null,
+            stock: result.sources.has(sourceUrl(candidate.stock.url) ?? "")
+              ? candidate.stock
+              : { ...candidate.stock, status: "unknown" },
+          })),
+      );
+      result.sources.forEach((source) => sources.add(source));
+      result.titles?.forEach((title, url) => titles.set(url, title));
+      searchCalls += result.searchCalls;
+      result.unavailableDomains?.forEach((domain) =>
+        unavailableDomains.add(domain),
+      );
+    };
+    const initial = await Promise.allSettled(
+      (["retail", "specs", "value"] as const).map((strategy) =>
+        live.search(searchText, goal, [], 0, {
+          strategy,
+          missingRequirements: goal.must,
+          knownModels: [],
+          coveredDomains: [],
+        }),
+      ),
+    );
+    signal?.throwIfAborted();
+    for (const result of initial) {
+      if (result.status === "fulfilled") {
+        merge(result.value);
+        completedAgents++;
+      } else logFailure(result.reason, "discovery");
+    }
+    if (!completedAgents) throw new Error("All discovery agents failed");
+    searchRounds = 1;
+    picks = rankProducts(
+      candidates,
+      goal,
+      sources,
+      new Date().toISOString(),
+      titles,
+    );
+    if (picks.length < 3) {
+      searchRounds++;
       try {
-        signal?.throwIfAborted();
-        const result = await live.search(
-          searchText,
-          goal,
-          picks.map((pick) => pick.model),
-          round,
+        const knownModels = [
+          ...new Set(candidates.map((candidate) => candidate.model)),
+        ];
+        const missingRequirements = [...goal.must, ...goal.nice].filter(
+          (requirement) =>
+            new Set(
+              candidates
+                .filter((candidate) =>
+                  candidate.evidence.some(
+                    (item) =>
+                      item.requirement === requirement && item.stance === "yes",
+                  ),
+                )
+                .map((candidate) => candidate.modelFamily ?? candidate.model),
+            ).size < 3,
         );
-        candidates.push(
-          ...result.candidates
-            .filter((candidate) =>
-              result.sources.has(sourceUrl(candidate.url) ?? ""),
-            )
-            .map((candidate): SearchCandidate => ({
-              ...candidate,
-              evidence: candidate.evidence.filter((item) =>
-                result.sources.has(sourceUrl(item.url) ?? ""),
+        merge(
+          await live.search(
+            searchText,
+            goal,
+            picks.map((pick) => pick.model),
+            1,
+            {
+              strategy: "retail",
+              avoidDomains: [...unavailableDomains].filter(
+                (domain) =>
+                  !candidates.some(
+                    (candidate) =>
+                      candidate.price &&
+                      new URL(candidate.price.url).hostname.replace(
+                        /^www\./,
+                        "",
+                      ) === domain.replace(/^www\./, ""),
+                  ),
               ),
-              price:
-                candidate.price &&
-                result.sources.has(sourceUrl(candidate.price.url) ?? "")
-                  ? candidate.price
-                  : null,
-              stock: result.sources.has(sourceUrl(candidate.stock.url) ?? "")
-                ? candidate.stock
-                : { ...candidate.stock, status: "unknown" },
-            })),
+              unpricedModels: knownModels.filter(
+                (model) =>
+                  !candidates.some(
+                    (candidate) => candidate.model === model && candidate.price,
+                  ),
+              ),
+              preferredOfferDomains: [
+                ...new Set(
+                  candidates.flatMap((candidate) =>
+                    candidate.price
+                      ? [new URL(candidate.price.url).hostname]
+                      : [],
+                  ),
+                ),
+              ],
+              missingRequirements,
+              knownModels,
+              coveredDomains: [
+                ...new Set([...sources].map((url) => new URL(url).hostname)),
+              ],
+            },
+          ),
         );
-        result.sources.forEach((source) => sources.add(source));
-        result.titles?.forEach((title, url) => titles.set(url, title));
-        searchRounds++;
-        searchCalls += result.searchCalls;
+        signal?.throwIfAborted();
         picks = rankProducts(
           candidates,
           goal,
@@ -104,11 +189,9 @@ export async function searchProducts(
           new Date().toISOString(),
           titles,
         );
-        if (picks.length >= 3) break;
       } catch (error) {
         signal?.throwIfAborted();
-        if (round === 0) throw error;
-        logFailure(error);
+        logFailure(error, "follow_up");
         expansionFailed = true;
       }
     }
@@ -117,6 +200,17 @@ export async function searchProducts(
       picks,
       searchCalls,
       searchRounds,
+      discovery: {
+        agents: 3,
+        completed: completedAgents,
+        candidates: new Set(
+          candidates.map(
+            (candidate) => candidate.modelFamily ?? candidate.model,
+          ),
+        ).size,
+        sources: sources.size,
+        followUp: searchRounds === 2,
+      },
       note:
         picks.length === 3
           ? "เรียงตามเงื่อนไขที่ตรงโจทย์ แล้วจึงเทียบราคา"
@@ -124,15 +218,19 @@ export async function searchProducts(
     };
   } catch (error) {
     signal?.throwIfAborted();
-    logFailure(error);
+    logFailure(error, "search");
     return demoFallback(searchText);
   }
 }
 
-function logFailure(error: unknown) {
+function logFailure(error: unknown, phase: string) {
   const details =
     error instanceof OpenAI.APIError
-      ? { type: error.type, status: error.status, code: error.code }
+      ? {
+          type: error.type ?? error.name,
+          status: error.status,
+          code: error.code,
+        }
       : { type: error instanceof Error ? error.name : "UnknownError" };
-  console.error("product_search_failed", details);
+  console.error("product_search_failed", { phase, ...details });
 }

@@ -73,6 +73,16 @@ export const candidateSchema = z.object({
   evidence: z.array(evidenceSchema),
 });
 export type SearchCandidate = z.infer<typeof candidateSchema> & { image?: string };
+export function matchesProductModel(text: string, model: string) {
+  const normalize = (value: string) => value.toLowerCase().normalize("NFKC").replace(/[^\p{L}\p{M}\p{N}]+/gu, " ").trim();
+  const tokens = normalize(model).split(" ");
+  const haystack = ` ${normalize(text)} `;
+  return tokens.every((token) => haystack.includes(` ${token} `)) && !tokens.some((token) => {
+    if (!/\d/.test(token)) return false;
+    const variant = haystack.match(new RegExp(` ${token} (pro|plus|max|ultra|lite|mini|se) `))?.[1];
+    return variant !== undefined && !tokens.includes(variant);
+  });
+}
 export function sourceUrl(raw: string): string | null {
   try {
     const url = new URL(raw);

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sourceUrl, type SearchCandidate } from "./domain";
+import { matchesProductModel as matches, sourceUrl, type SearchCandidate } from "./domain";
 
 const productSchema = z
   .object({
@@ -17,34 +17,13 @@ const offerSchema = z.object({
   availability: z.string().optional(),
 });
 type Page =
-  | { kind: "html"; html: string; url: string }
-  | { kind: "unavailable" }
-  | { kind: "invalid" };
-const normalize = (value: string) =>
-  value
-    .toLowerCase()
-    .normalize("NFKC")
-    .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
-    .trim();
-function matches(text: string, model: string) {
-  const tokens = normalize(model).split(" ");
-  const haystack = ` ${normalize(text)} `;
-  return (
-    tokens.every((token) => haystack.includes(` ${token} `)) &&
-    !tokens.some(
-      (token) =>
-        /\d/.test(token) &&
-        new RegExp(` ${token} (pro|plus|max|ultra|lite|mini|se) `).test(
-          haystack,
-        ) &&
-        !tokens.includes(
-          haystack.match(
-            new RegExp(` ${token} (pro|plus|max|ultra|lite|mini|se) `),
-          )?.[1] ?? "",
-        ),
-    )
-  );
+  | { kind: "html"; html: string; url: string; sourceUrls: string[] }
+  | { kind: "unavailable"; retryable?: true }
+  | { kind: "invalid"; missingSource?: string };
+export function createProductPageCache() {
+  return { pages: new Map<string, Promise<Page>>(), unavailableDomains: new Set<string>() };
 }
+type ProductPageCache = ReturnType<typeof createProductPageCache>;
 function safeUrl(raw: string) {
   const url = sourceUrl(raw);
   return url && !new URL(url).port ? url : null;
@@ -53,7 +32,7 @@ function detail(raw: string, spec = false) {
   const path = new URL(raw).pathname;
   return (
     path !== "/" &&
-    !/(?:^|\/)(?:search|category|categories|collections)(?:\/|$)/i.test(path) &&
+    !/(?:^|\/)(?:search|searchresult|product_search|category|categories|collections|brands?|promotions?|productcatalog|pricelist)(?:\/|$)/i.test(path) &&
     (spec || !/(?:^|\/)(?:manual|support)(?:\/|$)/i.test(path))
   );
 }
@@ -67,37 +46,75 @@ function entity(code: number) {
   return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : "";
 }
 function decode(text: string) {
-  return text
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&apos;|&#39;/gi, "'")
-    .replace(/&#(?:x([\da-f]+)|(\d+));/gi, (_, hex: string, decimal: string) =>
-      entity(parseInt(hex || decimal, hex ? 16 : 10)),
-    );
+  const named: Record<string, string> = {
+    quot: '"', amp: "&", nbsp: " ", lt: "<", gt: ">", apos: "'",
+    bull: "•", middot: "·", ndash: "–", mdash: "—", hellip: "…",
+    times: "×", plusmn: "±", reg: "®", trade: "™", copy: "©",
+  };
+  return text.replace(/&(#(?:x[\da-f]+|\d+)|[a-z]+);/gi, (match: string, code: string) => {
+    if (!code.startsWith("#")) return named[code.toLowerCase()] ?? match;
+    return entity(parseInt(code.replace(/^#x?/i, ""), /^#x/i.test(code) ? 16 : 10));
+  });
 }
 function passage(text: string) {
   return decode(text).normalize("NFC").replace(/\s+/gu, " ").trim();
 }
+function textOnly(html: string) {
+  return html.replace(/<\/?[a-z][\w-]*\b(?:[^"'<>]|"[^"]*"|'[^']*')*>|<![^>]*>/gi, " ");
+}
+function productHtml(html: string) {
+  const stripped = html
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<(script|style|nav|footer|aside|template|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, " ");
+  const stack: { tag: string; skip: boolean }[] = [];
+  const fragments: string[] = [];
+  for (const match of stripped.matchAll(/<\/?([a-z][\w-]*)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>|<![^>]*>|[^<]+/gi)) {
+    if (match[0].startsWith("<!")) continue;
+    const tag = match[1]?.toLowerCase();
+    const parentSkipped = stack.at(-1)?.skip ?? false;
+    if (!tag) {
+      if (!parentSkipped) fragments.push(match[0]);
+      continue;
+    }
+    if (match[0].startsWith("</")) {
+      const index = stack.findLastIndex((entry) => entry.tag === tag);
+      if (index >= 0) stack.length = index;
+      if (!parentSkipped) fragments.push(match[0]);
+      continue;
+    }
+    const attributes = new Map([...match[0].matchAll(/\s([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)].map((attribute) => [attribute[1].toLowerCase(), attribute[2] ?? attribute[3] ?? attribute[4] ?? ""]));
+    const skip = parentSkipped ||
+      attributes.has("hidden") || attributes.get("aria-hidden") === "true" ||
+      /display\s*:\s*none|visibility\s*:\s*hidden/i.test(attributes.get("style") ?? "") ||
+      /recommend|related|carousel|pcompare|product[-_ ]?compare|cross[-_]?sell|upsell/i.test(`${attributes.get("id")} ${attributes.get("class")}`);
+    if (!skip) fragments.push(match[0]);
+    if (!/^(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !match[0].endsWith("/>")) stack.push({ tag, skip });
+  }
+  return fragments.join(" ");
+}
+function productContent(html: string) {
+  const opening = html.match(/<main\b[^>]*>/i) ?? html.match(/<([a-z][\w-]*)\b[^>]*(?:id|class)=["'][^"']*(?:product[-_]?wrap(?:per)?|product[-_]detail[-_](?:container|content)|pdp[-_](?:main|content))[^"']*["'][^>]*>/i);
+  if (!opening || opening.index === undefined) return html;
+  const tag = opening[1] ?? "main";
+  const start = opening.index + opening[0].length;
+  let depth = 1;
+  for (const match of html.slice(start).matchAll(new RegExp(`<(/?)${tag}\\b[^>]*>`, "gi"))) {
+    depth += match[1] ? -1 : 1;
+    if (!depth) return html.slice(start, start + (match.index ?? 0));
+  }
+  return html.slice(start);
+}
 function productText(html: string, includeSpecRows = false) {
-  const clean = html
-    .replace(/<(script|style|nav|footer|aside)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
-    .replace(
-      /<([a-z][\w-]*)\b[^>]*(?:id|class)=["'][^"']*(?:recommend|related|carousel)[^"']*["'][^>]*>[\s\S]*?<\/\1>/gi,
-      " ",
-    );
+  const clean = productHtml(html);
   const title = clean.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "";
-  const main = clean.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] ?? clean;
-  const visible = passage(`${title} ${main}`.replace(/<[^>]*>/g, " "));
+  const main = productContent(clean);
+  const visible = passage(textOnly(`${title} ${main}`));
   if (!includeSpecRows) return visible;
-  const rows = [...main.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map((row) =>
-    [...row[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)]
-      .map((cell) => passage(cell[1].replace(/<[^>]*>/g, " ")))
-      .join(" | "),
-  );
-  return [visible, ...rows].join("\n");
+  const rows = [...main.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].flatMap((row) => {
+    const cells = [...row[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((cell) => passage(textOnly(cell[1])));
+    return cells.length > 1 ? [cells.join(" | ")] : [];
+  });
+  return [passage(textOnly(title)), ...rows, visible].join("\n");
 }
 function productImages(value: unknown): string[] {
   if (typeof value === "string") return [value];
@@ -105,8 +122,8 @@ function productImages(value: unknown): string[] {
   const image = z.object({ url: z.string() }).safeParse(value);
   return image.success ? [image.data.url] : [];
 }
-function inspect(html: string, model: string) {
-  const products = [
+function structuredProducts(html: string) {
+  return [
     ...html.matchAll(
       /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
     ),
@@ -126,6 +143,9 @@ function inspect(html: string, model: string) {
         ? [parsed.data]
         : [];
     });
+}
+function inspect(html: string, model: string) {
+  const products = structuredProducts(html);
   const same = products.filter((product) =>
     matches(
       [
@@ -221,16 +241,16 @@ function inspect(html: string, model: string) {
   };
 }
 
-export async function verifyProductPages(
-  candidates: SearchCandidate[],
+function pageReader(
   sources: Set<string>,
   signal?: AbortSignal,
-): Promise<SearchCandidate[]> {
+  context = createProductPageCache(),
+) {
   signal?.throwIfAborted();
   const normalizedSources = new Set(
     [...sources].map(safeUrl).filter((url) => url !== null),
   );
-  const cache = new Map<string, Promise<Page>>();
+  const cache = context.pages;
   const counts = new Map<string, number>();
   const deadline = Date.now() + 15_000;
   async function fetchPage(raw: string): Promise<Page> {
@@ -238,7 +258,16 @@ export async function verifyProductPages(
     if (!initial || !normalizedSources.has(initial) || !detail(initial, true))
       return { kind: "invalid" };
     const existing = cache.get(initial);
-    if (existing) return existing;
+    if (existing) {
+      const page = await existing;
+      if (page.kind === "invalid" && page.missingSource && normalizedSources.has(page.missingSource)) {
+        if (cache.get(initial) === existing) cache.delete(initial);
+        return fetchPage(raw);
+      }
+      return page.kind === "html" && !page.sourceUrls.every((url) => normalizedSources.has(url))
+        ? { kind: "invalid" }
+        : page;
+    }
     const request = async (): Promise<Page> => {
       const controller = new AbortController();
       const abort = () => controller.abort(signal?.reason);
@@ -246,11 +275,12 @@ export async function verifyProductPages(
       const timer = setTimeout(() => controller.abort(), 5000);
       try {
         let current = initial;
+        const sourceUrls = [initial];
         for (let hop = 0; hop < 4; hop++) {
           signal?.throwIfAborted();
           const host = new URL(current).hostname.replace(/^www\./, "");
           if (Date.now() >= deadline || (counts.get(host) ?? 0) >= 8)
-            return { kind: "unavailable" };
+            return { kind: "unavailable", retryable: true };
           counts.set(host, (counts.get(host) ?? 0) + 1);
           const response = await fetch(current, {
             redirect: "manual",
@@ -261,6 +291,7 @@ export async function verifyProductPages(
             const location = response.headers.get("location");
             const next = location && safeUrl(new URL(location, current).href);
             await response.body?.cancel();
+            if (next && !normalizedSources.has(next)) return { kind: "invalid", missingSource: next };
             if (
               !next ||
               !normalizedSources.has(next) ||
@@ -269,6 +300,7 @@ export async function verifyProductPages(
             )
               return { kind: "invalid" };
             current = next;
+            sourceUrls.push(next);
             continue;
           }
           if (response.status === 404 || response.status === 410) {
@@ -277,7 +309,7 @@ export async function verifyProductPages(
           }
           if (!response.ok) {
             await response.body?.cancel();
-            return { kind: "unavailable" };
+            return response.status >= 500 ? { kind: "unavailable", retryable: true } : { kind: "unavailable" };
           }
           if (
             /pdf|image\/|octet-stream/i.test(
@@ -304,21 +336,72 @@ export async function verifyProductPages(
           }
           if (!/<(?:!doctype\s+html|html|title|h1|main)\b/i.test(html))
             return { kind: "unavailable" };
-          return { kind: "html", html, url: current };
+          return { kind: "html", html, url: current, sourceUrls };
         }
         return { kind: "invalid" };
       } catch {
         signal?.throwIfAborted();
-        return { kind: "unavailable" };
+        return { kind: "unavailable", retryable: true };
       } finally {
         clearTimeout(timer);
         signal?.removeEventListener("abort", abort);
       }
     };
-    const pending = request();
+    const pending = request().then((page) => {
+      if (page.kind === "invalid" && page.missingSource) cache.delete(initial);
+      if (page.kind === "unavailable") {
+        if (page.retryable) cache.delete(initial);
+        else context.unavailableDomains.add(new URL(initial).hostname.replace(/^www\./, ""));
+      }
+      return page;
+    });
     cache.set(initial, pending);
     return pending;
   }
+  return fetchPage;
+}
+
+export async function readProductPages(sources: Set<string>, signal?: AbortSignal, context?: ProductPageCache) {
+  const fetchPage = pageReader(sources, signal, context);
+  const urls = [...sources].filter((raw) => {
+    const url = safeUrl(raw);
+    return url && detail(url) && !/\.(?:pdf|jpg|png|webp)$/i.test(new URL(url).pathname);
+  }).slice(0, 20);
+  const pages: { url: string; title: string; modelNames: string[]; text: string; offers: { modelName: string; baht: number; currency: string; availability?: string }[] }[] = [];
+  await Promise.all(Array.from({ length: 3 }, async () => {
+    for (;;) {
+      const url = urls.shift();
+      if (!url) break;
+      const page = await fetchPage(url);
+      if (page.kind !== "html") continue;
+      const title = passage(page.html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
+      const products = structuredProducts(page.html);
+      const modelNames = products.flatMap((product) => product.name ? [product.name] : []);
+      if (!modelNames.length && !/(?:^|\/)(?:p|products?|shop|item)(?:\/|$)/i.test(new URL(url).pathname)) continue;
+      const offers = products.flatMap((product) => objects(product.offers).flatMap((value) => {
+        const offer = offerSchema.safeParse(value);
+        if (!offer.success || !product.name) return [];
+        const baht = Number(String(offer.data.price).replace(/,/g, ""));
+        return Number.isFinite(baht) && baht > 0 && offer.data.priceCurrency.toUpperCase() === "THB"
+          ? [{ modelName: product.name, baht, currency: "THB", availability: offer.data.availability }]
+          : [];
+      }));
+      const text = productText(page.html, true);
+      if (title && text) pages.push({ url, title, modelNames, offers, text: text.slice(0, 6_000) });
+    }
+  }));
+  return pages;
+}
+
+export async function verifyProductPages(
+  candidates: SearchCandidate[],
+  sources: Set<string>,
+  signal?: AbortSignal,
+  context?: ProductPageCache,
+): Promise<SearchCandidate[]> {
+  signal?.throwIfAborted();
+  const normalizedSources = new Set([...sources].map(safeUrl).filter((url) => url !== null));
+  const fetchPage = pageReader(sources, signal, context);
   async function verify(
     candidate: SearchCandidate,
   ): Promise<SearchCandidate | null> {
@@ -371,7 +454,7 @@ export async function verifyProductPages(
         inspect(evidencePage.html, candidate.model) &&
         productText(evidencePage.html, true).includes(excerpt)
       )
-        evidence.push(item);
+        evidence.push({ ...item, pageModel: candidate.model });
     }
     return {
       ...candidate,
