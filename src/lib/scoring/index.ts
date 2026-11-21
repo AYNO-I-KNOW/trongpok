@@ -25,7 +25,7 @@ function appearanceClaim(text: string) {
 export function eligibleLabels(product: Product, requirements: Requirement[], labels: Label[]) {
   return validLabels(product, labels).filter((label) => {
     const requirement = requirements.find((item) => item.id === label.subjectId);
-    if (requirement) return label.usage !== "unboxing" && (!requirement.longUse || label.usage === "long");
+    if (requirement) return !requirement.specOnly && label.usage !== "unboxing" && (!requirement.longUse || label.usage === "long");
     const claim = product.claims.find((item) => item.id === label.subjectId && item.checkable);
     return Boolean(claim && (label.usage !== "unboxing" || appearanceClaim(claim.text)));
   });

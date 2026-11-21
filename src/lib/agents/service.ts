@@ -36,7 +36,7 @@ export async function runArenaRequest(input: z.infer<typeof ArenaRequestSchema>,
   const category = linked?.status === "found" ? linked.product.category : request.category;
   const pack = packs.find((item) => item.id === category) ?? (!category ? packs.find((item) => item.keywords.some((keyword) => request.needText?.toLowerCase().includes(keyword.toLowerCase()))) : undefined);
   if (!pack) throw new Error("กรุณาระบุหมวดสินค้า");
-  const requirements = request.answers ? requirementsFromAnswers(pack, request.answers) : await requirementsFromText(pack, request.needText ?? "");
+  const requirements = request.answers ? requirementsFromAnswers(pack, request.answers, request.needText) : await requirementsFromText(pack, request.needText ?? "");
   const linkedProductId = linked?.status === "found" ? linked.product.id : undefined;
   const key = cacheHash([scoringVersion, requirements, linkedProductId, pack.id, version]);
   const cached = await readArenaCache(cacheRoot, key);
