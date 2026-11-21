@@ -11,6 +11,7 @@ export const RequirementSchema = z.object({
   text: textSchema,
   kind: z.enum(["must", "nice", "budget"]),
   longUse: z.boolean().optional(),
+  specOnly: z.boolean().optional(),
   value: z.number().nonnegative().optional(),
   spec: z.object({
     key: textSchema,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import example from "../../../data/products/_example.json";
 import { ProductSchema, type Label, type Product, type Requirement } from "../types";
-import { evidenceCount, fit, rank, requirementResult, reviewWeight, reviewQualityWarning, shopScore, specCheck, trust } from "./index";
+import { eligibleLabels, evidenceCount, fit, rank, requirementResult, reviewWeight, reviewQualityWarning, shopScore, specCheck, trust } from "./index";
 
 const base = ProductSchema.parse(example);
 const need: Requirement = { id: "ice", text: "ปั่นน้ำแข็ง", kind: "must" };
@@ -169,4 +169,17 @@ it("counts unlabeled unboxing once and warns without reducing computed scores", 
   expect(before.rankScore).toBe(after.rankScore);
   p.reviews.push({ ...p.reviews[4], id: "extra" });
   expect(reviewQualityWarning(p, [need], [])).toBeNull();
+});
+
+
+it("cannot use broad ice quotes to prove exact container capacity or affect trust", () => {
+  const exact: Requirement = { id: "ice-condition", text: "ปั่นน้ำแข็ง 5 ก้อนในขวด 600 มล.", kind: "must", specOnly: true, spec: { key: "maxIceCubesBottle600", op: ">=", value: 5 } };
+  const p = product(10);
+  const evidence = labels(Array(10).fill("confirm"), exact.id);
+  expect(requirementResult(p, exact, evidence)).toMatchObject({ status: "unknown", score: 0.4, quotes: [] });
+  expect(evidenceCount(p, [exact], evidence)).toBe(0);
+  expect(trust(p, [exact], evidence)).toBeNull();
+  expect(eligibleLabels(p, [exact], labels(["contradict"], exact.id))).toEqual([]);
+  expect(requirementResult({ ...p, specs: { maxIceCubesBottle600: 5 } }, exact, evidence)).toMatchObject({ status: "spec-only", score: 0.6, quotes: [] });
+  expect(requirementResult({ ...p, specs: { maxIceCubesBottle600: 4 } }, exact, evidence)).toMatchObject({ status: "fail", score: 0, quotes: [] });
 });

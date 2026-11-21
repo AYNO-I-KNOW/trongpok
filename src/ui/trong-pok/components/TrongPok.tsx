@@ -1,30 +1,283 @@
-'use client';
-import {useEffect,useRef,useState} from 'react';
-import type {Conditions,Plan,ResearchResult} from '@/ui/trong-pok/lib/types';
-import {planQuery} from '@/ui/trong-pok/lib/query';
-import {manufacturerExample,research,researchDesignPreview} from '@/ui/trong-pok/lib/research';
-import Mascot from './Mascot';
-import HomeForm from './HomeForm';
-import QuestionCard from './QuestionCard';
-import Results from './Results';
-import HomeHistory from './HomeHistory';
-import {readHistory,rememberHistory,historyResult,type HistoryEntry} from '@/ui/trong-pok/lib/history';
-export default function TrongPok({rankingDemo,fontTheme='ibm'}:{rankingDemo:boolean;fontTheme?:'ibm'|'line'}){
- const [phase,setPhase]=useState(rankingDemo?'result':'home'),[query,setQuery]=useState(''),[plan,setPlan]=useState<Plan|null>(null),[result,setResult]=useState<ResearchResult|null>(()=>rankingDemo?manufacturerExample():null),[error,setError]=useState('');
- const [history,setHistory]=useState<HistoryEntry[]>([]);
- useEffect(()=>{const refresh=()=>setHistory(readHistory());const frame=requestAnimationFrame(refresh);window.addEventListener('storage',refresh);return()=>{cancelAnimationFrame(frame);window.removeEventListener('storage',refresh)}},[]);
- const controller=useRef<AbortController|null>(null),busy=useRef(false),preflightTimer=useRef<ReturnType<typeof setTimeout>|null>(null),resultTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
- useEffect(()=>()=>{controller.current?.abort();if(preflightTimer.current!==null)clearTimeout(preflightTimer.current)},[]);
- function cancelPreflight(){if(preflightTimer.current!==null){clearTimeout(preflightTimer.current);preflightTimer.current=null}}
- function reset(){cancelPreflight();controller.current?.abort();controller.current=null;busy.current=false;setQuery('');setPlan(null);setResult(null);setError('');setPhase('home');const url=new URL(window.location.href);url.searchParams.delete('demo');window.history.replaceState(window.history.state,'',url.pathname+url.search+url.hash);requestAnimationFrame(()=>document.getElementById('query')?.focus())}
- function openHistory(entry:HistoryEntry){cancelPreflight();controller.current?.abort();busy.current=false;const saved=historyResult(entry);setQuery('');setPlan(saved.plan);setResult(saved);setError('');setPhase('result')}
- function back(){cancelPreflight();controller.current?.abort();busy.current=false;setPhase('home');const url=new URL(window.location.href);url.searchParams.delete('demo');window.history.replaceState(window.history.state,'',url.pathname+url.search+url.hash);requestAnimationFrame(()=>document.getElementById('query')?.focus())}
- async function run(next:Plan){if(busy.current)return;busy.current=true;controller.current?.abort();const current=new AbortController();controller.current=current;setPlan(next);setPhase('search');setError('');
- try{
- await new Promise<void>((resolve,reject)=>{const abort=()=>{if(resultTimer.current!==null){clearTimeout(resultTimer.current);resultTimer.current=null}reject(new DOMException('Cancelled','AbortError'))};current.signal.addEventListener('abort',abort,{once:true});resultTimer.current=setTimeout(()=>{resultTimer.current=null;current.signal.removeEventListener('abort',abort);resolve()},3000)});
- const data=next.designPreview?researchDesignPreview(next):await research(next,current.signal);if(!current.signal.aborted){setResult(data);if(next.designPreview)setHistory(rememberHistory(data));setPhase('result')}
- }catch(e){if(!current.signal.aborted){setError(e instanceof Error?e.message:'ตรวจข้อมูลไม่สำเร็จ');setPhase('unsupported')}}finally{if(controller.current===current)busy.current=false}}
- function submit(raw:string){if(busy.current||!raw.trim())return;cancelPreflight();busy.current=true;const parsed=planQuery(raw);const next:Plan={...(parsed.supported?parsed:{...planQuery('เครื่องปั่น'),raw,designPreview:true}),needsContext:true,designPreview:true};setQuery(raw);setPlan(next);setError('');setPhase('search');preflightTimer.current=setTimeout(()=>{preflightTimer.current=null;busy.current=false;setPhase('clarify')},2500)}
- function changeConditions(conditions:Conditions){if(!result)return;void run({...result.plan,conditions,needsContext:false})}
- return <main className={'phone '+phase} data-font={fontTheme}><Mascot phase={phase}/>{phase==='home'&&<HomeForm key={query} initial={query} onSubmit={submit} history={history.length?<HomeHistory items={history} onOpen={openHistory}/>:null}/>} {phase==='clarify'&&plan&&<QuestionCard plan={plan} onConfirm={next=>void run(next)} onBack={back}/>} {phase==='search'&&<section className="search-copy" role="status"><h1>กำลังวิเคราะห์สินค้าของคุณ..</h1><p>กรุณารอสักครู่</p></section>} {phase==='result'&&result&&<Results result={result} onReset={reset} onBack={back} onConditions={changeConditions}/>} {phase==='unsupported'&&<section className="unsupported"><h1>ยังตรวจเรื่องนี้ไม่ได้</h1><p>{error}</p><p>ชุดข้อมูลนี้รองรับเครื่องปั่น Electrolux E3CB1-630S, HOFFEN FB-3025 และ Simplus DDJR003 สำหรับโจทย์น้ำแข็ง</p><button className="primary" onClick={back}>แก้โจทย์</button></section>}</main>
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { z } from "zod";
+import {
+  ArenaResultSchema,
+  type AgentEvent,
+  type ArenaResult,
+} from "@/lib/types";
+import type { Plan } from "@/ui/trong-pok/lib/types";
+import { manufacturerExample } from "@/ui/trong-pok/lib/research";
+import { readArenaStream } from "@/ui/trong-pok/lib/arena-stream";
+import { detectInputLinks } from "@/ui/trong-pok/lib/input-link";
+import {
+  readHistory,
+  historyResult,
+  type HistoryEntry,
+} from "@/ui/trong-pok/lib/history";
+import Mascot from "./Mascot";
+import HomeForm from "./HomeForm";
+import QuestionCard, { type BlenderAnswers } from "./QuestionCard";
+import Results from "./Results";
+import ArenaResults, { type CatalogProduct } from "./ArenaResults";
+import HomeHistory from "./HomeHistory";
+const SavedSchema = z.array(
+  z.object({ query: z.string(), result: ArenaResultSchema }),
+);
+type Saved = z.infer<typeof SavedSchema>[number];
+type Screen =
+  | { kind: "home" }
+  | { kind: "clarify"; plan: Plan }
+  | { kind: "search"; answers: BlenderAnswers; events: AgentEvent[] }
+  | { kind: "result"; result: ArenaResult }
+  | { kind: "error"; answers: BlenderAnswers; message: string }
+  | { kind: "preview"; entry: HistoryEntry | null };
+const historyKey = "trong-pok-arena-history-v1";
+export default function TrongPok({
+  rankingDemo,
+  fontTheme = "ibm",
+  products,
+}: {
+  rankingDemo: boolean;
+  fontTheme?: "ibm" | "line";
+  products: CatalogProduct[];
+}) {
+  const [screen, setScreen] = useState<Screen>(
+    rankingDemo ? { kind: "preview", entry: null } : { kind: "home" },
+  );
+  const [query, setQuery] = useState(""),
+    [saved, setSaved] = useState<Saved[]>([]),
+    [legacy, setLegacy] = useState<HistoryEntry[]>([]);
+  const controller = useRef<AbortController | null>(null);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setLegacy(readHistory());
+      try {
+        const parsed = SavedSchema.safeParse(
+          JSON.parse(localStorage.getItem(historyKey) || "[]"),
+        );
+        if (parsed.success) setSaved(parsed.data.slice(0, 3));
+      } catch {}
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      controller.current?.abort();
+    };
+  }, []);
+  function back() {
+    controller.current?.abort();
+    controller.current = null;
+    setScreen({ kind: "home" });
+    requestAnimationFrame(() => {
+      document.getElementById("query")?.focus();
+    });
+    const url = new URL(window.location.href);
+    url.searchParams.delete("demo");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      url.pathname + url.search + url.hash,
+    );
+  }
+  function reset() {
+    back();
+    setQuery("");
+  }
+  function submit(raw: string) {
+    if (!raw.trim()) return;
+    controller.current?.abort();
+    setQuery(raw);
+    setScreen({
+      kind: "clarify",
+      plan: {
+        raw,
+        target: null,
+        supported: true,
+        ice: false,
+        conditions: {
+          cubes: null,
+          container: "unknown",
+          pulse: null,
+          budget: null,
+        },
+        needsContext: true,
+      },
+    });
+  }
+  async function run(answers: BlenderAnswers) {
+    controller.current?.abort();
+    const current = new AbortController();
+    controller.current = current;
+    setScreen({ kind: "search", answers, events: [] });
+    try {
+      const link = detectInputLinks(query)[0]?.url;
+      const response = await fetch("/api/arena", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: "blender",
+          needText: query,
+          ...(link ? { link } : {}),
+          answers,
+        }),
+        signal: current.signal,
+      });
+      const result = await readArenaStream(response, (event) => {
+        if (controller.current !== current || current.signal.aborted) return;
+        setScreen((previous) =>
+          previous.kind === "search"
+            ? { ...previous, events: [...previous.events, event] }
+            : previous,
+        );
+      });
+      if (controller.current !== current || current.signal.aborted) return;
+      setScreen({ kind: "result", result });
+      const next = [
+        { query, result },
+        ...saved.filter((entry) => entry.query !== query),
+      ].slice(0, 3);
+      setSaved(next);
+      try {
+        localStorage.setItem(historyKey, JSON.stringify(next));
+      } catch {}
+    } catch (error) {
+      if (controller.current === current && !current.signal.aborted)
+        setScreen({
+          kind: "error",
+          answers,
+          message:
+            error instanceof z.ZodError || error instanceof SyntaxError
+              ? "ข้อมูลผลลัพธ์ไม่ถูกต้อง กรุณาลองอีกครั้ง"
+              : error instanceof Error
+                ? error.message
+                : "ตรวจข้อมูลไม่สำเร็จ",
+        });
+    }
+  }
+  const phase =
+    screen.kind === "preview"
+      ? "result"
+      : screen.kind === "error"
+        ? "unsupported"
+        : screen.kind;
+  return (
+    <main className={"phone " + phase} data-font={fontTheme}>
+      <Mascot phase={phase} />
+      {screen.kind === "home" && (
+        <HomeForm
+          initial={query}
+          onSubmit={submit}
+          history={
+            <>
+              {saved.length > 0 && (
+                <section className="arena-history">
+                  <h2>ผลล่าสุด</h2>
+                  <div className="history-list">
+                    {saved.map((entry) => (
+                      <button
+                        type="button"
+                        key={entry.query}
+                        onClick={() => {
+                          setQuery(entry.query);
+                          setScreen({ kind: "result", result: entry.result });
+                        }}
+                      >
+                        {entry.query}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {legacy.length > 0 && (
+                <section>
+                  <p>ประวัติแบบจำลองการออกแบบ</p>
+                  <HomeHistory
+                    items={legacy}
+                    onOpen={(entry) => setScreen({ kind: "preview", entry })}
+                  />
+                </section>
+              )}
+            </>
+          }
+        />
+      )}{" "}
+      {screen.kind === "clarify" && (
+        <QuestionCard
+          onConfirm={(answers) => void run(answers)}
+          onBack={back}
+        />
+      )}{" "}
+      {screen.kind === "search" && (
+        <section className="search-copy">
+          <button
+            className="back"
+            type="button"
+            onClick={back}
+            aria-label="ยกเลิกและกลับหน้าแรก"
+          >
+            ←
+          </button>
+          <div role="status">
+            <h1>กำลังวิเคราะห์สินค้าของคุณ..</h1>
+            <p>{screen.events.at(-1)?.text || "กำลังเริ่มตัวแทนตรวจสอบ"}</p>
+          </div>
+          <ol className="arena-events" aria-label="ความคืบหน้าตัวแทน">
+            {screen.events.slice(-8).map((event, index) => (
+              <li key={index}>
+                <strong>
+                  {
+                    {
+                      verifier: "ผู้ตรวจสอบ",
+                      fit: "ผู้หาความเหมาะสม",
+                      value: "ผู้หาความคุ้มค่า",
+                      skeptic: "ผู้ทักท้วง",
+                      judge: "ผู้สรุป",
+                    }[event.agent]
+                  }
+                </strong>{" "}
+                · {event.text}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}{" "}
+      {screen.kind === "result" && (
+        <ArenaResults
+          result={screen.result}
+          products={products}
+          onBack={back}
+          onReset={reset}
+        />
+      )}{" "}
+      {screen.kind === "preview" && (
+        <>
+          <span className="demo-label">ตัวอย่างการออกแบบ</span>
+          <Results
+            result={
+              screen.entry ? historyResult(screen.entry) : manufacturerExample()
+            }
+            onBack={back}
+            onReset={reset}
+            onConditions={() => {}}
+          />
+        </>
+      )}{" "}
+      {screen.kind === "error" && (
+        <section className="unsupported">
+          <h1>ตรวจข้อมูลไม่สำเร็จ</h1>
+          <p role="alert">{screen.message}</p>
+          <button
+            className="primary"
+            type="button"
+            onClick={() => void run(screen.answers)}
+          >
+            ลองอีกครั้ง
+          </button>
+          <button className="back" type="button" onClick={back}>
+            กลับไปแก้โจทย์
+          </button>
+        </section>
+      )}
+    </main>
+  );
 }
