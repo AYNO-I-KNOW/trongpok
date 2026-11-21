@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { MAX_CLARIFICATION_QUESTIONS, MAX_SEARCH_TEXT_LENGTH } from "@/lib/product-search/contract";
 
 type Props = {
   question: string;
   choices: string[];
+  number: number;
   onAnswer: (answer: string) => void;
   onBack: () => void;
 };
 
-export default function SearchQuestion({ question, choices, onAnswer, onBack }: Props) {
+export default function SearchQuestion({ question, choices, number, onAnswer, onBack }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
   const [custom, setCustom] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
@@ -20,10 +22,10 @@ export default function SearchQuestion({ question, choices, onAnswer, onBack }: 
     <section className="clarify">
       <nav className="question-nav" aria-label="ความคืบหน้าคำถาม">
         <button type="button" className="back" onClick={onBack} aria-label="ย้อนกลับ">←</button>
-        <div className="question-progress" role="progressbar" aria-label="คำถามเพิ่มเติม" aria-valuemin={0} aria-valuemax={1} aria-valuenow={1}>
-          <span className="question-progress-fill" />
+        <div className="question-progress" role="progressbar" aria-label={`คำถามเพิ่มเติม สูงสุด ${MAX_CLARIFICATION_QUESTIONS} ข้อ`} aria-valuemin={0} aria-valuemax={MAX_CLARIFICATION_QUESTIONS} aria-valuenow={number}>
+          <span className="question-progress-fill" style={{ transform: `scaleX(${number / MAX_CLARIFICATION_QUESTIONS})` }} />
         </div>
-        <span>1 จาก 1</span>
+        <span>ข้อที่ {number}</span>
       </nav>
       <div className="question-step">
         <div className="question-copy">
@@ -46,13 +48,13 @@ export default function SearchQuestion({ question, choices, onAnswer, onBack }: 
           </fieldset>
           {isOther && (
             <label className="custom-label">คำตอบของคุณ
-              <textarea autoFocus rows={1} value={custom} onChange={(event) => setCustom(event.target.value)} placeholder="พิมพ์คำตอบของคุณ" required />
+              <textarea autoFocus rows={1} maxLength={MAX_SEARCH_TEXT_LENGTH} value={custom} onChange={(event) => setCustom(event.target.value)} placeholder="พิมพ์คำตอบของคุณ" required />
             </label>
           )}
         </form>
       </div>
       <div className="question-footer">
-        <button className="primary" type="submit" form="question-form" disabled={!answer}>เริ่มค้นหาต่อ</button>
+        <button className="primary" type="submit" form="question-form" disabled={!answer}>ส่งคำตอบ</button>
       </div>
     </section>
   );

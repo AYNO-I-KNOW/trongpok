@@ -2,6 +2,19 @@ import { z } from "zod";
 import { clarificationSchema, isDetailUrl, sourceUrl } from "./domain";
 
 const text = z.string().trim().min(1);
+export const MAX_CLARIFICATION_QUESTIONS = 5;
+export const MAX_SEARCH_TEXT_LENGTH = 1200;
+const buyerText = text.max(MAX_SEARCH_TEXT_LENGTH);
+const clarificationTurnSchema = z.object({
+  question: clarificationSchema.shape.question,
+  answer: buyerText,
+});
+export const productSearchRequestSchema = z.object({
+  query: buyerText,
+  clarifications: z.array(clarificationTurnSchema).max(MAX_CLARIFICATION_QUESTIONS).default([]),
+});
+export type ClarificationTurn = z.infer<typeof clarificationTurnSchema>;
+
 const source = z.union([
   z.url({ protocol: /^https$/ }),
   z.string().regex(/^\/api\/demo-products\/[a-z0-9-]+$/),
@@ -53,6 +66,7 @@ export const productSearchResultSchema = z.discriminatedUnion("kind", [
     note: text,
   }),
   clarificationSchema.extend({ kind: z.literal("clarify") }),
+  z.object({ kind: z.literal("needs-specifics"), message: text }),
   z.object({ kind: z.literal("unavailable"), message: text }),
 ]);
 

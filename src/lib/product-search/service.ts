@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { rankProducts } from "../scoring/product-search";
-import type { ProductSearchResult } from "./contract";
+import { MAX_CLARIFICATION_QUESTIONS, type ClarificationTurn, type ProductSearchResult } from "./contract";
 import { demoFallback } from "./demo";
 import { sourceUrl } from "./domain";
 import { budgetFromQuery } from "./budget";
@@ -15,22 +15,42 @@ const productTypeQuestion = {
   question: "กำลังมองหาสินค้าประเภทไหน?",
   choices: ["เครื่องใช้ไฟฟ้าในบ้าน", "อุปกรณ์ไอที", "อุปกรณ์ออกกำลังกาย"],
 } satisfies ProductSearchResult;
+const needsSpecifics = {
+  kind: "needs-specifics",
+  message: "ข้อมูลยังไม่พอให้รู้ว่าควรค้นหาสินค้าแบบไหน ลองแก้โจทย์โดยระบุประเภทสินค้าหรือการใช้งานหลัก",
+} satisfies ProductSearchResult;
 
-export async function searchProducts(
-  query: string,
-  backend?: SearchBackend,
-  signal?: AbortSignal,
-): Promise<ProductSearchResult> {
-  signal?.throwIfAborted();
-  const searchText = query
+function cleanBuyerText(text: string): string {
+  return text
     .replace(
       /https?:\/\/[^\s<>]+|\b(?:[\w-]+\.)*(?:shopee\.[a-z.]+|shope\.ee)\/[^\s<>]*/gi,
       (link) => sourceUrl(link) ?? "",
     )
     .trim();
-  if (!searchText) return productTypeQuestion;
+}
+
+export async function searchProducts(
+  query: string,
+  backend?: SearchBackend,
+  signal?: AbortSignal,
+  clarifications: readonly ClarificationTurn[] = [],
+): Promise<ProductSearchResult> {
+  signal?.throwIfAborted();
+  const original = cleanBuyerText(query);
+  const turns = clarifications.map(({ question, answer }) => ({
+    question: cleanBuyerText(question),
+    answer: cleanBuyerText(answer),
+  }));
+  const searchText = [original, ...turns.map(({ answer }) => answer)].filter(Boolean).join("\n");
+  const canClarify = turns.length < MAX_CLARIFICATION_QUESTIONS;
+  const askProductType = canClarify ? productTypeQuestion : needsSpecifics;
+  const fallback = async () => {
+    const result = await demoFallback(searchText);
+    return !canClarify && result.kind === "clarify" ? needsSpecifics : result;
+  };
+  if (!searchText) return askProductType;
   if (!backend && (!process.env.OPENAI_API_KEY || !process.env.OPENAI_MODEL))
-    return demoFallback(searchText);
+    return fallback();
   const live =
     backend ??
     createSearchBackend(
@@ -39,15 +59,16 @@ export async function searchProducts(
       signal,
     );
   try {
-    const extracted = await live.goal(searchText);
+    const extracted = await live.goal(original, turns);
     if (extracted.clarification) {
+      if (!canClarify) return needsSpecifics;
       const { question, choices } = extracted.clarification;
       const presets = [...new Set(choices)].filter(
         (choice) => !/^(?:อื่น(?:\s*ๆ)?|กรอกเอง|พิมพ์เอง|ระบุเอง|other)(?:$|[\s(:（])/iu.test(choice),
       );
       return presets.length >= 2
         ? { kind: "clarify", question, choices: presets }
-        : productTypeQuestion;
+        : askProductType;
     }
     const cap = budgetFromQuery(searchText);
     const goal = {
@@ -57,9 +78,9 @@ export async function searchProducts(
           ? extracted.budget
           : Math.min(cap, extracted.budget ?? cap),
     };
-    if (!goal.category.trim()) return productTypeQuestion;
+    if (!goal.category.trim()) return askProductType;
     if (goal.budget !== null && (!Number.isFinite(goal.budget) || goal.budget <= 0))
-      return {
+      return !canClarify ? needsSpecifics : {
         kind: "clarify",
         question: "ตั้งงบไว้ไม่เกินเท่าไร?",
         choices: ["ไม่เกิน 1,000 บาท", "ไม่เกิน 3,000 บาท", "ไม่เกิน 5,000 บาท"],
@@ -203,7 +224,7 @@ export async function searchProducts(
         expansionFailed = true;
       }
     }
-    if (!picks.length && expansionFailed) return demoFallback(searchText);
+    if (!picks.length && expansionFailed) return fallback();
     const constraints =
       `${goal.budget === null ? "" : ` ภายในงบ ${goal.budget.toLocaleString("th-TH")} บาท`}` +
       `${goal.must.length ? ` และเงื่อนไข ${goal.must.join(" / ")}` : ""}`;
@@ -239,7 +260,7 @@ export async function searchProducts(
   } catch (error) {
     signal?.throwIfAborted();
     logFailure(error, "search");
-    return demoFallback(searchText);
+    return fallback();
   }
 }
 

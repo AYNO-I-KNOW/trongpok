@@ -110,7 +110,7 @@ describe("bounded live discovery", () => {
       const parse = vi.spyOn(Responses.prototype, "parse").mockRejectedValue(stopped);
       const create = vi.spyOn(Responses.prototype, "create").mockRejectedValue(stopped);
       const backend = createSearchBackend("test-key", model);
-      await expect(backend.goal("buyer request")).rejects.toThrow(stopped);
+      await expect(backend.goal("buyer request", [])).rejects.toThrow(stopped);
       expect(parse.mock.calls[0][0]).toMatchObject({ model });
       expect(parse.mock.calls[0][0].reasoning).toEqual(
         model === "gpt-6-luna" ? { effort: "none" } : undefined,

@@ -35,7 +35,7 @@ export const allowedDomains = [
   "bosch-professional.com",
 ];
 export const clarificationSchema = z.object({
-  question: z.string().trim().min(1),
+  question: z.string().trim().min(1).max(240),
   choices: z.array(z.string().trim().min(1)).min(2).max(3),
 });
 

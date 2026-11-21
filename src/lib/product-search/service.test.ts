@@ -218,6 +218,45 @@ describe("live search rounds", () => {
     });
     expect(search).not.toHaveBeenCalled();
   });
+
+  it("offers a fifth question but asks no sixth when intent remains unclear", async () => {
+    const search = vi.fn<SearchBackend["search"]>();
+    const backend = {
+      goal: async () => ({
+        ...goal,
+        clarification: {
+          question: "จะใช้เมาส์ทำอะไรเป็นหลัก?",
+          choices: ["ทำงานออฟฟิศ", "เล่นเกม"],
+        },
+      }),
+      search,
+    };
+    const turns = Array.from({ length: 5 }, (_, index) => ({
+      question: `คำถาม ${index + 1}`,
+      answer: "ยังไม่แน่ใจ",
+    }));
+    await expect(searchProducts("อยากได้เมาส์", backend, undefined, turns.slice(0, 4)))
+      .resolves.toMatchObject({ kind: "clarify" });
+    const result = await searchProducts("อยากได้เมาส์", backend, undefined, turns);
+    expect(productSearchResultSchema.parse(result)).toMatchObject({ kind: "needs-specifics" });
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it("starts discovery after the fifth answer without turning examples in a question into requirements", async () => {
+    const search = vi.fn<SearchBackend["search"]>().mockResolvedValue({
+      candidates: [candidate()],
+      sources,
+      usable: true,
+      searchCalls: 1,
+    });
+    const turns = Array.from({ length: 5 }, () => ({
+      question: "อยากได้เมาส์สำหรับงานแบบไหน เช่น ใช้เล่นเกม งบ 100 บาท?",
+      answer: "ทำงานออฟฟิศ",
+    }));
+    const result = await searchProducts("เมาส์คลิกเงียบ", { goal: async () => goal, search }, undefined, turns);
+    expect(result).toMatchObject({ kind: "web", picks: [{ model: "Logitech M240" }] });
+    expect(search.mock.calls[0]?.[0]).not.toContain("งบ 100 บาท");
+  });
 });
 
 describe("search execution proof", () => {
@@ -394,7 +433,7 @@ it("keeps excluded buyer URLs out of both provider requests", async () => {
   });
   expect(extract).not.toHaveBeenCalled();
   await searchProducts("เมาส์ไร้สาย " + link, backend);
-  expect(extract).toHaveBeenCalledWith("เมาส์ไร้สาย");
+  expect(extract).toHaveBeenCalledWith("เมาส์ไร้สาย", []);
   expect(search.mock.calls.every(([text]) => text === "เมาส์ไร้สาย")).toBe(true);
 });
 
