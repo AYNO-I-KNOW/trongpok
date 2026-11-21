@@ -16,6 +16,16 @@ it.each([
   expect(budgetFromQuery(query)).toBe(expected);
 });
 
+it.each(["เครื่องปั่น", "BLENDER", "สมาร์ทวอทช์"])(
+  "asks about intended use before recommending demo products for %s",
+  async (query) => {
+    expect(await demoFallback(query)).toEqual({
+      kind: "clarify",
+      question: expect.stringContaining("ใช้"),
+    });
+  },
+);
+
 it("offers only affordable synthetic products and points to their own records", async () => {
   const result = productSearchResultSchema.parse(
     await demoFallback("เครื่องปั่น งบ 999 บาท"),

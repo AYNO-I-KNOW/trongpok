@@ -14,12 +14,18 @@ export async function demoFallback(
       kind: "unavailable",
       message: "ค้นเว็บไม่ได้ในขณะนี้ และยังไม่มีสินค้าหมวดนี้ในชุดเดโม",
     };
+  const normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery === pack.name.toLowerCase() || normalizedQuery === pack.id)
+    return {
+      kind: "clarify",
+      question: `อยากใช้${pack.name}ทำอะไรเป็นหลัก?`,
+    };
   const budget = budgetFromQuery(query);
   const preferences = pack.keywords
     .toSorted((a, b) => b.length - a.length)
     .reduce(
       (text, keyword) => text.replaceAll(keyword.toLowerCase(), " "),
-      query.toLowerCase(),
+      normalizedQuery,
     );
   const requirements = requirementsFromTextWithRules(pack, preferences).filter(
     (item) => item.kind !== "budget",
