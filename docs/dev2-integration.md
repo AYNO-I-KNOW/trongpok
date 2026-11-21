@@ -1,12 +1,12 @@
 # Dev 2 integration
 
-The working branch is codex/dev2-integration, based on upstream main commit c288e11a8792df20453edfa42cd3e600126d051e. All 25 upstream image and font files have been checked against their Git blob hashes. Commit and push feature changes only after the required test and build checks pass.
+The working branch is `codex/dev2-integration`. It preserves the homepage search and blender Arena from `main` and uses the components and assets from `thanid-design` for the Dev 2 comparison.
 
 ## User flow
 
-Normal searches use the design from `thanid-design` throughout: the original search form, one-question cards, the mascot during analysis, the product comparison table, and the evidence dialog. The designer's preview and the actual comparison share the question, comparison and evidence components. The original IBM and Line themes carry through the same flow.
+The homepage uses the verified product search from `main` and offers a link to compare products using reviews. Both flows use the original search form, mascot, product comparison table, and evidence dialog. The original IBM and Line themes carry through the comparison.
 
-Routes remain /compare?q=..., /arena, /results?run=..., and /p/<id>?run=.... Requirements can be reviewed and edited before analysis. The comparison table uses the backend ranking and fit scores, with additional ranked options available beneath the first three columns. Opening an evidence link displays the designer's dialog over the results. Unknown product links offer category selection without fetching the product site.
+The review comparison uses `/compare?q=...` and submits edited requirements to `/arena?flow=compare`. The blender demo remains at `/arena`. Fit, Value and Skeptic assess the reviewed requirements. Results at `/results?run=...` use the backend ranking and fit scores, with more options below the first three columns. Opening `/p/<id>?run=...` shows the designer's evidence dialog. Unknown product links offer category selection without fetching the product site.
 
 The catalog contains 20 team-created products in four categories. Products and reviews are synthetic demonstration data, as described in data/README.md. The comparison pages disclose this. /?demo=ranking remains a labeled design example. The separate /api/ui/preview endpoint is an explicit synthetic preview; the production Fit endpoint never falls back to it.
 

@@ -90,7 +90,7 @@ export function NeedFlow({ packs, products, previews, initialText = "", initialP
         preview, pack, font, products: preview ? previews[pack.id] ?? [] : products.filter((product) => product.category === pack.id),
         ...(linked ? { linkedProductId: linked.id } : {}),
       });
-      router.push("/arena");
+      router.push("/arena?flow=compare");
     } catch {
       setError("บันทึกการเลือกไม่ได้ กรุณาอนุญาตพื้นที่เก็บข้อมูลของเบราว์เซอร์ แล้วลองใหม่");
     }

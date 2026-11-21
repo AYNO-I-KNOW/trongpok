@@ -6,10 +6,9 @@ export const statusText: Record<RequirementStatus, string> = {
   "spec-only": "ตามสเปก ยังไม่มีรีวิวยืนยัน", unknown: "ยังไม่มีข้อมูลยืนยัน",
 };
 export const agentInfo = {
-  verifier: { name: "Verifier", title: "ตรวจให้ชัวร์", goal: "สินค้าที่คุณเล็ง ผ่านความต้องการไหม", mark: "◎" },
-  fit: { name: "Fit", title: "หาให้เหมาะ", goal: "หาตัวที่ตอบโจทย์คุณมากที่สุด", mark: "✳" },
-  value: { name: "Value", title: "เลือกให้คุ้ม", goal: "หาราคาที่ดี ในเงื่อนไขที่คุณต้องการ", mark: "↘" },
-  skeptic: { name: "Skeptic", title: "มองอีกด้าน", goal: "ตรวจข้อเสียก่อนคุณตัดสินใจ", mark: "◈" },
+  fit: { title: "หาให้เหมาะ" },
+  value: { title: "เลือกให้คุ้ม" },
+  skeptic: { title: "มองอีกด้าน" },
 };
 
 export function safeQuotes(product: Product, labels: Label[]): Label[] {

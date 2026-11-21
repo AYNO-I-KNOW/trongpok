@@ -32,6 +32,33 @@ export function reviewSpecific(text: string) {
   return text.replace(/ใช้ได้ผล|ส่งไว|แนะนำ|ดี|มาก|ค่ะ|ครับ/g, "").length >= 25;
 }
 
+export function iceReviewRelevant(text: string) {
+  const explicitIce = /น้ำแข็ง/.test(text);
+  const dailyShopUse = /ร้าน|ขาย/.test(text) && /วันละ[^.!?\n]{0,35}แก้ว/.test(text);
+  const actualUse = /(?:ใช้|ทำร้าน|เปิดร้าน|ขาย|ปั่น)[^.!?\n]{0,20}(?:มา|ครบ|ต่อเนื่อง)/.test(text);
+  const operationalOutcome = /เครื่องตัด|มอเตอร์(?:ไม่)?(?:ไหม้|ดับ|ตัด)|เดินเรียบ/.test(text);
+  return explicitIce || (dailyShopUse && actualUse && operationalOutcome);
+}
+
+export function isBlenderIceRequirement(category: string, subject: Subject) {
+  return category === "blender" && "kind" in subject && /น้ำแข็ง/.test(subject.text);
+}
+
+function iceStance(text: string, usage: Label["usage"]): Label["stance"] {
+  if (usage === "unboxing" || !iceReviewRelevant(text)) return "none";
+  const complaint = text.replace(/(?:มอเตอร์)?ไม่(?:เคย)?(?:มี)?กลิ่นไหม้|มอเตอร์ไม่ไหม้|ไม่ไหม้|ไม่เคยเครื่องตัด|มอเตอร์ไม่ตัด|ไม่เจอเกล็ดใหญ่|ไม่เคยลองขายทั้งวัน/g, "");
+  if (/ไหม้|ดับ|เครื่องตัด|ใบมีดติด|ไม่ละเอียด|เหลือเศษ|ปั่นหลายรอบ|สั่นทั้งโต๊ะ/.test(complaint)) return "contradict";
+  return /เนียน|ละเอียด|หมุนปกติ|ไม่ไหม้|ไม่เคยเครื่องตัด|มอเตอร์ไม่ตัด|เดินเรียบ|ไม่มีกลิ่นไหม้/.test(text) ? "confirm" : "none";
+}
+
+function quietStance(text: string, usage: Label["usage"]): Label["stance"] {
+  if (usage === "unboxing") return "none";
+  const quiet = /เสียงไม่ดัง(?:จน[^.!?\n]{0,15}ตื่น)?|เสียง.{0,8}เบา|ไม่รบกวน|ไม่ได้ยินเสียง|เสียง.{0,8}เงียบ/g;
+  const complaints = text.replace(quiet, "");
+  if (/เสียง.{0,20}(?:ดัง|ลอดไป|รบกวน|แหลม)|(?:เสียง|ปั่น).{0,20}จน.{0,12}ตื่น/.test(complaints)) return "contradict";
+  return quiet.test(text) ? "confirm" : "none";
+}
+
 export function labelWithRules(product: Product, subjects: Subject[]): Label[] {
   const segmenter = new Intl.Segmenter("th", { granularity: "word" });
   return product.reviews.filter((review) => !review.isTemplate).flatMap((review) => {
@@ -45,12 +72,17 @@ export function labelWithRules(product: Product, subjects: Subject[]): Label[] {
       const quote = sentence ?? review.text;
       const complaintText = quote.replace(/ไม่ไหม้|ไม่ดับ|ไม่พัง|ไม่ละลาย|ไม่เยิ้ม|ไม่เหม็น|ไม่กลับมา|เสียงไม่ดัง|ไม่เสียงดัง/g, "");
       const contradict = /ไม่|ไหม้|ดับ|พัง|ไม่ละเอียด|ละลาย|เยิ้ม|เหม็น|กลับมา|จกตา|ปกเทพ/.test(complaintText) || (/เสียงดัง/.test(complaintText) && /เสียง|เงียบ/.test(subject.text));
+      const isIceRequirement = isBlenderIceRequirement(product.category, subject);
+      const isQuietRequirement = product.category === "blender" && "kind" in subject && subject.id === "quiet";
+      const stance = isIceRequirement ? iceStance(review.text, usage)
+        : isQuietRequirement ? quietStance(review.text, usage)
+        : !sentence ? "none" : contradict ? "contradict" : "confirm";
       return {
         reviewId: review.id,
         subjectId: subject.id,
-        stance: logistics || !sentence ? "none" : contradict ? "contradict" : "confirm",
+        stance: logistics ? "none" : stance,
         target: logistics ? "logistics" : "product",
-        quote,
+        quote: isIceRequirement || isQuietRequirement ? review.text : quote,
         usage,
         specific,
       };

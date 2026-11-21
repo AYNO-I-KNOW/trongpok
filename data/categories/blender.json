@@ -27,7 +27,7 @@
       "text": "เรื่องเสียงสำคัญไหม",
       "multi": false,
       "options": [
-        { "label": "ต้องเงียบ (คอนโด / เช้ามืด)", "requirement": { "id": "quiet", "text": "เสียงไม่ดัง", "kind": "nice" } },
+        { "label": "ต้องเงียบ (คอนโด / เช้ามืด)", "requirement": { "id": "quiet", "text": "เสียงไม่ดัง", "kind": "must" } },
         { "label": "ไม่ซีเรียส", "requirement": null }
       ]
     },

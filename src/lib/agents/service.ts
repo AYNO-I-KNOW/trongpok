@@ -18,9 +18,11 @@ export const ArenaRequestSchema = z.object({
   { message: "เงื่อนไขที่ยืนยันไม่ถูกต้อง" }).optional(),
 });
 
-export async function runArenaRequest(input: z.infer<typeof ArenaRequestSchema>, emit: (event: AgentEvent) => void = () => {}, options: { dataRoot?: string; cacheRoot?: string; replayDelayMs?: number; strictCache?: boolean; signal?: AbortSignal; onMode?: (mode: ArenaResult["mode"]) => void } = {}): Promise<ArenaResult> {
+const InternalArenaRequestSchema = ArenaRequestSchema.extend({ linkedProductId: z.string().min(1).optional() });
+
+export async function runArenaRequest(input: z.infer<typeof InternalArenaRequestSchema>, emit: (event: AgentEvent) => void = () => {}, options: { dataRoot?: string; cacheRoot?: string; replayDelayMs?: number; strictCache?: boolean; signal?: AbortSignal; onMode?: (mode: ArenaResult["mode"]) => void } = {}): Promise<ArenaResult> {
   options.signal?.throwIfAborted();
-  const request = ArenaRequestSchema.parse(input);
+  const request = InternalArenaRequestSchema.parse(input);
   const dataRoot = options.dataRoot ?? join(process.cwd(), "data");
   const cacheRoot = options.cacheRoot ?? join(dataRoot, "cache", "arena");
   const [packs, products] = await Promise.all([loadPacks(dataRoot), loadProducts(dataRoot)]);
@@ -38,12 +40,18 @@ export async function runArenaRequest(input: z.infer<typeof ArenaRequestSchema>,
   if (indexed) return replay(indexed);
   const linked = request.link ? await findByLink(request.link, dataRoot) : null;
   if (linked?.status === "not-in-demo") throw new Error("ลิงก์นี้ไม่อยู่ในชุดเดโม");
-  const category = linked?.status === "found" ? linked.product.category : request.category;
+  const linkedById = request.linkedProductId ? products.find((product) => product.id === request.linkedProductId) : undefined;
+  if (request.linkedProductId && !linkedById) throw new Error("Unknown linked product");
+  const selectedProduct = linkedById ?? (linked?.status === "found" ? linked.product : undefined);
+  if (linkedById && request.category && linkedById.category !== request.category) throw new Error("Linked product category mismatch");
+  const category = selectedProduct?.category ?? request.category;
   const pack = packs.find((item) => item.id === category) ?? (!category ? packs.find((item) => item.keywords.some((keyword) => request.needText?.toLowerCase().includes(keyword.toLowerCase()))) : undefined);
   if (!pack) throw new Error("กรุณาระบุหมวดสินค้า");
-  const requirements = request.requirements ?? (request.answers ? requirementsFromAnswers(pack, request.answers) : await requirementsFromText(pack, request.needText ?? ""));
-  const linkedProductId = linked?.status === "found" ? linked.product.id : undefined;
-  const key = cacheHash([scoringVersion, requirements, linkedProductId, pack.id, version]);
+  const requirements = request.requirements ?? (request.answers
+    ? requirementsFromAnswers(pack, request.answers, request.needText)
+    : await requirementsFromText(pack, request.needText ?? ""));
+  const linkedProductId = selectedProduct?.id;
+  const key = cacheHash([scoringVersion, requirements, request.needText, linkedProductId, pack.id, version]);
   const cached = await readArenaCache(cacheRoot, key);
   if (cached) {
     await writeRequestCache(cacheRoot, requestKey, key, options.strictCache);
@@ -51,7 +59,7 @@ export async function runArenaRequest(input: z.infer<typeof ArenaRequestSchema>,
   }
   options.signal?.throwIfAborted();
   options.onMode?.(process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL ? "llm" : "rules");
-  const result = await runArena({ pack, requirements, linkedProductId, products }, (event) => {
+  const { usedModel, ...result } = await runArena({ pack, requirements, needText: request.needText, linkedProductId, products }, (event) => {
     options.signal?.throwIfAborted();
     if (event.text === "ใช้โหมดกฎ") options.onMode?.("rules");
     emit(event);
@@ -59,9 +67,9 @@ export async function runArenaRequest(input: z.infer<typeof ArenaRequestSchema>,
   options.signal?.throwIfAborted();
   emit({ agent: "judge", type: "start", text: "กำลังสรุปเหตุผล" });
   result.events.push({ agent: "judge", type: "start", text: "กำลังสรุปเหตุผล" });
-  const summary = await judge(result.ranked, requirements, result.mode === "llm" ? "llm" : "rules");
+  const summary = await judge(result.ranked, requirements, usedModel ? "llm" : "rules", request.needText, result.events);
   options.signal?.throwIfAborted();
-  const judged = { ...result, ranked: summary.ranked, mode: summary.mode };
+  const judged = { ...result, ranked: summary.ranked, mode: result.mode === "rules" ? result.mode : summary.mode };
   options.onMode?.(judged.mode);
   const done: AgentEvent = { agent: "judge", type: "done", text: "สรุปผลแล้ว" };
   judged.events.push(done);

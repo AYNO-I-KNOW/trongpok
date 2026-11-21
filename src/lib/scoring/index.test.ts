@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import example from "../../../data/products/_example.json";
 import { ProductSchema, type Label, type Product, type Requirement } from "../types";
-import { evidenceCount, fit, rank, requirementResult, reviewWeight, reviewQualityWarning, shopScore, specCheck, trust } from "./index";
+import { eligibleLabels, evidenceCount, fit, rank, requirementResult, reviewWeight, reviewQualityWarning, shopScore, specCheck, trust } from "./index";
 
 const base = ProductSchema.parse(example);
 const need: Requirement = { id: "ice", text: "ปั่นน้ำแข็ง", kind: "must" };
@@ -70,6 +70,30 @@ it("ranks must-ok products ahead of products with higher scores", () => {
   const result = rank([bad, good], requirements, { bad: labels(Array(4).fill("contradict")) });
   expect(result[0].productId).toBe("good");
   expect(result[0].rankScore).toBeLessThan(result[1].rankScore);
+});
+
+it("keeps a product with two concrete must failures behind a supported alternative", () => {
+  const risky = { ...product(), id: "risky", priceThb: 500 };
+  const supported = { ...product(), id: "supported", priceThb: 1500 };
+  const result = rank([risky, supported], [need], {
+    risky: labels(["contradict", "contradict"]),
+    supported: labels(["confirm", "confirm"]),
+  });
+  expect(result.map(({ productId, mustOk }) => ({ productId, mustOk }))).toEqual([
+    { productId: "supported", mustOk: true }, { productId: "risky", mustOk: false },
+  ]);
+  expect(result[1].requirements[0].status).toBe("unknown");
+});
+
+it("prefers stronger must review support when fit ties", () => {
+  const cheaper = { ...product(), id: "cheaper", priceThb: 500 };
+  const supported = { ...product(), id: "supported", priceThb: 1500 };
+  const result = rank([cheaper, supported], [need, { id: "budget", text: "งบ", kind: "budget", value: 2000 }], {
+    cheaper: labels(["confirm"]),
+    supported: labels(["confirm", "confirm"]),
+  });
+  expect(result.map(({ productId }) => productId)).toEqual(["supported", "cheaper"]);
+  expect(result[0].fitPct).toBe(result[1].fitPct);
 });
 it("computes positive savings and unused features from the highest-starred alternative", () => {
   const cheap = { ...product(), id: "cheap", priceThb: 500, stars: 4 };
@@ -169,4 +193,17 @@ it("counts unlabeled unboxing once and warns without reducing computed scores", 
   expect(before.rankScore).toBe(after.rankScore);
   p.reviews.push({ ...p.reviews[4], id: "extra" });
   expect(reviewQualityWarning(p, [need], [])).toBeNull();
+});
+
+
+it("cannot use broad ice quotes to prove exact container capacity or affect trust", () => {
+  const exact: Requirement = { id: "ice-condition", text: "ปั่นน้ำแข็ง 5 ก้อนในขวด 600 มล.", kind: "must", specOnly: true, spec: { key: "maxIceCubesBottle600", op: ">=", value: 5 } };
+  const p = product(10);
+  const evidence = labels(Array(10).fill("confirm"), exact.id);
+  expect(requirementResult(p, exact, evidence)).toMatchObject({ status: "unknown", score: 0.4, quotes: [] });
+  expect(evidenceCount(p, [exact], evidence)).toBe(0);
+  expect(trust(p, [exact], evidence)).toBeNull();
+  expect(eligibleLabels(p, [exact], labels(["contradict"], exact.id))).toEqual([]);
+  expect(requirementResult({ ...p, specs: { maxIceCubesBottle600: 5 } }, exact, evidence)).toMatchObject({ status: "spec-only", score: 0.6, quotes: [] });
+  expect(requirementResult({ ...p, specs: { maxIceCubesBottle600: 4 } }, exact, evidence)).toMatchObject({ status: "fail", score: 0, quotes: [] });
 });

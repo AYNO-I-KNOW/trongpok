@@ -59,14 +59,13 @@ export function previewArena(pack: CategoryPack, requirements: Requirement[]): A
     };
   });
   const events: AgentEvent[] = [
-    { agent: "verifier", type: "done", text: "รอบตัวอย่างนี้เริ่มจากความต้องการ จึงไม่มีสินค้าจากลิงก์ให้ตรวจ" },
     { agent: "fit", type: "start", text: "เทียบความต้องการกับสินค้า 4 รุ่นสมมติ" },
     { agent: "value", type: "start", text: "ตรวจงบประมาณและเงื่อนไขจำเป็น" },
+    { agent: "skeptic", type: "start", text: "มองหาหลักฐานอีกด้านใน 3 อันดับแรก" },
     ...ranked.slice(0, 3).map((row): AgentEvent => ({ agent: "fit", type: "candidate", productId: row.productId, text: `พบตัวเลือกที่เหมาะ ${row.fitPct}% ตามข้อมูลจำลอง` })),
     { agent: "value", type: "candidate", productId: ranked.find((row) => row.mustOk)?.productId, text: "เปรียบเทียบราคาเฉพาะตัวเลือกที่ยังไม่พบเงื่อนไขจำเป็นไม่ผ่าน" },
-    { agent: "fit", type: "done", text: "ส่งตัวเลือกให้ตรวจข้อเสียต่อ" },
+    { agent: "fit", type: "done", text: "เทียบความเหมาะสมเสร็จแล้ว" },
     { agent: "value", type: "done", text: "เปรียบเทียบราคาเสร็จแล้ว" },
-    { agent: "skeptic", type: "start", text: "มองหาหลักฐานอีกด้านใน 3 อันดับแรก" },
     ...ranked.slice(0, 3).flatMap((row) => row.objections.map((label): AgentEvent => ({ agent: "skeptic", type: "objection", productId: row.productId, quote: label.quote, text: "พบข้อควรระวังจากรีวิวจำลอง" }))),
     { agent: "skeptic", type: "done", text: "ตรวจครบแล้ว ข้อมูลที่ยังไม่รู้จะไม่ถูกแสดงว่าผ่าน" },
     { agent: "judge", type: "done", text: "สรุปผลตัวอย่างพร้อมแล้ว" },

@@ -9,7 +9,7 @@ import { splitNeedInput } from "../src/lib/ui/input.ts";
 const pack = JSON.parse(await readFile(new URL("../data/categories/blender.json", import.meta.url), "utf8"));
 const product = JSON.parse(await readFile(new URL("../data/products/_example.json", import.meta.url), "utf8"));
 
-test("mixed Thai text and one product link preserve both the need and Verifier input", () => {
+test("mixed Thai text and one product link preserve both the need and the linked product", () => {
   const link = "https://shopee.co.th/product/123/456?variation=2";
   assert.deepEqual(splitNeedInput("ปั่นน้ำแข็ง " + link + " งบ 3000"), { link, needText: "ปั่นน้ำแข็ง  งบ 3000" });
   assert.deepEqual(splitNeedInput("  นาฬิกาสำหรับวิ่ง  "), { link: undefined, needText: "นาฬิกาสำหรับวิ่ง" });

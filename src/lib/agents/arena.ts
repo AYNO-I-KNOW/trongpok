@@ -2,88 +2,119 @@ import { byCategory } from "../catalog";
 import { labelWithRules } from "../labeling/rules";
 import { fit, rank, requirementResult, reviewWeight, eligibleLabels } from "../scoring";
 import type { AgentEvent, ArenaResult, CategoryPack, Label, Product, Requirement } from "../types";
-import { createTools, type ArenaAgent } from "./tools";
+import { createTools } from "./tools";
 import { runLlmAgent } from "./llm";
 
-export async function runArena({ pack, requirements, linkedProductId, products: supplied }: {
-  pack: CategoryPack; requirements: Requirement[]; linkedProductId?: string; products?: Product[];
-}, emit: (event: AgentEvent) => void = () => {}): Promise<ArenaResult> {
+const roles = ["fit", "value", "skeptic"] as const;
+type Role = (typeof roles)[number];
+
+export async function runArena({ pack, requirements, needText, linkedProductId, products: supplied }: {
+  pack: CategoryPack; requirements: Requirement[]; needText?: string; linkedProductId?: string; products?: Product[];
+}, emit: (event: AgentEvent) => void = () => {}): Promise<ArenaResult & { usedModel: boolean }> {
   const products = (supplied ?? await byCategory(pack.id)).filter((product) => product.category === pack.id);
   const events: AgentEvent[] = [];
   const publish = (event: AgentEvent) => { events.push(event); emit(event); };
-  const merged: Record<string, Label[]> = {};
   const useLlm = Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL);
-  const roleResults = new Map<ArenaAgent, Map<string, Label[]>>();
-  let mode: ArenaResult["mode"] = process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL ? "llm" : "rules";
-  function rules(agent: ArenaAgent, tools: ReturnType<typeof createTools>) {
-    const pool = tools.search_catalog(pack.id);
-    const scored = pool.map((product) => {
-      const labels = labelWithRules(product, [...requirements, ...product.claims.filter((claim) => claim.checkable)]);
+  const requirementIds = new Set(requirements.map((requirement) => requirement.id));
+  const ruleLabels = new Map<string, Label[]>();
+
+  function labelsFor(product: Product) {
+    const cached = ruleLabels.get(product.id);
+    if (cached) return cached;
+    const labels = labelWithRules(product, [...requirements, ...product.claims.filter((claim) => claim.checkable)]);
+    ruleLabels.set(product.id, labels);
+    return labels;
+  }
+
+  function ruleCandidates(pool: Product[]) {
+    return pool.map((product) => {
+      const labels = labelsFor(product);
       const results = requirements.map((requirement) => requirementResult(product, requirement, labels));
-      const requirementIds = new Set(requirements.map((requirement) => requirement.id));
       const confirmations = eligibleLabels(product, requirements, labels)
         .filter((label) => requirementIds.has(label.subjectId) && label.stance === "confirm").length;
       return { product, labels, results, confirmations, fit: fit(requirements, results) };
-    });
-    let candidates = scored;
-    if (agent === "value") {
-      candidates = scored.filter(({ results }) => requirements.every((requirement, index) =>
-        requirement.kind === "nice" || ["pass", "spec-only"].includes(results[index].status)))
-        .toSorted((a, b) => a.product.priceThb - b.product.priceThb || a.product.id.localeCompare(b.product.id));
-    }
-    if (agent === "fit") {
-      candidates = scored.toSorted((a, b) =>
-        Number(b.fit.mustOk) - Number(a.fit.mustOk) || b.fit.fit - a.fit.fit ||
-        b.confirmations - a.confirmations || a.product.id.localeCompare(b.product.id));
-    }
-    for (const { product, labels } of candidates.slice(0, agent === "verifier" ? 1 : 3)) {
-      if (agent !== "skeptic") {
-        tools.propose(product.id, labels);
-        continue;
-      }
-      const objections = eligibleLabels(product, requirements, labels).filter((label) => label.stance === "contradict")
-        .toSorted((a, b) => reviewWeight(product.reviews.find((review) => review.id === b.reviewId)!) -
-          reviewWeight(product.reviews.find((review) => review.id === a.reviewId)!)).slice(0, 1);
-      if (objections.length) tools.propose(product.id, objections);
-    }
+    }).sort((a, b) =>
+      Number(b.fit.mustOk) - Number(a.fit.mustOk) || b.fit.fit - a.fit.fit ||
+      b.confirmations - a.confirmations || a.product.id.localeCompare(b.product.id));
   }
-  async function role(agent: ArenaAgent, topIds?: string[]) {
-    const allowedIds = agent === "verifier" ? [linkedProductId!] : topIds;
-    const staged: AgentEvent[] = [];
-    const modelEmit = (event: AgentEvent) => {
-      if (event.type === "candidate" || event.type === "objection") staged.push(event);
-      else publish(event);
-    };
-    let tools = createTools({ agent, products, requirements, allowedIds, emit: modelEmit });
+
+  function rules(agent: Role, tools: ReturnType<typeof createTools>) {
+    const pool = tools.search_catalog(pack.id);
+    if (agent === "skeptic") {
+      const objections = pool.flatMap((product) => {
+        const labels = eligibleLabels(product, requirements, labelsFor(product)).filter((label) => label.stance === "contradict");
+        if (!labels.length) return [];
+        const weight = (label: Label) => reviewWeight(product.reviews.find((review) => review.id === label.reviewId)!);
+        labels.sort((a, b) => Number(requirementIds.has(b.subjectId)) - Number(requirementIds.has(a.subjectId)) || weight(b) - weight(a));
+        return [{ product, labels: labels.slice(0, 3) }];
+      }).sort((a, b) => Number(b.product.id === linkedProductId) - Number(a.product.id === linkedProductId) ||
+        b.labels.filter((label) => requirementIds.has(label.subjectId)).length -
+        a.labels.filter((label) => requirementIds.has(label.subjectId)).length);
+      for (const { product, labels } of objections.slice(0, 3)) tools.propose(product.id, labels);
+      return;
+    }
+    const scored = ruleCandidates(pool);
+    const candidates = agent === "value" ? scored.filter(({ results, fit }) => fit.mustOk && requirements.every((requirement, index) =>
+      requirement.kind === "nice" || ["pass", "spec-only"].includes(results[index].status)))
+      .sort((a, b) => a.product.priceThb - b.product.priceThb || a.product.id.localeCompare(b.product.id)) : scored;
+    for (const { product, labels } of candidates.slice(0, 3)) tools.propose(product.id, labels);
+  }
+
+  async function runRole(agent: Role) {
     publish({ agent, type: "start", text: "เริ่มตรวจสอบสินค้า" });
-    let needsRules = !useLlm;
     if (useLlm) {
+      const staged: AgentEvent[] = [];
+      const tools = createTools({ agent, products, requirements, emit: (event) => {
+        if (event.type === "candidate" || event.type === "objection") staged.push(event);
+        else publish(event);
+      } });
       try {
-        await runLlmAgent({ agent, category: pack.id, requirements, tools, linkedProductId, topIds });
+        await runLlmAgent({ agent, category: pack.id, requirements, needText, tools, linkedProductId });
         for (const event of staged) publish(event);
+        publish({ agent, type: "done", text: "ตรวจสอบเสร็จแล้ว" });
+        return { proposals: tools.proposals, usedRules: false };
       } catch {
-        mode = "rules";
-        needsRules = true;
         publish({ agent, type: "step", text: "ใช้โหมดกฎ" });
       }
     }
-    if (needsRules) {
-      tools = createTools({ agent, products, requirements, allowedIds, emit: publish });
-      rules(agent, tools);
-    }
-    roleResults.set(agent, tools.proposals);
+    const tools = createTools({ agent, products, requirements, emit: publish });
+    rules(agent, tools);
     publish({ agent, type: "done", text: "ตรวจสอบเสร็จแล้ว" });
+    return { proposals: tools.proposals, usedRules: true };
   }
-  await Promise.all([...(linkedProductId ? [role("verifier")] : []), role("fit"), role("value")]);
-  for (const agent of ["verifier", "fit", "value"] as const) {
-    for (const [id, labels] of roleResults.get(agent) ?? []) merged[id] = [...(merged[id] ?? []), ...labels];
+
+  const [fitRole, valueRole, skepticRole] = await Promise.all(roles.map(runRole));
+  const merged: Record<string, Label[]> = Object.fromEntries(products.map(({ id }) => [id, []]));
+  const candidateIds = new Set([...fitRole.proposals.keys(), ...valueRole.proposals.keys()]);
+  let supplemented = false;
+  const linked = products.find((product) => product.id === linkedProductId);
+  if (linked) {
+    if (!candidateIds.has(linked.id)) {
+      merged[linked.id] = labelsFor(linked);
+      supplemented = true;
+      publish({ agent: "judge", type: "step", text: "ตรวจสินค้าที่ส่งมาด้วยกฎ", productId: linked.id });
+    }
+    candidateIds.add(linked.id);
   }
-  const candidates = products.filter((product) => Object.hasOwn(merged, product.id));
-  const topIds = rank(candidates, requirements, merged, products).slice(0, 3).map((row) => row.productId);
-  await role("skeptic", topIds);
-  for (const [id, labels] of roleResults.get("skeptic") ?? []) merged[id] = [...(merged[id] ?? []), ...labels];
+  if (candidateIds.size < Math.min(3, products.length)) {
+    const missing = Math.min(3, products.length) - candidateIds.size;
+    const reserve = ruleCandidates(products.filter(({ id }) => !candidateIds.has(id))).slice(0, missing);
+    for (const { product, labels } of reserve) {
+      candidateIds.add(product.id);
+      merged[product.id] = labels;
+      supplemented = true;
+      publish({ agent: "judge", type: "step", text: "เพิ่มตัวเลือกเปรียบเทียบจากกฎ", productId: product.id });
+    }
+  }
+  for (const { proposals } of [valueRole, fitRole, skepticRole]) {
+    for (const [id, labels] of proposals) merged[id].push(...labels);
+  }
+  const candidates = products.filter(({ id }) => candidateIds.has(id));
   const ranked = rank(candidates, requirements, merged, products).map((row) => ({
-    ...row, objections: eligibleLabels(products.find((product) => product.id === row.productId)!, requirements, roleResults.get("skeptic")?.get(row.productId) ?? []),
+    ...row, objections: skepticRole.proposals.get(row.productId) ?? [],
   }));
-  return { requirements, ranked, events, mode };
+  const outcomes = [fitRole, valueRole, skepticRole];
+  const mode = supplemented || outcomes.some(({ usedRules }) => usedRules) ? "rules" : "llm";
+  const usedModel = outcomes.some(({ usedRules }) => !usedRules);
+  return { requirements, ranked, events, mode, usedModel };
 }

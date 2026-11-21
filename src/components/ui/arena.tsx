@@ -65,14 +65,13 @@ export function Arena() {
   if (loaded && !pending) return <EmptyState title="เริ่มจากความต้องการของคุณก่อน" text="เลือกหมวดและตอบคำถามสั้น ๆ เพื่อให้ผู้ช่วยเปรียบเทียบได้ตรงโจทย์" />;
   const lanes = Object.entries(agentInfo).map(([agent, info]) => {
     const updates = events.filter((event) => event.agent === agent);
-    const skipped = agent === "verifier" && Boolean(pending && !pending.linkedProductId);
-    const finished = skipped || updates.some((event) => event.type === "done");
-    return { agent, info, updates, skipped, finished };
+    const finished = updates.some((event) => event.type === "done");
+    return { agent, info, updates, finished };
   });
   const completed = lanes.filter((lane) => lane.finished).length;
   return <DesignerScreen phase="search" font={pending?.font}>
     <nav className="question-nav" aria-label="การนำทางระหว่างวิเคราะห์">
-      <Link className="back arena-back" href="/" onClick={() => controllerRef.current?.abort()} aria-label="ยกเลิกและกลับหน้าแรก">←</Link>
+      <Link className="back arena-back" href={pending?.font === "line" ? "/?font=line" : "/"} onClick={() => controllerRef.current?.abort()} aria-label="ยกเลิกและกลับหน้าแรก">←</Link>
     </nav>
     <section className="search-copy arena-search">
       <div role="status">
@@ -81,8 +80,8 @@ export function Arena() {
       </div>
       <ModeBadge preview={pending?.preview ?? false} mode={mode} />
       <ul className="arena-agent-status" aria-label="สถานะผู้ช่วยเปรียบเทียบ">
-        {lanes.map(({ agent, info, updates, skipped, finished }) => <li key={agent}>
-          <span>{info.title}</span><span>{skipped ? "ไม่มีลิงก์ให้ตรวจ" : finished ? "เรียบร้อย" : updates.length ? "กำลังทำงาน" : "รอเริ่ม"}</span>
+        {lanes.map(({ agent, info, updates, finished }) => <li key={agent}>
+          <span>{info.title}</span><span>{finished ? "เรียบร้อย" : updates.length ? "กำลังทำงาน" : "รอเริ่ม"}</span>
         </li>)}
       </ul>
       {events.length > 0 && <details className="method">

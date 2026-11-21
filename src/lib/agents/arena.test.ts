@@ -16,15 +16,15 @@ it("runs linked rules roles and returns ranked products", async () => {
   const result = await runArena({ pack, requirements: [], linkedProductId: product.id, products: [product] });
   expect(result.mode).toBe("rules");
   expect(result.ranked[0].productId).toBe(product.id);
-  expect(new Set(result.events.map((event) => event.agent))).toEqual(new Set(["verifier", "fit", "value", "skeptic"]));
+  expect(new Set(result.events.map((event) => event.agent))).toEqual(new Set(["fit", "value", "skeptic"]));
   expect(result.events.some((event) => event.type === "step")).toBe(true);
   expect(result.events.some((event) => event.type === "candidate")).toBe(true);
 });
-it("omits verifier without a link and handles an empty catalog", async () => {
+it("handles an empty catalog", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   const result = await runArena({ pack, requirements: [], products: [] });
   expect(result.ranked).toEqual([]);
-  expect(result.events.some((event) => event.agent === "verifier")).toBe(false);
+  expect(result.events.filter((event) => event.type === "start").map((event) => event.agent)).toEqual(["fit", "value", "skeptic"]);
 });
 it("rejects invented quotes and out-of-scope products", () => {
   const emit = vi.fn();
@@ -39,6 +39,18 @@ it("requires value candidates to pass all musts", () => {
   expect(tools.propose(product.id, []).accepted).toBe(false);
 });
 
+it("rejects a Value proposal with concrete must objections despite a passing spec", () => {
+  const requirement = { id: "ice", text: "ปั่นน้ำแข็ง", kind: "must" as const,
+    spec: { key: "watt", op: ">=" as const, value: 600 } };
+  const tools = createTools({ agent: "value", products: [product], requirements: [requirement], emit: () => {} });
+  const labels = product.reviews.slice(1, 3).map((review) => ({
+    reviewId: review.id, subjectId: requirement.id, stance: "contradict" as const,
+    target: "product" as const, quote: review.text, usage: "short" as const, specific: true,
+  }));
+  expect(tools.propose(product.id, labels).accepted).toBe(false);
+  expect(tools.propose(product.id, []).accepted).toBe(true);
+});
+
 it("streams exact skeptic quotes and exposes only its objections", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   const observed: AgentEvent[] = [];
@@ -46,9 +58,13 @@ it("streams exact skeptic quotes and exposes only its objections", async () => {
   expect(observed).toEqual(result.events);
   const objections = result.events.filter((event) => event.type === "objection");
   expect(objections).toHaveLength(1);
-  expect(result.ranked[0].objections).toHaveLength(1);
-  expect(objections[0].quote).toBe(result.ranked[0].objections[0].quote);
-  expect(product.reviews.some((review) => review.text.includes(objections[0].quote!))).toBe(true);
+  const returned = result.ranked[0].objections;
+  expect(returned.length).toBeGreaterThan(0);
+  expect(objections[0]).toMatchObject({ agent: "skeptic", productId: product.id, quote: returned[0].quote });
+  for (const objection of returned) {
+    expect(objection).toMatchObject({ stance: "contradict", target: "product" });
+    expect(product.reviews.find((review) => review.id === objection.reviewId)?.text).toContain(objection.quote);
+  }
 });
 it("allows skeptic to finish without an objection", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
@@ -61,12 +77,10 @@ it("enforces proposal caps and linked and top-three scope", () => {
   const fit = createTools({ agent: "fit", products, requirements: [], emit: () => {} });
   products.slice(0, 3).forEach((item) => expect(fit.propose(item.id, []).accepted).toBe(true));
   expect(fit.propose(products[3].id, []).accepted).toBe(false);
-  for (const agent of ["verifier", "skeptic"] as const) {
-    const tools = createTools({ agent, products, requirements: [], allowedIds: [products[0].id], emit: () => {} });
-    expect(tools.get_product(products[1].id)).toBeNull();
-    expect(tools.search_catalog(pack.id).map((item) => item.id)).toEqual([products[0].id]);
-    expect(tools.propose(products[1].id, []).accepted).toBe(false);
-  }
+  const tools = createTools({ agent: "skeptic", products, requirements: [], allowedIds: [products[0].id], emit: () => {} });
+  expect(tools.get_product(products[1].id)).toBeNull();
+  expect(tools.search_catalog(pack.id).map((item) => item.id)).toEqual([products[0].id]);
+  expect(tools.propose(products[1].id, []).accepted).toBe(false);
 });
 it("does not let cheap unknown products displace passing value choices", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
@@ -89,6 +103,27 @@ it("discards partial model proposals before falling back", async () => {
   expect(result.mode).toBe("rules");
   expect(result.events.filter((event) => event.agent === "fit" && event.type === "candidate")).toHaveLength(1);
   expect(result.ranked).toHaveLength(1);
+});
+
+it("starts all three independent roles before any returns and keeps the linked product", async () => {
+  vi.stubEnv("OPENAI_API_KEY", "test");
+  vi.stubEnv("OPENAI_MODEL", "test");
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const alternative = { ...product, id: "alternative" };
+  const third = { ...product, id: "third" };
+  vi.mocked(runLlmAgent).mockImplementation(async ({ agent, tools }) => {
+    await gate;
+    if (agent === "fit") tools.propose(alternative.id, []);
+  });
+  const pending = runArena({ pack, requirements: [], products: [product, alternative, third], linkedProductId: product.id });
+  const started = vi.mocked(runLlmAgent).mock.calls.map(([input]) => input.agent);
+  release();
+  const result = await pending;
+  expect(started).toEqual(["fit", "value", "skeptic"]);
+  expect(result.ranked.map(({ productId }) => productId)).toEqual(expect.arrayContaining([product.id, alternative.id, third.id]));
+  expect(result.mode).toBe("rules");
+  expect(result.events).toEqual(expect.arrayContaining([expect.objectContaining({ agent: "judge", productId: product.id })]));
 });
 it("orders equally fitting products by evidence independently of input order", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
@@ -116,6 +151,22 @@ it("rejects short-use skeptic evidence for a long-use requirement", () => {
     target: "product" as const, quote: product.reviews[0].text, usage: "short" as const, specific: true };
   expect(tools.propose(product.id, [label]).accepted).toBe(false);
   expect(tools.propose(product.id, [{ ...label, usage: "long" }]).accepted).toBe(true);
+});
+
+it("lets Skeptic retrieve a relevant short-use failure past the preview limit", () => {
+  const requirement = { id: "ice", text: "ปั่นน้ำแข็งได้ต่อเนื่องโดยมอเตอร์ไม่ไหม้", kind: "must" as const };
+  const review = { ...product.reviews[0], isTemplate: false };
+  const reviews = [
+    ...Array.from({ length: 6 }, (_, index) => ({
+      ...review, id: String(index), text: "ใช้มา 2 เดือน ปั่นน้ำแข็งทุกวันมอเตอร์ไม่ไหม้",
+    })),
+    { ...review, id: "failure", text: "ลองมา 3 วัน ปั่นน้ำแข็งแล้วเครื่องตัด" },
+  ];
+  const tools = createTools({ agent: "skeptic", products: [{ ...product, reviews }], requirements: [requirement], emit: () => {} });
+  const preview = tools.get_product(product.id)?.reviewEvidence[0];
+  expect(preview?.matchingReviewCount).toBe(7);
+  expect(preview?.reviews).toHaveLength(6);
+  expect(tools.get_reviews(product.id, "", requirement.id)).toContainEqual(reviews[6]);
 });
 
 it("preserves long-use warnings in schema-validated arena results", async () => {

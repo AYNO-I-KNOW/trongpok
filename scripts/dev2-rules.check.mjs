@@ -130,7 +130,8 @@ test("linked-product SSE and Fit JSON use the same real rules backend", async ()
     const result = await consumeArena(await arenaPost(request(input)), (event) => events.push(event), undefined, (mode) => modes.push(mode));
     assert.equal(result.mode, "rules");
     assert.ok(modes.includes("rules"));
-    assert.ok(events.some((event) => event.agent === "verifier" && event.type === "done"));
+    assert.deepEqual(events.filter((event) => event.type === "start").map((event) => event.agent),
+      ["fit", "value", "skeptic", "judge"]);
     assert.ok(result.ranked.some((item) => item.productId === linked.id));
     const cachedModes = [];
     const cached = await consumeArena(await arenaPost(request(input)), () => {}, undefined, (mode) => cachedModes.push(mode));

@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import { POST } from "../../app/api/arena/route";
 import { runLlmAgent } from "./llm";
 import { requirementsFromText } from "../needs";
 import { RequirementSchema } from "../types";
+import { runArenaRequest } from "./service";
 
 vi.mock("./llm", () => ({ runLlmAgent: vi.fn(async () => { throw new Error("offline"); }) }));
 vi.mock("../needs", async (original) => ({
@@ -15,12 +16,22 @@ vi.mock("../needs", async (original) => ({
   requirementsFromText: vi.fn(async () => []),
 }));
 let root: string;
+async function fixtureRoot() {
+  root = await mkdtemp(join(tmpdir(), "arena-fixture-"));
+  await mkdir(join(root, "data/categories"), { recursive: true });
+  await mkdir(join(root, "data/products"), { recursive: true });
+  await writeFile(join(root, "data/categories/blender.json"), JSON.stringify(category));
+  await writeFile(join(root, "data/products", example.id + ".json"), JSON.stringify(example));
+  vi.stubEnv("OPENAI_API_KEY", "");
+  vi.stubEnv("VERCEL", "");
+}
 afterEach(async () => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   if (root) await rm(root, { recursive: true, force: true });
 });
 it("streams two fixture products and replays the persona request without model calls", async () => {
+  vi.stubEnv("VERCEL", "");
   root = await mkdtemp(join(tmpdir(), "arena-fixture-"));
   await mkdir(join(root, "data/categories"), { recursive: true });
   await mkdir(join(root, "data/products"), { recursive: true });
@@ -44,6 +55,7 @@ it("streams two fixture products and replays the persona request without model c
   const calls = vi.mocked(runLlmAgent).mock.calls.length;
   expect(calls).toBeGreaterThan(0);
   vi.stubEnv("OPENAI_API_KEY", "");
+  vi.stubEnv("VERCEL", "1");
   const replay = await POST(request());
   const replayFrames = (await replay.text()).trim().split("\n\n");
   const cached = JSON.parse(replayFrames.at(-1)!.split("\ndata: ")[1]);
@@ -60,6 +72,89 @@ it("does not reuse request cache keys from the previous scoring formula", async 
   expect(requestCacheKey({}, [], [])).not.toBe(cacheHash(["request", {}, cacheHash([[], []])]));
 });
 
+it("evaluates a product linked by local id and keeps its cache distinct", async () => {
+  const { runArenaRequest } = await import("./service");
+  root = await mkdtemp(join(tmpdir(), "arena-linked-"));
+  await mkdir(join(root, "categories"), { recursive: true });
+  await mkdir(join(root, "products"), { recursive: true });
+  await writeFile(join(root, "categories/blender.json"), JSON.stringify(category));
+  await writeFile(join(root, "products", example.id + ".json"), JSON.stringify(example));
+  vi.stubEnv("OPENAI_API_KEY", "");
+  const options = { dataRoot: root, replayDelayMs: 0 };
+  const input = { category: "blender", answers: {} };
+  const first = await runArenaRequest(input, undefined, options);
+  expect(first.events.some((event) => event.agent === "verifier")).toBe(false);
+  const linked = await runArenaRequest({ ...input, linkedProductId: example.id }, undefined, options);
+  expect(linked.mode).toBe("rules");
+  expect(linked.events.filter((event) => event.type === "start").map((event) => event.agent)).toEqual(["fit", "value", "skeptic", "judge"]);
+  expect(linked.ranked.some((item) => item.productId === example.id)).toBe(true);
+  expect((await runArenaRequest({ ...input, linkedProductId: example.id }, undefined, options)).mode).toBe("cache");
+  await expect(runArenaRequest({ ...input, linkedProductId: "missing" }, undefined, options)).rejects.toThrow("Unknown linked");
+  await expect(runArenaRequest({ category: "other", linkedProductId: example.id }, undefined, options)).rejects.toThrow("category mismatch");
+});
+
+it("reads linked persona cache with the same request key used by evaluation", async () => {
+  const { runArenaRequest } = await import("./service");
+  const { parsePersonas, personaRequest } = await import("../personas");
+  const { loadPacks, loadProducts } = await import("../catalog");
+  const { readRequestCache, requestCacheKey } = await import("./cache");
+  root = await mkdtemp(join(tmpdir(), "persona-readback-"));
+  await mkdir(join(root, "categories"), { recursive: true });
+  await mkdir(join(root, "products"), { recursive: true });
+  await writeFile(join(root, "categories/blender.json"), JSON.stringify(category));
+  await writeFile(join(root, "products", example.id + ".json"), JSON.stringify(example));
+  const csv = "persona_id,category,need_text,link_product_id,answers,labeler_a_top3,labeler_b_top3,human_top3,must_notes\n" +
+    "b1,blender,ice," + example.id + ",use=ice;budget=3000,,,,\n";
+  const request = personaRequest(parsePersonas(csv)[0]);
+  vi.stubEnv("OPENAI_API_KEY", "");
+  const result = await runArenaRequest(request, undefined, { dataRoot: root, replayDelayMs: 0, strictCache: true });
+  const packs = await loadPacks(root);
+  const products = await loadProducts(root);
+  expect(await readRequestCache(join(root, "cache/arena"), requestCacheKey(request, packs, products))).toEqual(result);
+});
+
+it("streams a completed result when the cache directory cannot be created", async () => {
+  await fixtureRoot();
+  const warnings = vi.spyOn(console, "warn").mockImplementation(() => {});
+  await writeFile(join(root, "data/cache"), "blocked");
+  vi.spyOn(process, "cwd").mockReturnValue(root);
+  const response = await POST(new Request("http://localhost/api/arena", {
+    method: "POST",
+    body: JSON.stringify({ category: "blender", answers: { blenderUsage: "ice" } }),
+  }));
+  const frames = (await response.text()).trim().split("\n\n");
+  expect(frames.at(-1)).toMatch(/^event: result\n/);
+  expect(JSON.parse(frames.at(-1)!.split("\ndata: ")[1])).toMatchObject({
+    mode: "rules",
+    ranked: [{ productId: example.id }],
+  });
+  expect(frames.some((frame) => frame.startsWith("event: error"))).toBe(false);
+  expect(warnings).toHaveBeenCalledWith({ event: "arena_cache_write_failed", code: "ENOTDIR" });
+});
+
+it("returns a result on Vercel without writing to the bundled data directory", async () => {
+  await fixtureRoot();
+  vi.stubEnv("VERCEL", "1");
+  const result = await runArenaRequest({ category: "blender", answers: {} }, undefined, {
+    dataRoot: join(root, "data"),
+  });
+  expect(result.mode).toBe("rules");
+  expect(result.ranked.map((product) => product.productId)).toEqual([example.id]);
+  await expect(stat(join(root, "data/cache"))).rejects.toMatchObject({ code: "ENOENT" });
+});
+
+it("reports cache persistence errors when precomputing with strict cache enabled", async () => {
+  await fixtureRoot();
+  vi.stubEnv("VERCEL", "1");
+  const blocked = join(root, "blocked");
+  await writeFile(blocked, "blocked");
+  await expect(runArenaRequest({ category: "blender", answers: {} }, undefined, {
+    dataRoot: join(root, "data"),
+    cacheRoot: join(blocked, "cache"),
+    strictCache: true,
+  })).rejects.toMatchObject({ code: "ENOTDIR" });
+});
+
 it("preserves reviewed edits and separates their cache", async () => {
   const { runArenaRequest } = await import("./service");
   root = await mkdtemp(join(tmpdir(), "arena-reviewed-"));
@@ -71,7 +166,8 @@ it("preserves reviewed edits and separates their cache", async () => {
   vi.stubEnv("OPENAI_MODEL", "");
   const ice = RequirementSchema.parse(category.questions[0].options.find((option) => option.requirement?.id === "ice")!.requirement);
   const reviewed = [{ ...ice, kind: "nice" as const }];
-  const input = { category: "blender", answers: { use: ["ice"], budget: [3000] }, requirements: reviewed };
+  vi.stubEnv("VERCEL", "");
+  const input = { category: "blender", needText: "งบ 3000 บาท", answers: { use: ["ice"], budget: [3000] }, requirements: reviewed };
   const modes: string[] = [];
   const options = { dataRoot: root, replayDelayMs: 0, onMode: (mode: string) => modes.push(mode) };
   const first = await runArenaRequest(input, undefined, options);

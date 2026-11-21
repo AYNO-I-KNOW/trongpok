@@ -49,9 +49,32 @@ try {
   const designerWidth = await page.locator("main.phone.result").evaluate((node) => getComputedStyle(node).maxWidth);
   await page.goto(base);
   await page.locator("main.phone.home img[src='/assets/home.png']").waitFor();
-  await page.getByRole("textbox", { name: "คำถามหรือลิงก์สินค้า", exact: true }).fill("เครื่องปั่นปั่นน้ำแข็ง");
-  await page.getByRole("button", { name: "เริ่มค้นหา", exact: true }).click();
+  const homeSearch = () => page.getByRole("textbox", { name: "คำถามหรือลิงก์สินค้า", exact: true });
+  const submitSearch = () => page.getByRole("button", { name: "เริ่มค้นหา", exact: true }).click();
+  const searchResponse = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/product-search" && response.request().method() === "POST");
+  await homeSearch().fill("เครื่องปั่น");
+  await submitSearch();
+  const fallback = await (await searchResponse).json();
+  assert.equal(fallback.kind, "demo", "Homepage search keeps the new product-search fallback");
+  assert.ok(fallback.picks.length > 0);
+  await comparison().waitFor();
+  assert.equal(await comparison().locator(".fit-score-row").count(), 0);
+  await comparison().getByRole("link", { name: /^ดูข้อมูลเดโม / }).first().waitFor();
+
+  await page.goto(base + "/arena");
+  await homeSearch().fill("เครื่องปั่นปั่นน้ำแข็ง");
+  await submitSearch();
+  await page.getByRole("heading", { name: "อยากใช้ปั่นอะไร?", exact: true }).waitFor();
+  await page.getByRole("radio", { name: "บดน้ำแข็ง", exact: true }).check();
+  await page.getByRole("button", { name: "ถัดไป", exact: true }).click();
+  await page.getByRole("heading", { name: "ใช้น้ำแข็งกี่ก้อน?", exact: true }).waitFor();
+
+  await page.goto(base);
+  await page.getByRole("link", { name: /เปรียบเทียบจากรีวิวใน Arena/ }).click();
   await page.waitForURL((url) => url.pathname === "/compare");
+  await homeSearch().fill("เครื่องปั่นปั่นน้ำแข็ง");
+  await page.getByRole("button", { name: "เริ่มค้นหา", exact: true }).click();
   await page.locator("main.phone.clarify .question-nav").waitFor();
   await answerQuestions(async (question) => {
     if (question.options.includes(ice)) await page.getByRole("checkbox", { name: ice.label, exact: true }).check();
@@ -62,7 +85,9 @@ try {
   const arenaRequest = (request) => new URL(request.url()).pathname === "/api/arena" && request.method() === "POST";
   const requestPromise = page.waitForRequest(arenaRequest);
   const responsePromise = page.waitForResponse((response) => arenaRequest(response.request()));
+  const arenaPage = page.waitForURL((url) => url.pathname === "/arena" && url.searchParams.get("flow") === "compare");
   await page.getByRole("button", { name: "เริ่มเปรียบเทียบ", exact: true }).click();
+  await arenaPage;
   const sent = (await requestPromise).postDataJSON();
   assert.equal(sent.requirements.find((item) => item.id === "ice").kind, "nice");
   assert.equal(sent.requirements.find((item) => item.kind === "budget").value, 3000);
@@ -71,7 +96,10 @@ try {
   const stream = await (await responsePromise).text();
   const payload = stream.match(/event: result\r?\ndata: ([^\r\n]+)/);
   assert.ok(payload, "Arena did not return a result event");
-  const ranked = JSON.parse(payload[1]).ranked.slice(0, 3);
+  const result = JSON.parse(payload[1]);
+  const ranked = result.ranked.slice(0, 3);
+  assert.deepEqual(result.events.filter((event) => event.type === "start").map((event) => event.agent),
+    ["fit", "value", "skeptic", "judge"]);
   assert.ok(ranked.length > 1, "Expected multiple ranked options");
   const headers = comparison().getByRole("columnheader");
   assert.deepEqual(await headers.evaluateAll((items) => items.map((item) => item.dataset.productId)),
@@ -122,7 +150,7 @@ try {
   assert.equal(await page.locator("main.phone.result").getAttribute("data-font"), "line");
   assert.equal(await page.locator(".purchase-row a[target='_blank']").count(), 0);
   assert.deepEqual(errors, []);
-  console.log("Browser smoke passed: Git design, reviewed conditions, backend ranking and scores, evidence dialog, reload, empty tab, mobile width, link recovery, keyboard and preview.");
+  console.log("Browser smoke passed: homepage search, blender Arena, Dev 2 comparison, reviewed conditions, backend ranking, evidence dialog, reload, mobile width, link recovery, keyboard and preview.");
 } catch (error) {
   if (page) console.error("Page state: " + (await page.locator("body").innerText().catch(() => "")).slice(0, 3000));
   throw error;

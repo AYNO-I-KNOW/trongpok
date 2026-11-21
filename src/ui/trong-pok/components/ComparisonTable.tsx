@@ -7,11 +7,13 @@ export type ComparisonColumn = {
   id: string;
   title: string;
   price: string;
+  priceLink?: string;
+  plainTitle?: boolean;
   image?: string;
   placeholder?: ReactNode;
   rank?: number;
   context?: string;
-  fit: { value: number; label: string; tone: "high" | "low" | "pending" };
+  fit?: { value: number; label: string; tone: "high" | "low" | "pending" };
   action: ReactNode;
 };
 
@@ -58,19 +60,20 @@ export function ComparisonTable({ columns, children }: { columns: ComparisonColu
       </div>)}
     </div>}
     <table className="comparison" aria-label="เปรียบเทียบรุ่นตามโจทย์">
-      <thead><tr>{columns.map(({ id, title, price, rank, context, image, placeholder }, index) => {
+      <thead><tr>{columns.map(({ id, title, price, priceLink, plainTitle, rank, context, image, placeholder }, index) => {
         const [brand, ...model] = title.split(" ");
         return <th scope="col" key={id} data-product-id={id} data-recommendation-rank={rank ?? ""}>
           <div className="rank-slot">{index < 3 && <img className="rank-mascot" src={`/assets/trong-pok-agent-rank-${index + 1}.svg`}
             alt={`คอลัมน์ ${index + 1}`} width="92" height="80" />}</div>
           <div className="product-image">{image ? <img src={image} alt={title} width="104" height="120" /> : placeholder}</div>
-          <h2>{model.length ? <><span className="product-brand">{brand}</span>{" "}<span className="product-sku">{model.join(" ")}</span></> : title}</h2>
-          <div className="header-price">{price}</div><span className="model-context">{context}</span>
+          <h2>{model.length ? <><span className="product-brand">{brand}</span>{" "}<span className={plainTitle ? undefined : "product-sku"}>{model.join(" ")}</span></> : title}</h2>
+          <div className="header-price">{priceLink ? <a href={priceLink} target="_blank" rel="noopener noreferrer">{price}</a> : price}</div>
+          <span className="model-context">{context}</span>
         </th>;
       })}</tr></thead>
-      <tbody className="fit-label"><tr className="fit-score-row">
-        {columns.map(({ id, fit }) => <td key={id} data-product-id={id}><FitPill {...fit} /></td>)}
-      </tr></tbody>
+      {columns.some(({ fit }) => Boolean(fit)) && <tbody className="fit-label"><tr className="fit-score-row">
+        {columns.map(({ id, fit }) => <td key={id} data-product-id={id}>{fit && <FitPill {...fit} />}</td>)}
+      </tr></tbody>}
       <tbody className="purchase-section" ref={purchaseRow}><tr className="purchase-row">
         {columns.map(({ id, action }) => <td key={id} data-product-id={id}>{action}</td>)}
       </tr></tbody>
