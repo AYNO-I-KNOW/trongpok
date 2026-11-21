@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { productSearchResultSchema, type ProductSearchResult } from '../../../lib/product-search/contract';
-import type { Plan, ResearchResult } from './types';
-import { researchDesignPreview } from './research';
+import type { ResearchResult } from './types';
 import { liveResult } from './live-result';
 
 export const HISTORY_KEY = 'trong-pok-history-v1';
@@ -24,8 +23,8 @@ const entrySchema = z.discriminatedUnion('version', [legacyEntrySchema, webEntry
 export type HistoryEntry = z.infer<typeof entrySchema>;
 export type SearchHistoryEntry = Extract<HistoryEntry, { version: 3 }>;
 
-export function historyResult(entry: HistoryEntry): ResearchResult {
- return entry.version === 3 ? liveResult(entry.query, entry.response) : researchDesignPreview({ raw: '', target: entry.target, supported: true, ice: entry.ice, conditions: entry.conditions, needsContext: false, designPreview: true });
+export function historyResult(entry: SearchHistoryEntry): ResearchResult {
+ return liveResult(entry.query, entry.response);
 }
 
 export function readHistory(): HistoryEntry[] {
@@ -54,11 +53,3 @@ export function rememberSearch(query: string, response: Extract<ProductSearchRes
  if (!query.trim() || !response.picks.length) return readSearchHistory();
  return rememberEntry({ version: 3, key: JSON.stringify([query, response]), query, response }).filter(isSearchEntry);
 }
-
-export function rememberHistory(result: ResearchResult): HistoryEntry[] {
- const key = JSON.stringify(result.items.map(item => [item.product.id, item.verdict, item.rank || null, item.reason, item.limitation]));
- const { target, ice, conditions } = result.plan;
- return rememberEntry({ version: 1, key, target, ice, conditions: { ...conditions } });
-}
-
-export function historyPlan(entry: HistoryEntry): Plan { return historyResult(entry).plan; }

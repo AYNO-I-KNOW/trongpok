@@ -1,10 +1,14 @@
 "use client";
 import { useRef, useState } from "react";
-export type BlenderAnswers = {
-  blenderUsage: string;
-  iceCubes: string;
-  container: string;
-};
+import type { CategoryPack } from "@/lib/types";
+import { requirementsFromAnswers, type Answers } from "@/lib/needs/answers";
+
+const requirementGroups = [
+  ["must", "ต้องมี"],
+  ["nice", "อยากได้"],
+  ["budget", "งบประมาณ"],
+] as const;
+
 const cards = [
   {
     title: "อยากใช้ปั่นอะไร?",
@@ -40,10 +44,14 @@ const cards = [
   },
 ];
 export default function QuestionCard({
+  pack,
+  needText,
   onConfirm,
   onBack,
 }: {
-  onConfirm: (answers: BlenderAnswers) => void;
+  pack: CategoryPack;
+  needText: string;
+  onConfirm: (answers: Answers) => void;
   onBack: () => void;
 }) {
   const [direction, setDirection] = useState<"next" | "back">("next");
@@ -51,6 +59,7 @@ export default function QuestionCard({
     [answers, setAnswers] = useState(["", "", ""]),
     [custom, setCustom] = useState(["", "", ""]);
   const locked = useRef(false);
+  const reviewing = step === cards.length;
   const card = cards[step],
     choice = answers[step],
     valid = choice && (choice !== "custom" || custom[step].trim());
@@ -58,24 +67,26 @@ export default function QuestionCard({
     setAnswers((a) => a.map((old, i) => (i === step ? value : old)));
   }
   function next() {
-    if (!valid || locked.current) return;
-    if (step < cards.length - 1) {
-      setDirection("next");
-      setStep(step + 1);
-      return;
-    }
+    if (!valid) return;
+    setDirection("next");
+    setStep(step + 1);
+  }
+  function resolve(index: number) {
+    return answers[index] === "custom" ? custom[index].trim() : answers[index];
+  }
+  const resolved = reviewing ? {
+    blenderUsage: resolve(0),
+    iceCubes: resolve(1),
+    container: resolve(2),
+  } : null;
+  const requirements = resolved && requirementsFromAnswers(pack, resolved, needText);
+  function confirm() {
+    if (locked.current || !resolved) return;
     locked.current = true;
-    const values = answers.map((answer, index) =>
-      answer === "custom" ? custom[index].trim() : answer,
-    );
-    onConfirm({
-      blenderUsage: values[0],
-      iceCubes: values[1],
-      container: values[2],
-    });
+    onConfirm(resolved);
   }
   return (
-    <section className="clarify">
+    <section className={"clarify" + (reviewing ? " arena-requirements" : "")}>
       <nav className="question-nav" aria-label="ความคืบหน้าคำถาม">
         <button
           type="button"
@@ -96,85 +107,110 @@ export default function QuestionCard({
           aria-label="คำถามเพิ่มเติม"
           aria-valuemin={0}
           aria-valuemax={cards.length}
-          aria-valuenow={step + 1}
+          aria-valuenow={Math.min(step + 1, cards.length)}
         >
           <span
             className="question-progress-fill"
-            style={{ transform: `scaleX(${(step + 1) / cards.length})` }}
+            style={{ transform: `scaleX(${Math.min(step + 1, cards.length) / cards.length})` }}
           />
         </div>
         <span>
-          {step + 1} จาก {cards.length}
+          {reviewing ? "สรุปโจทย์" : `${step + 1} จาก ${cards.length}`}
         </span>
       </nav>
-      <div
-        className="question-step"
-        key={step}
-        style={
-          {
-            "--question-enter-x": direction === "next" ? "8px" : "-8px",
-          } as React.CSSProperties
-        }
-      >
-        <div className="question-copy">
-          <h1>{card.title}</h1>
-          <p>{card.description}</p>
+      {requirements && (
+        <div className="question-step" key="requirements">
+          <div className="question-copy">
+            <h1>เงื่อนไขที่จะใช้เปรียบเทียบ</h1>
+            <p>ตรวจโจทย์ก่อนเริ่มเปรียบเทียบจากชุดเดโม</p>
+          </div>
+          <div className="arena-requirement-groups">
+            {requirementGroups.map(([kind, title]) => {
+              const entries = requirements.filter((requirement) => requirement.kind === kind);
+              if (!entries.length) return null;
+              return (
+                <section key={kind}>
+                  <h2>{title}</h2>
+                  <ul>
+                    {entries.map((requirement) => (
+                      <li key={requirement.id} data-kind={kind}>{requirement.text}</li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
+          </div>
         </div>
-        <form
-          id="question-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            next();
-          }}
+      )}
+      {!reviewing && (
+        <div
+          className="question-step"
+          key={step}
+          style={
+            {
+              "--question-enter-x": direction === "next" ? "8px" : "-8px",
+            } as React.CSSProperties
+          }
         >
-          <fieldset>
-            <legend className="sr-only">{card.title}</legend>
-            {[...card.choices, ["custom", "กรอกเอง"]].map(([value, label]) => (
-              <label
-                key={value}
-                className={"choice " + (choice === value ? "selected" : "")}
-              >
-                <input
-                  type="radio"
-                  name={"answer-" + step}
-                  value={value}
-                  checked={choice === value}
-                  onChange={() => select(value)}
+          <div className="question-copy">
+            <h1>{card.title}</h1>
+            <p>{card.description}</p>
+          </div>
+          <form
+            id="question-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              next();
+            }}
+          >
+            <fieldset>
+              <legend className="sr-only">{card.title}</legend>
+              {[...card.choices, ["custom", "กรอกเอง"]].map(([value, label]) => (
+                <label
+                  key={value}
+                  className={"choice " + (choice === value ? "selected" : "")}
+                >
+                  <input
+                    type="radio"
+                    name={"answer-" + step}
+                    value={value}
+                    checked={choice === value}
+                    onChange={() => select(value)}
+                  />
+                  <span className="check" aria-hidden="true">
+                    {choice === value ? "✓" : ""}
+                  </span>
+                  <span>{label}</span>
+                </label>
+              ))}
+            </fieldset>
+            {choice === "custom" && (
+              <label className="custom-label">
+                {card.label}
+                <textarea
+                  autoFocus
+                  rows={1}
+                  value={custom[step]}
+                  onChange={(e) =>
+                    setCustom((a) =>
+                      a.map((old, i) => (i === step ? e.target.value : old)),
+                    )
+                  }
+                  placeholder={card.placeholder}
                 />
-                <span className="check" aria-hidden="true">
-                  {choice === value ? "✓" : ""}
-                </span>
-                <span>{label}</span>
               </label>
-            ))}
-          </fieldset>
-          {choice === "custom" && (
-            <label className="custom-label">
-              {card.label}
-              <textarea
-                autoFocus
-                rows={1}
-                value={custom[step]}
-                onChange={(e) =>
-                  setCustom((a) =>
-                    a.map((old, i) => (i === step ? e.target.value : old)),
-                  )
-                }
-                placeholder={card.placeholder}
-              />
-            </label>
-          )}
-        </form>
-      </div>
+            )}
+          </form>
+        </div>
+      )}
       <div className="question-footer">
-        <button
-          className="primary"
-          type="submit"
-          form="question-form"
-          disabled={!valid}
-        >
-          {step === cards.length - 1 ? "เริ่มค้นหาต่อ" : "ถัดไป"}
-        </button>
+        {reviewing ? (
+          <button className="primary" type="button" onClick={confirm}>เริ่มค้นหาต่อ</button>
+        ) : (
+          <button className="primary" type="submit" form="question-form" disabled={!valid}>
+            {step === cards.length - 1 ? "ดูสรุปเงื่อนไข" : "ถัดไป"}
+          </button>
+        )}
       </div>
     </section>
   );

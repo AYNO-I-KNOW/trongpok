@@ -47,8 +47,15 @@ export function isBlenderIceRequirement(category: string, subject: Subject) {
 function iceStance(text: string, usage: Label["usage"]): Label["stance"] {
   if (usage === "unboxing" || !iceReviewRelevant(text)) return "none";
   const complaint = text.replace(/(?:มอเตอร์)?ไม่(?:เคย)?(?:มี)?กลิ่นไหม้|มอเตอร์ไม่ไหม้|ไม่ไหม้|ไม่เคยเครื่องตัด|มอเตอร์ไม่ตัด|ไม่เจอเกล็ดใหญ่|ไม่เคยลองขายทั้งวัน/g, "");
-  if (/ไหม้|ดับ|เครื่องตัด|ใบมีดติด|ไม่ละเอียด|เหลือเศษ|ปั่นหลายรอบ|สั่นทั้งโต๊ะ/.test(complaint)) return "contradict";
+  if (/ไหม้|ดับ|เครื่องตัด|ใบมีดติด|ไม่ละเอียด|เหลือเศษ|ปั่นหลายรอบ|ต้องแบ่ง[^.!?\n]{0,16}รอบ|สั่นทั้งโต๊ะ/.test(complaint)) return "contradict";
   return /เนียน|ละเอียด|หมุนปกติ|ไม่ไหม้|ไม่เคยเครื่องตัด|มอเตอร์ไม่ตัด|เดินเรียบ|ไม่มีกลิ่นไหม้/.test(text) ? "confirm" : "none";
+}
+
+function iceTextureStance(text: string, usage: Label["usage"]): Label["stance"] {
+  if (usage === "unboxing" || !/น้ำแข็ง/.test(text)) return "none";
+  const outcome = text.replace(/ไม่เจอเกล็ดใหญ่|ไม่เหลือเศษ/g, "");
+  if (/ไม่ละเอียด|ไม่เนียน|เหลือเศษ|(?:เป็น|มี)เกล็ดใหญ่/.test(outcome)) return "contradict";
+  return /เนียน|ละเอียด|ไม่เจอเกล็ดใหญ่|ไม่เหลือเศษ/.test(text) ? "confirm" : "none";
 }
 
 function quietStance(text: string, usage: Label["usage"]): Label["stance"] {
@@ -72,17 +79,21 @@ export function labelWithRules(product: Product, subjects: Subject[]): Label[] {
       const quote = sentence ?? review.text;
       const complaintText = quote.replace(/ไม่ไหม้|ไม่ดับ|ไม่พัง|ไม่ละลาย|ไม่เยิ้ม|ไม่เหม็น|ไม่กลับมา|เสียงไม่ดัง|ไม่เสียงดัง/g, "");
       const contradict = /ไม่|ไหม้|ดับ|พัง|ไม่ละเอียด|ละลาย|เยิ้ม|เหม็น|กลับมา|จกตา|ปกเทพ/.test(complaintText) || (/เสียงดัง/.test(complaintText) && /เสียง|เงียบ/.test(subject.text));
-      const isIceRequirement = isBlenderIceRequirement(product.category, subject);
-      const isQuietRequirement = product.category === "blender" && "kind" in subject && subject.id === "quiet";
-      const stance = isIceRequirement ? iceStance(review.text, usage)
-        : isQuietRequirement ? quietStance(review.text, usage)
+      const blenderClaim = product.category === "blender" && !("kind" in subject);
+      const isIceSubject = isBlenderIceRequirement(product.category, subject) || (blenderClaim && /น้ำแข็ง/.test(subject.text));
+      const isQuietSubject = product.category === "blender" && (
+        "kind" in subject ? subject.id === "quiet" : /เสียง(?:เบา|เงียบ)/.test(subject.text)
+      );
+      const stance = blenderClaim && /น้ำแข็ง.*ละเอียด/.test(subject.text) ? iceTextureStance(review.text, usage)
+        : isIceSubject ? iceStance(review.text, usage)
+        : isQuietSubject ? quietStance(review.text, usage)
         : !sentence ? "none" : contradict ? "contradict" : "confirm";
       return {
         reviewId: review.id,
         subjectId: subject.id,
         stance: logistics ? "none" : stance,
         target: logistics ? "logistics" : "product",
-        quote: isIceRequirement || isQuietRequirement ? review.text : quote,
+        quote: isIceSubject || isQuietSubject ? review.text : quote,
         usage,
         specific,
       };

@@ -1,27 +1,33 @@
 import BlenderArena from "@/ui/trong-pok/components/BlenderArena";
-import { byCategory, shopeeLink } from "@/lib/catalog";
+import { byCategory, loadPacks } from "@/lib/catalog";
 export default async function ArenaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ demo?: string; font?: string }>;
+  searchParams: Promise<{ font?: string }>;
 }) {
-  const params = await searchParams;
+  const [params, packs, catalog] = await Promise.all([
+    searchParams,
+    loadPacks(),
+    byCategory("blender"),
+  ]);
+  const pack = packs.find(({ id }) => id === "blender");
+  if (!pack) throw new Error("Missing blender category pack");
   const fontTheme = params.font === "line" ? "line" : "ibm";
-  const products = (await byCategory("blender")).map((product) => ({
+  const products = catalog.map((product) => ({
     id: product.id,
     title: product.title,
     priceThb: product.priceThb,
     imageUrl: product.imageUrl,
-    shopeeUrl: product.shopeeUrl,
-    outboundUrl: shopeeLink(product),
     stars: product.stars,
     ratingCount: product.ratingCount,
     shopName: product.shop.name,
+    reviews: product.reviews,
+    claims: product.claims,
   }));
   return (
     <BlenderArena
       products={products}
-      rankingDemo={false}
+      pack={pack}
       fontTheme={fontTheme}
     />
   );

@@ -19,14 +19,14 @@ describe('recent searches', () => {
   localStorage.setItem(HISTORY_KEY, JSON.stringify([legacy]));
   rememberSearch('นาฬิกาไว้เดินป่า', response);
   const entries = readHistory();
-  expect(entries).toHaveLength(2);
+  expect(entries[0]?.version).toBe(3);
+  if (entries[0]?.version !== 3) throw new Error('Missing web entry');
   const result = historyResult(entries[0]);
   expect(result.plan.raw).toBe('นาฬิกาไว้เดินป่า');
   expect(result.searchKind).toBe('web');
   expect(result.items[0].product).toMatchObject({ name: 'Verified watch', price: 8900, storeUrl: response.picks[0].url });
   expect(result.items[0].evidence[0]).toMatchObject({ summary: 'ข้อมูลตรงรุ่น', url: response.picks[0].url });
   expect(entries[1]).toEqual(legacy);
-  expect(historyResult(entries[1]).plan.target).toBe('electrolux');
  });
  it('excludes synthetic entries from the homepage without removing them from shared storage', () => {
   const saved = { version: 3, key: 'saved', query: 'นาฬิกาไว้เดินป่า', response };

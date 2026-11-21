@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   productSearchResultSchema,
@@ -100,6 +101,11 @@ export default function SearchHome({
         <HomeForm
           initial={query}
           onSubmit={search}
+          introAction={
+            <Link className="evidence-link arena-entry" href={fontTheme === "line" ? "/arena?font=line" : "/arena"} prefetch={false}>
+              ลอง Arena · เดโมเปรียบเทียบเครื่องปั่น ↗
+            </Link>
+          }
           history={history.length > 0 && (
             <HomeHistory
               items={history}

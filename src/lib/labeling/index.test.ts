@@ -1,5 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import fixture from "../../../data/products/_example.json";
+import stationFixture from "../../../data/products/blender-ice-station.json";
+import quietFixture from "../../../data/products/blender-quiet-daily.json";
 import { ProductSchema } from "../types";
 import { labelWithRules } from "./rules";
 import { labelProduct } from "./index";
@@ -164,4 +166,19 @@ it("requires an actual operational outcome for indirect commercial ice evidence"
     { ...product.reviews[0], text: "ทำร้านมา 4 เดือน ใช้วันละสี่สิบถึงห้าสิบแก้ว ยังไม่เคยเครื่องตัด" },
   ] };
   expect(labelWithRules(custom, subjects).map((label) => label.stance)).toEqual(["none", "none", "confirm"]);
+});
+
+it("does not turn clean ice or a motor that did not cut out into a Skeptic objection", () => {
+  const station = ProductSchema.parse(stationFixture);
+  const quieter = ProductSchema.parse(quietFixture);
+  const stationObjections = labelWithRules(station, station.claims).filter(({ stance }) => stance === "contradict");
+  const quietObjections = labelWithRules(quieter, quieter.claims).filter(({ stance }) => stance === "contradict");
+
+  expect(stationObjections).not.toContainEqual(expect.objectContaining({ reviewId: "r1", subjectId: "c1" }));
+  expect(quietObjections).not.toContainEqual(expect.objectContaining({ reviewId: "r14", subjectId: "c1" }));
+  expect(quietObjections).not.toContainEqual(expect.objectContaining({ reviewId: "r5", subjectId: "c1" }));
+  expect(labelWithRules(quieter, subjects)).toContainEqual(expect.objectContaining({
+    reviewId: "r5", subjectId: "ice", stance: "contradict",
+  }));
+  expect(quietObjections).not.toContainEqual(expect.objectContaining({ reviewId: "r2", subjectId: "c2" }));
 });

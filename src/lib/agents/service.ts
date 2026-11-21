@@ -2,8 +2,10 @@ import { join } from "node:path";
 import { setTimeout } from "node:timers/promises";
 import { z } from "zod";
 import { loadPacks, loadProducts, findByLink } from "../catalog";
-import { requirementsFromAnswers, requirementsFromText } from "../needs";
-import type { AgentEvent, ArenaResult } from "../types";
+import { requirementsFromAnswers } from "../needs/answers";
+import { requirementsFromText } from "../needs";
+import { eligibleLabels } from "../scoring";
+import type { AgentEvent, ArenaResult, Product } from "../types";
 import { runArena } from "./arena";
 import { scoringVersion, cacheHash, requestCacheKey, readArenaCache, writeArenaCache, readRequestCache, writeRequestCache } from "./cache";
 import { judge } from "./judge";
@@ -17,6 +19,30 @@ export const ArenaRequestSchema = z.object({
 
 const InternalArenaRequestSchema = ArenaRequestSchema.extend({ linkedProductId: z.string().min(1).optional() });
 
+function cacheMatchesCatalog(result: ArenaResult, products: Product[]) {
+  const objectionsByProduct = new Map<string, string>();
+  for (const row of result.ranked) {
+    const product = products.find(({ id }) => id === row.productId);
+    if (!product) return false;
+    const { objections } = row;
+    if (objections.length) {
+      if (objectionsByProduct.has(row.productId) || objections.some(({ stance }) => stance !== "contradict")
+        || eligibleLabels(product, result.requirements, objections).length !== objections.length) return false;
+      objectionsByProduct.set(row.productId, JSON.stringify(objections));
+    }
+    for (const { requirementId, quotes } of row.requirements) {
+      if (quotes.some(({ subjectId }) => subjectId !== requirementId)
+        || eligibleLabels(product, result.requirements, quotes).length !== quotes.length) return false;
+    }
+  }
+  for (const event of result.events) {
+    if (event.type !== "objection") continue;
+    if (!event.productId || objectionsByProduct.get(event.productId) !== JSON.stringify(event.objections)) return false;
+    objectionsByProduct.delete(event.productId);
+  }
+  return objectionsByProduct.size === 0;
+}
+
 export async function runArenaRequest(input: z.infer<typeof InternalArenaRequestSchema>, emit: (event: AgentEvent) => void = () => {}, options: { dataRoot?: string; cacheRoot?: string; replayDelayMs?: number; strictCache?: boolean } = {}): Promise<ArenaResult> {
   const request = InternalArenaRequestSchema.parse(input);
   const dataRoot = options.dataRoot ?? join(process.cwd(), "data");
@@ -24,15 +50,20 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
   const [packs, products] = await Promise.all([loadPacks(dataRoot), loadProducts(dataRoot)]);
   const version = cacheHash([packs, products]);
   const requestKey = requestCacheKey(request, packs, products);
-  const replay = async (result: ArenaResult): Promise<ArenaResult> => {
+  const hasModel = Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL);
+  const canReplay = (result: ArenaResult | null): result is ArenaResult & { mode: "llm" | "rules" } =>
+    result !== null && (result.mode === "rules" || result.mode === "llm") &&
+    (hasModel || (result.mode === "rules" && !result.modelContributed)) &&
+    cacheMatchesCatalog(result, products);
+  const replay = async (result: ArenaResult & { mode: "llm" | "rules" }): Promise<ArenaResult> => {
     for (const event of result.events) {
       await setTimeout(options.replayDelayMs ?? 15);
       emit(event);
     }
-    return { ...result, mode: "cache" };
+    return { ...result, mode: "cache", cachedMode: result.mode };
   };
   const indexed = await readRequestCache(cacheRoot, requestKey);
-  if (indexed) return replay(indexed);
+  if (canReplay(indexed)) return replay(indexed);
   const linked = request.link ? await findByLink(request.link, dataRoot) : null;
   if (linked?.status === "not-in-demo") throw new Error("ลิงก์นี้ไม่อยู่ในชุดเดโม");
   const linkedById = request.linkedProductId ? products.find((product) => product.id === request.linkedProductId) : undefined;
@@ -46,7 +77,7 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
   const linkedProductId = selectedProduct?.id;
   const key = cacheHash([scoringVersion, requirements, request.needText, linkedProductId, pack.id, version]);
   const cached = await readArenaCache(cacheRoot, key);
-  if (cached) {
+  if (canReplay(cached)) {
     await writeRequestCache(cacheRoot, requestKey, key, options.strictCache);
     return replay(cached);
   }
@@ -54,7 +85,12 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
   emit({ agent: "judge", type: "start", text: "กำลังสรุปเหตุผล" });
   result.events.push({ agent: "judge", type: "start", text: "กำลังสรุปเหตุผล" });
   const summary = await judge(result.ranked, requirements, usedModel ? "llm" : "rules", request.needText, result.events);
-  const judged = { ...result, ranked: summary.ranked, mode: result.mode === "rules" ? result.mode : summary.mode };
+  const judged = {
+    ...result,
+    ranked: summary.ranked,
+    mode: result.mode === "rules" ? result.mode : summary.mode,
+    ...(usedModel ? { modelContributed: true } : {}),
+  };
   const done: AgentEvent = { agent: "judge", type: "done", text: "สรุปผลแล้ว" };
   judged.events.push(done);
   emit(done);
