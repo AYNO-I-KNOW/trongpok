@@ -71,6 +71,30 @@ it("ranks must-ok products ahead of products with higher scores", () => {
   expect(result[0].productId).toBe("good");
   expect(result[0].rankScore).toBeLessThan(result[1].rankScore);
 });
+
+it("keeps a product with two concrete must failures behind a supported alternative", () => {
+  const risky = { ...product(), id: "risky", priceThb: 500 };
+  const supported = { ...product(), id: "supported", priceThb: 1500 };
+  const result = rank([risky, supported], [need], {
+    risky: labels(["contradict", "contradict"]),
+    supported: labels(["confirm", "confirm"]),
+  });
+  expect(result.map(({ productId, mustOk }) => ({ productId, mustOk }))).toEqual([
+    { productId: "supported", mustOk: true }, { productId: "risky", mustOk: false },
+  ]);
+  expect(result[1].requirements[0].status).toBe("unknown");
+});
+
+it("prefers stronger must review support when fit ties", () => {
+  const cheaper = { ...product(), id: "cheaper", priceThb: 500 };
+  const supported = { ...product(), id: "supported", priceThb: 1500 };
+  const result = rank([cheaper, supported], [need, { id: "budget", text: "งบ", kind: "budget", value: 2000 }], {
+    cheaper: labels(["confirm"]),
+    supported: labels(["confirm", "confirm"]),
+  });
+  expect(result.map(({ productId }) => productId)).toEqual(["supported", "cheaper"]);
+  expect(result[0].fitPct).toBe(result[1].fitPct);
+});
 it("computes positive savings and unused features from the highest-starred alternative", () => {
   const cheap = { ...product(), id: "cheap", priceThb: 500, stars: 4 };
   const premium = { ...product(), id: "premium", priceThb: 1500, stars: 5, features: ["ปั่นน้ำแข็ง", "GPS"] };

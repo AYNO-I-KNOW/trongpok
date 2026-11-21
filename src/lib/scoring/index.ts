@@ -95,7 +95,15 @@ export function fit(requirements: Requirement[], results: RequirementResult[]) {
   const weights = requirements.map((requirement) => requirement.kind === "nice" ? 1 : 2);
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   const score = total ? requirements.reduce((sum, requirement, index) => sum + weights[index] * (results.find((result) => result.requirementId === requirement.id)?.score ?? 0.4), 0) / total : 0.4;
-  const mustOk = requirements.every((requirement) => requirement.kind === "nice" || !results.some((result) => result.requirementId === requirement.id && ["fail", "contradicted"].includes(result.status)));
+  const mustOk = requirements.every((requirement) => {
+    if (requirement.kind === "nice") return true;
+    const result = results.find((item) => item.requirementId === requirement.id);
+    if (!result) return true;
+    if (result.status === "fail" || result.status === "contradicted") return false;
+    const sparseConflict = ["unknown", "spec-only"].includes(result.status) &&
+      result.quotes.length >= 2 && result.quotes.every((label) => label.stance === "contradict" && label.specific);
+    return !sparseConflict;
+  });
   return { fit: score, fitPct: Math.round(score * 100), mustOk };
 }
 
@@ -133,13 +141,16 @@ export function savings(product: Product, comparison: Product | undefined, mustO
 
 export function rank(products: Product[], requirements: Requirement[], labelsByProduct: Record<string, Label[]>, categoryPool = products): Ranked[] {
   const budget = requirements.find((requirement) => requirement.kind === "budget")?.value;
+  const mustIds = new Set(requirements.filter(({ kind }) => kind === "must").map(({ id }) => id));
   const rows = products.map((product) => {
     const labels = labelsByProduct[product.id] ?? [];
     const results = requirements.map((requirement) => requirementResult(product, requirement, labels));
     const fitResult = fit(requirements, results);
+    const mustSupport = results.filter(({ requirementId }) => mustIds.has(requirementId))
+      .flatMap(({ quotes }) => quotes.filter(({ stance, specific }) => stance === "confirm" && specific)).length;
     const trustResult = trust(product, requirements, labels);
     const value = budget ? Math.max(0, Math.min(1, 1 - product.priceThb / budget)) : 0.5;
-    return { product, row: {
+    return { product, fit: fitResult.fit, mustSupport, row: {
       productId: product.id,
       fitPct: fitResult.fitPct,
       mustOk: fitResult.mustOk,
@@ -153,7 +164,9 @@ export function rank(products: Product[], requirements: Requirement[], labelsByP
       reviewQualityWarning: reviewQualityWarning(product, requirements, labels),
     } satisfies Ranked };
   });
-  const sorted = rows.toSorted((a, b) => Number(b.row.mustOk) - Number(a.row.mustOk) || b.row.rankScore - a.row.rankScore || a.product.priceThb - b.product.priceThb);
+  const sorted = rows.toSorted((a, b) =>
+    Number(b.row.mustOk) - Number(a.row.mustOk) || b.fit - a.fit ||
+    b.mustSupport - a.mustSupport || b.row.rankScore - a.row.rankScore || a.product.priceThb - b.product.priceThb);
   return sorted.map(({ product, row }, index) => {
     if (index !== 0) return row;
     const comparison = categoryPool.filter((other) => other.category === product.category && other.id !== product.id)

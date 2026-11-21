@@ -108,12 +108,14 @@ function rules(pack: CategoryPack, text: string) {
 }
 
 export async function requirementsFromText(pack: CategoryPack, text: string): Promise<Requirement[]> {
+  if (!text.trim()) return [];
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
   if (!apiKey || !model) return rules(pack, text);
   try {
-    const response = await new OpenAI({ apiKey, timeout: 20_000, maxRetries: 0 }).responses.parse({
+    const response = await new OpenAI({ apiKey, timeout: 6_000, maxRetries: 0 }).responses.parse({
       model,
+      reasoning: { effort: "low" },
       instructions: "เลือกเฉพาะตัวเลือกที่ตรงความต้องการ ระบุ questionId และ optionIndex เริ่มที่ศูนย์ เพิ่ม extraNeeds ได้ไม่เกินสองข้อความ ห้ามสร้างคะแนนหรืออันดับ",
       input: JSON.stringify({ pack, text }),
       text: { format: zodTextFormat(extractionSchema, "requirements") },

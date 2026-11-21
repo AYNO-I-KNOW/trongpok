@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const PersonaSchema = z.object({
   persona_id: z.string().min(1), category: z.string().min(1),
-  need_text: z.string(), answers: z.string(),
+  need_text: z.string(), answers: z.string(), link_product_id: z.string().optional(),
   labeler_a_top3: z.string(), labeler_b_top3: z.string(),
   human_top3: z.string(), must_notes: z.string(),
 });
@@ -26,8 +26,8 @@ export function parsePersonas(csv: string): Persona[] {
   if (quoted) throw new Error("Unclosed CSV quote");
   if (field || row.length) rows.push([...row, field.replace(/\r$/, "")]);
   const headers = rows.shift()?.map((name) => name.replace(/^\uFEFF/, "")) ?? [];
-  const expected = Object.keys(PersonaSchema.shape);
-  if (headers.length !== expected.length || new Set(headers).size !== headers.length ||
+  const expected = Object.keys(PersonaSchema.shape).filter((name) => name !== "link_product_id");
+  if (headers.length !== expected.length + Number(headers.includes("link_product_id")) || new Set(headers).size !== headers.length ||
     expected.some((name) => !headers.includes(name))) throw new Error("Invalid persona CSV headers");
   const ids = new Set<string>();
   return rows.filter((values) => values.some((value) => value.trim())).map((values) =>
@@ -36,6 +36,9 @@ export function parsePersonas(csv: string): Persona[] {
       const persona = PersonaSchema.parse(Object.fromEntries(headers.map((name, index) => [name, values[index]])));
       if (ids.has(persona.persona_id)) throw new Error("Duplicate persona id");
       ids.add(persona.persona_id);
+      for (const key of ["labeler_a_top3", "labeler_b_top3", "human_top3"] as const) {
+        persona[key] = persona[key].split(/[>|]/).map((id) => id.trim()).filter(Boolean).join("|");
+      }
       personaAnswers(persona);
       return persona;
     });
@@ -50,7 +53,7 @@ export function personaAnswers(persona: Persona) {
   for (const entry of persona.answers.split(";").filter(Boolean)) {
     const match = entry.match(/^([^=;]+)=([^=]*)$/);
     if (!match || Object.hasOwn(answers, match[1])) throw new Error("Invalid persona answers");
-    answers[match[1]] = match[2].split("|").filter(Boolean);
+    answers[match[1]] = match[2].split(/[+|]/).filter(Boolean);
   }
   return answers;
 }
@@ -61,5 +64,6 @@ export function personaRequest(persona: Persona) {
     category: persona.category,
     needText: persona.need_text,
     ...(Object.values(answers).some((values) => values.length) ? { answers } : {}),
+    ...(persona.link_product_id ? { linkedProductId: persona.link_product_id } : {}),
   };
 }
