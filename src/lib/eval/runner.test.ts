@@ -11,7 +11,7 @@ import { plainLlm } from "./plain-llm";
 vi.mock("./plain-llm", () => ({ plainLlm: vi.fn(async () => null) }));
 afterEach(() => vi.unstubAllEnvs());
 
-it("evaluates fixture caches and leaves unavailable model measurements empty", async () => {
+it("runs from fresh demo caches and preserves the configured cache workflow", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   const root = await mkdtemp(join(tmpdir(), "eval-fixture-"));
   try {
@@ -21,10 +21,16 @@ it("evaluates fixture caches and leaves unavailable model measurements empty", a
     const products = [example, { ...example, id: "alternative", stars: 4, ratingCount: 5000 }];
     for (const product of products) await writeFile(join(root, "products", product.id + ".json"), JSON.stringify(product));
     await writeFile(join(root, "personas.csv"), "persona_id,category,need_text,answers,labeler_a_top3,labeler_b_top3,human_top3,must_notes\np1,blender,เครื่องปั่น,budget=3000,blender-smoothie-pro|alternative,blender-smoothie-pro|alternative,blender-smoothie-pro|alternative,\n");
-    await expect(collectEvaluations(root)).rejects.toThrow("Missing arena cache");
+    const options = { dataRoot: root };
+    const demo = await collectEvaluations({ ...options, mode: "demo-rules" });
+    expect(demo).toHaveLength(1);
+    expect(demo[0].rankings.ours).toHaveLength(2);
+    expect(demo[0].rankings["plain-llm"]).toBeNull();
+    expect(plainLlm).not.toHaveBeenCalled();
+    await expect(collectEvaluations(options)).rejects.toThrow("Missing arena cache");
     await runArenaRequest({ category: "blender", needText: "เครื่องปั่น", answers: { budget: ["3000"] } }, undefined, { dataRoot: root, replayDelayMs: 0, strictCache: true });
-    const rows = await collectEvaluations(root);
-    expect(rows).toHaveLength(1);
+    const rows = await collectEvaluations(options);
+    expect(rows).toEqual(demo);
     expect(rows[0].rankings.stars).toEqual(["blender-smoothie-pro", "alternative"]);
     expect(rows[0].rankings.popular).toEqual(["alternative", "blender-smoothie-pro"]);
     expect(rows[0].rankings.ours).toHaveLength(2);

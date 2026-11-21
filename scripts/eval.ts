@@ -5,16 +5,25 @@ import { join } from "node:path";
 import { collectEvaluations } from "../src/lib/eval/runner";
 import { buildReport } from "../src/lib/eval/metrics";
 
-loadEnvConfig(process.cwd());
-
 async function main() {
-  const report = buildReport(await collectEvaluations());
+  const args = process.argv.slice(2);
+  const demo = args[0] === "--demo";
+  if (args.length && (!demo || args.length !== 1)) throw new Error("Usage: npm run eval [-- --demo]");
+  if (demo) {
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_MODEL;
+  } else {
+    loadEnvConfig(process.cwd());
+  }
+  const mode = demo ? "demo-rules" : "configured-cache";
+  const report = buildReport(await collectEvaluations({ mode }), mode);
+  const serialized = JSON.stringify(report, null, 2) + "\n";
   const root = join(process.cwd(), "data/cache");
   await mkdir(root, { recursive: true });
   const temporary = join(root, randomUUID() + ".tmp");
-  await writeFile(temporary, JSON.stringify(report, null, 2));
+  await writeFile(temporary, serialized);
   await rename(temporary, join(root, "eval-report.json"));
-  console.log(JSON.stringify(report, null, 2));
+  process.stdout.write(serialized);
 }
 
 void main().catch((error) => {
