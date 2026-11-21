@@ -130,6 +130,14 @@ it("labels concrete daily ice use without mistaking successful absence for failu
   expect(labels.find((label) => label.reviewId === "r9")?.stance).toBe("none");
 });
 
+it("treats blender noise carrying to another room as a quiet requirement failure", async () => {
+  const { default: noisy } = await import("../../../data/products/blender-smoothie-pro.json");
+  const { default: quieter } = await import("../../../data/products/blender-quiet-daily.json");
+  const quiet = [{ id: "quiet", text: "เสียงไม่ดัง", kind: "must" as const }];
+  expect(labelWithRules(ProductSchema.parse(noisy), quiet).find(({ reviewId }) => reviewId === "r12")?.stance).toBe("contradict");
+  expect(labelWithRules(ProductSchema.parse(quieter), quiet).find(({ reviewId }) => reviewId === "r1")?.stance).toBe("confirm");
+});
+
 it("keeps everyday smoothie praise and absent ice outcomes out of ice evidence", () => {
   const custom = { ...product, reviews: [
     { ...product.reviews[0], id: "smoothie", text: "ใช้มา 2 เดือน ปั่นกล้วยเนียน ลูกค้าไม่เจอเม็ด" },
