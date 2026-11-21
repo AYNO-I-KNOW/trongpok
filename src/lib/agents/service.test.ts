@@ -70,6 +70,47 @@ it("does not reuse request cache keys from the previous scoring formula", async 
   expect(requestCacheKey({}, [], [])).not.toBe(cacheHash(["request", {}, cacheHash([[], []])]));
 });
 
+it("evaluates a product linked by local id and keeps its cache distinct", async () => {
+  const { runArenaRequest } = await import("./service");
+  root = await mkdtemp(join(tmpdir(), "arena-linked-"));
+  await mkdir(join(root, "categories"), { recursive: true });
+  await mkdir(join(root, "products"), { recursive: true });
+  await writeFile(join(root, "categories/blender.json"), JSON.stringify(category));
+  await writeFile(join(root, "products", example.id + ".json"), JSON.stringify(example));
+  vi.stubEnv("OPENAI_API_KEY", "");
+  const options = { dataRoot: root, replayDelayMs: 0 };
+  const input = { category: "blender", answers: {} };
+  const first = await runArenaRequest(input, undefined, options);
+  expect(first.events.some((event) => event.agent === "verifier")).toBe(false);
+  const linked = await runArenaRequest({ ...input, linkedProductId: example.id }, undefined, options);
+  expect(linked.mode).toBe("rules");
+  expect(linked.events.filter((event) => event.type === "start").map((event) => event.agent)).toEqual(["fit", "value", "skeptic", "judge"]);
+  expect(linked.ranked.some((item) => item.productId === example.id)).toBe(true);
+  expect((await runArenaRequest({ ...input, linkedProductId: example.id }, undefined, options)).mode).toBe("cache");
+  await expect(runArenaRequest({ ...input, linkedProductId: "missing" }, undefined, options)).rejects.toThrow("Unknown linked");
+  await expect(runArenaRequest({ category: "other", linkedProductId: example.id }, undefined, options)).rejects.toThrow("category mismatch");
+});
+
+it("reads linked persona cache with the same request key used by evaluation", async () => {
+  const { runArenaRequest } = await import("./service");
+  const { parsePersonas, personaRequest } = await import("../personas");
+  const { loadPacks, loadProducts } = await import("../catalog");
+  const { readRequestCache, requestCacheKey } = await import("./cache");
+  root = await mkdtemp(join(tmpdir(), "persona-readback-"));
+  await mkdir(join(root, "categories"), { recursive: true });
+  await mkdir(join(root, "products"), { recursive: true });
+  await writeFile(join(root, "categories/blender.json"), JSON.stringify(category));
+  await writeFile(join(root, "products", example.id + ".json"), JSON.stringify(example));
+  const csv = "persona_id,category,need_text,link_product_id,answers,labeler_a_top3,labeler_b_top3,human_top3,must_notes\n" +
+    "b1,blender,ice," + example.id + ",use=ice;budget=3000,,,,\n";
+  const request = personaRequest(parsePersonas(csv)[0]);
+  vi.stubEnv("OPENAI_API_KEY", "");
+  const result = await runArenaRequest(request, undefined, { dataRoot: root, replayDelayMs: 0, strictCache: true });
+  const packs = await loadPacks(root);
+  const products = await loadProducts(root);
+  expect(await readRequestCache(join(root, "cache/arena"), requestCacheKey(request, packs, products))).toEqual(result);
+});
+
 it("streams a completed result when the cache directory cannot be created", async () => {
   await fixtureRoot();
   const warnings = vi.spyOn(console, "warn").mockImplementation(() => {});

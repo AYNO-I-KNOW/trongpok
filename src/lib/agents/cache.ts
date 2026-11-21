@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { ArenaResultSchema, type ArenaResult, type CategoryPack, type Product } from "../types";
 
-export const scoringVersion = "review-quality-v2";
+export const scoringVersion = "parallel-requirement-arena-v6";
 
 export function cacheHash(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
