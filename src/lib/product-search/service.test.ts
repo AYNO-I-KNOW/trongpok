@@ -511,6 +511,26 @@ it("targets missing coverage and avoids blocked domains in the follow-up", async
   });
 });
 
+
+it.each([false, true])("prefers the chosen SKU's supporting reason regardless of offer order (reversed: %s)", (reverse) => {
+  const selected = candidate();
+  const otherUrl = "https://www.jib.co.th/product/m240-white";
+  const other = {
+    ...candidate(),
+    url: otherUrl,
+    price: { baht: 800, currency: "THB", pageModel: selected.model, url: otherUrl },
+    stock: { ...selected.stock, url: otherUrl },
+    evidence: [{ ...selected.evidence[0], url: otherUrl, text: "รุ่นสีขาวคลิกเงียบ" }],
+  } satisfies SearchCandidate;
+  const offers = reverse ? [other, selected] : [selected, other];
+  const verifiedSources = new Set([url, otherUrl]);
+  expect(rankProducts(offers, goal, verifiedSources, "now")).toMatchObject([
+    { url, price: { baht: 700 }, reasons: [{ text: "คลิกเงียบ", url }] },
+  ]);
+  other.evidence[0].stance = "no";
+  expect(rankProducts(offers, goal, verifiedSources, "now")).toEqual([]);
+});
+
 it("keeps a verified first-round offer when unusable expansion cites the same URL", async () => {
   const search = vi.fn<SearchBackend["search"]>()
     .mockResolvedValueOnce({ candidates: [candidate()], sources, usable: true, searchCalls: 1 })

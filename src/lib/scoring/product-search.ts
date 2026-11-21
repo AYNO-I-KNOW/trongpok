@@ -94,15 +94,17 @@ export function rankProducts(
       (requirement) => supports(requirement) && !contradicts(requirement),
     );
     const relevant = new Set([goal.category, ...goal.must, ...met]);
-    const reasons = new Map(
-      evidence
-        .filter(
-          (item) => relevant.has(item.requirement) && item.stance === "yes",
-        )
-        .map((item) => [item.requirement, { text: item.text, url: item.url }]),
+    const supportingEvidence = evidence.filter(
+      (item) => relevant.has(item.requirement) && item.stance === "yes",
     );
 
     for (const offer of offers) {
+      const selectedUrl = sourceUrl(offer.url);
+      const reasons = new Map(
+        [...supportingEvidence.filter((item) => sourceUrl(item.url) !== selectedUrl),
+          ...supportingEvidence.filter((item) => sourceUrl(item.url) === selectedUrl)]
+          .map((item) => [item.requirement, { text: item.text, url: item.url }]),
+      );
       const stock =
         sourced(offer.stock.url) && identity(offer.stock.pageModel) === key
           ? offer.stock.status

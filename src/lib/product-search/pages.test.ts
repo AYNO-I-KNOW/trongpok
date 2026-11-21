@@ -35,6 +35,7 @@ describe("independent retail page verification", () => {
     page("Logitech M240 Pro"),
     page("Logitech M241"),
     page("Logitech M240", 799, "OutOfStock"),
+    `<title>Logitech M240</title><main>Logitech M240 ฿799</main><script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: "Logitech M240", offers: { availability: "https://schema.org/OutOfStock" } })}</script>`,
     "<title>JIB homepage</title>",
   ])("rejects a wrong variant, sold out or unrelated page", async (html) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(html)));
