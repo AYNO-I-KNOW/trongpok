@@ -18,6 +18,7 @@ export async function readArenaCache(root: string, key: string) {
 }
 
 export async function writeArenaCache(root: string, key: string, result: ArenaResult, strict = false) {
+  if (process.env.VERCEL === "1" && !strict) return;
   const temporary = join(root, key + "." + randomUUID() + ".tmp");
   try {
     await mkdir(root, { recursive: true });
@@ -25,7 +26,8 @@ export async function writeArenaCache(root: string, key: string, result: ArenaRe
     await rename(temporary, join(root, key + ".json"));
   } catch (error) {
     await unlink(temporary).catch(() => {});
-    if (strict || !(error instanceof Error && "code" in error && ["EROFS", "EACCES", "EPERM"].includes(String(error.code)))) throw error;
+    if (strict) throw error;
+    console.warn({ event: "arena_cache_write_failed", code: error instanceof Error && "code" in error ? String(error.code) : "unknown" });
   }
 }
 
@@ -40,6 +42,7 @@ export async function readRequestCache(root: string, key: string) {
 }
 
 export async function writeRequestCache(root: string, key: string, target: string, strict = false) {
+  if (process.env.VERCEL === "1" && !strict) return;
   const temporary = join(root, key + "." + randomUUID() + ".tmp");
   try {
     await mkdir(root, { recursive: true });
@@ -47,7 +50,8 @@ export async function writeRequestCache(root: string, key: string, target: strin
     await rename(temporary, join(root, key + ".ref"));
   } catch (error) {
     await unlink(temporary).catch(() => {});
-    if (strict || !(error instanceof Error && "code" in error && ["EROFS", "EACCES", "EPERM"].includes(String(error.code)))) throw error;
+    if (strict) throw error;
+    console.warn({ event: "arena_cache_write_failed", code: error instanceof Error && "code" in error ? String(error.code) : "unknown" });
   }
 }
 

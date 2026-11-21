@@ -435,3 +435,40 @@ button,select,.scenario-control,.question-nav,.eyebrow{font-weight:500}
   text-align: left;
   font-size: 13px;
 }
+
+.phone.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 32px 16px max(32px, env(safe-area-inset-bottom));
+}
+
+.error .mascot-position {
+  position: static;
+  flex-shrink: 0;
+  transform: none;
+}
+
+.arena-error {
+  width: 100%;
+  text-align: center;
+}
+
+.arena-error > p {
+  margin: 12px 0 24px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.arena-error-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.arena-error-actions .secondary {
+  background: var(--peach);
+  color: var(--brown);
+}
