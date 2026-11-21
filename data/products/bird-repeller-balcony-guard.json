@@ -1,0 +1,214 @@
+{
+  "id": "bird-repeller-balcony-guard",
+  "category": "bird-repeller",
+  "keywords": [
+    "ไล่นก",
+    "นกพิราบ",
+    "โซลาร์"
+  ],
+  "title": "เกาะไกล โซลาร์แคลมป์สำหรับระเบียง",
+  "brand": "เกาะไกล",
+  "priceThb": 1190,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.4,
+  "ratingCount": 328,
+  "specs": {
+    "power": [
+      "solar",
+      "battery"
+    ],
+    "noDrill": true,
+    "rangeM": 12
+  },
+  "features": [
+    "แคลมป์ยาง",
+    "เซ็นเซอร์ระยะสั้น"
+  ],
+  "shop": {
+    "id": "shop-balcony-guard",
+    "name": "เกาะไกล",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ไล่ได้ทุกชนิด 100%",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "คนไม่ได้ยินเสียงรบกวน",
+      "source": "description",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 4,
+      "text": "ติดมา 3 เดือน ระเบียงชั้น 12 ไม่มีนกพิราบลงราวฝั่งที่วางเครื่อง",
+      "hasMedia": true,
+      "daysAgo": 5,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "ใช้ครบ 8 สัปดาห์ นกพิราบที่ช่องแอร์ลดลงจนเหลือเดินผ่าน",
+      "hasMedia": false,
+      "daysAgo": 9,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 5,
+      "text": "ผ่านมา 4 เดือน ขอบหน้าต่างห้องชั้น 9 ไม่ต้องเช็ดขี้นกทุกวันแล้ว",
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "stars": 5,
+      "text": "ทดลอง 5 สัปดาห์ ที่ราวตากผ้านกไม่ลง แต่ตึกข้างๆ ยังมี",
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 4,
+      "text": "ติดมา 2 เดือน แคลมป์ยางไม่ทำสีราวลอก",
+      "hasMedia": false,
+      "daysAgo": 21,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "stars": 5,
+      "text": "ใช้ 6 สัปดาห์ เปิดหน้าต่างนอน คนในบ้านไม่ได้ยินเสียง",
+      "hasMedia": true,
+      "daysAgo": 25,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "stars": 5,
+      "text": "ลองครบ 3 เดือน แผงรับแดดครึ่งวันก็ใช้ข้ามคืนได้",
+      "hasMedia": false,
+      "daysAgo": 29,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "stars": 5,
+      "text": "ครบ 7 สัปดาห์ ปรับมุมเข้าราวแล้วพิราบเลิกเกาะ",
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "stars": 4,
+      "text": "ใช้มา 4 วัน ขันแคลมป์ยากมาก คู่มือรูปเล็ก",
+      "hasMedia": false,
+      "daysAgo": 37,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "stars": 5,
+      "text": "สัปดาห์แรกขนส่งมาช้า ถ่านในกล่องไม่ครบ",
+      "hasMedia": false,
+      "daysAgo": 41,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "stars": 5,
+      "text": "ได้มา 2 วัน ปกเทพจริง คู่มือเล็กจนต้องถ่ายขยาย",
+      "hasMedia": true,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "stars": 5,
+      "text": "ใช้เดือนแรก ฝนสาดแล้วช่องถ่านยังแห้ง",
+      "hasMedia": false,
+      "daysAgo": 49,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "stars": 4,
+      "text": "ผ่าน 9 สัปดาห์ ต้องเช็ดแผงทุกอาทิตย์ถ้าฝุ่นเยอะ",
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "stars": 5,
+      "text": "ใช้ 3 วัน ดีค่ะ ชอบ",
+      "hasMedia": false,
+      "daysAgo": 57,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "stars": 5,
+      "text": "วันนี้แกะกล่อง งานเรียบร้อย",
+      "hasMedia": false,
+      "daysAgo": 61,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "stars": 5,
+      "text": "ได้รับเมื่อวาน สินค้าคุณภาพดี แพ็คอย่างดี",
+      "hasMedia": true,
+      "daysAgo": 65,
+      "isTemplate": true
+    },
+    {
+      "id": "r17",
+      "stars": 4,
+      "text": "ใช้งาน 5 เดือน นกเอี้ยงยังมา แต่พิราบไม่ค้างคืน",
+      "hasMedia": false,
+      "daysAgo": 69,
+      "isTemplate": false
+    },
+    {
+      "id": "r18",
+      "stars": 5,
+      "text": "ลอง 10 วัน ย้ายมุมสามครั้งกว่าจะครอบคลุมราว",
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r19",
+      "stars": 5,
+      "text": "ครบ 2 เดือน แสงกระพริบสะท้อนกระจก ต้องหันออก",
+      "hasMedia": false,
+      "daysAgo": 77,
+      "isTemplate": false
+    },
+    {
+      "id": "r20",
+      "stars": 5,
+      "text": "ใช้มา 6 เดือน ยังใช้โซลาร์ได้ แต่สายรัดเริ่มซีด",
+      "hasMedia": false,
+      "daysAgo": 81,
+      "isTemplate": false
+    }
+  ]
+}

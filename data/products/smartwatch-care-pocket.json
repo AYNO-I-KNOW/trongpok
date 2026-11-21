@@ -1,0 +1,190 @@
+{
+  "id": "smartwatch-care-pocket",
+  "category": "smartwatch",
+  "keywords": [
+    "นาฬิกา",
+    "smartwatch"
+  ],
+  "title": "Pocketfern นาฬิกาอัจฉริยะ",
+  "brand": "Pocketfern",
+  "priceThb": 2590,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.3,
+  "ratingCount": 390,
+  "features": [
+    "แจ้งเตือนภาษาไทย",
+    "นับก้าว",
+    "SOS",
+    "ตรวจจับการล้ม",
+    "ECG"
+  ],
+  "specs": {
+    "gps": false,
+    "waterAtm": 3,
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "fallDetection": true,
+    "sos": true,
+    "ecg": true,
+    "spo2": true,
+    "batteryDays": 6,
+    "thaiNotifications": true
+  },
+  "shop": {
+    "id": "shop-care-pocket",
+    "name": "Pocketfern Demo",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "วัดชีพจรขณะออกกำลังได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "ใช้งานกับ Android และ iPhone ได้",
+      "source": "title",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "พ่อใช้มา 5 สัปดาห์ ปุ่ม SOS ใหญ่ กดแล้วลูกได้รับสาย",
+      "stars": 5,
+      "hasMedia": true,
+      "daysAgo": 10,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ลองมา 4 วัน เสียงพูดจากลำโพงเบาในตลาด",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "แม่ใช้ครบ 3 เดือน เมนู Android ยังจำตำแหน่งปุ่มได้",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 24,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "ทดลองแจ้งเตือนล้มเดือนแรก มีนับถอยหลังก่อนส่งข้อความ",
+      "stars": 5,
+      "hasMedia": true,
+      "daysAgo": 31,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "ใช้กับ Android มา 2 เดือน เก็บ ECG ในแอปแล้วเปิดให้ลูกดูได้",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ตั้งเบอร์ลูกที่ใช้ iPhone มา 6 สัปดาห์ โทรข้ามเครื่องได้",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "ใช้มา 18 วัน โหมดตัวหนังสือใหญ่เห็นชัดตอนลืมแว่น",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 52,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "ใช้ครบเดือน ถ้าออกห่างมือถือจะโทรขอความช่วยเหลือไม่ได้",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 59,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ชาร์จทุกสี่วันมา 2 เดือน ยังไม่พบแบตดับกลางวัน",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 66,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "ลอง 3 วัน ปกเทพปุ่มใหญ่ แต่สายล็อกใส่เองยาก",
+      "stars": 3,
+      "hasMedia": true,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "text": "เพิ่งได้รับ Pocketfern วันนี้ ส่งกล่องบุบ สายอยู่ครบ ยังไม่ได้ใส่",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 80,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "แกะกล่อง Pocketfern เมื่อวาน สีสวยมาก ชอบค่ะ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 87,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "ได้รับ Pocketfern มา 2 วัน สินค้าคุณภาพดี ทางร้านแพ็คอย่างดี",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 94,
+      "isTemplate": true
+    },
+    {
+      "id": "r14",
+      "text": "ใช้ Pocketfern มา 2 วัน เก็บสายส่วนเกินใต้ห่วงแล้วไม่เกี่ยวเสื้อ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 101,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ใช้ Pocketfern มา 3 วัน ตั้งปลุกเช้าแล้วสั่นจนตื่น",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 108,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "text": "ใช้ Pocketfern มา 4 วัน ใส่เดินซื้อของหนึ่งชั่วโมงไม่หลุด",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 115,
+      "isTemplate": false
+    }
+  ]
+}

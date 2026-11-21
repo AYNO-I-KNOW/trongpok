@@ -1,0 +1,183 @@
+{
+  "id": "smartwatch-gloss-hit",
+  "category": "smartwatch",
+  "keywords": [
+    "นาฬิกา",
+    "smartwatch"
+  ],
+  "title": "Glossmorrow นาฬิกาอัจฉริยะ",
+  "brand": "Glossmorrow",
+  "priceThb": 990,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.9,
+  "ratingCount": 18000,
+  "features": [
+    "แจ้งเตือนภาษาไทย",
+    "นับก้าว",
+    "GPS",
+    "นับรอบว่าย",
+    "SOS",
+    "ตรวจจับการล้ม",
+    "ECG"
+  ],
+  "specs": {
+    "gps": true,
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "fallDetection": true,
+    "sos": true,
+    "ecg": true,
+    "spo2": true,
+    "batteryDays": 6,
+    "thaiNotifications": true
+  },
+  "shop": {
+    "id": "shop-gloss-hit",
+    "name": "Glossmorrow Demo",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "วัดชีพจรขณะออกกำลังได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "ใช้งานกับ Android และ iPhone ได้",
+      "source": "title",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "ลองมา 2 วัน จอสว่าง ดูเวลาในสวนได้ชัด",
+      "stars": 5,
+      "hasMedia": true,
+      "daysAgo": 10,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ใช้มา 6 วัน วิ่งจริงชีพจรกระโดดทั้งที่เดินช้า",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "ใช้มา 3 เดือน GPS ลากข้ามถนนและว่ายน้ำนับรอบขาด",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 24,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "แม่ใช้ Android มา 4 สัปดาห์ กด SOS แล้วแอปค้างสองครั้ง",
+      "stars": 5,
+      "hasMedia": true,
+      "daysAgo": 31,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "ลองทดสอบการล้มตามคู่มือ 7 วัน ไม่มีข้อความถึงลูก",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ใช้มา 2 เดือน เมนู ECG เปิดได้แต่ส่งออกประวัติไม่สำเร็จ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "เพิ่งได้รับ Glossmorrow วันนี้ ส่งกล่องบุบ สายอยู่ครบ ยังไม่ได้ใส่",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 52,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "แกะกล่อง Glossmorrow เมื่อวาน สีสวยมาก ชอบค่ะ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 59,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ได้รับ Glossmorrow มา 2 วัน สินค้าคุณภาพดี ทางร้านแพ็คอย่างดี",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 66,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "แกะกล่องวันนี้ สีถูกใจ",
+      "stars": 3,
+      "hasMedia": true,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "text": "แกะกล่องวันนี้ สวยค่ะ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 80,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "แกะกล่องวันนี้ ดูดี",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 87,
+      "isTemplate": true
+    },
+    {
+      "id": "r13",
+      "text": "แกะกล่องวันนี้ คุ้มมาก",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 94,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "text": "แกะกล่องวันนี้ แนะนำเลย",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 101,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "แกะกล่องวันนี้ หน้าจอใส",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 108,
+      "isTemplate": false
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "id": "bird-repeller-solar-hit",
+  "category": "bird-repeller",
+  "keywords": [
+    "ไล่นก",
+    "นกพิราบ",
+    "โซลาร์"
+  ],
+  "title": "ลูมารัง โซลาร์ไล่นก รุ่นยอดนิยม",
+  "brand": "ลูมารัง",
+  "priceThb": 490,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.9,
+  "ratingCount": 18760,
+  "specs": {
+    "power": [
+      "solar",
+      "battery"
+    ],
+    "noDrill": true,
+    "rangeM": 18
+  },
+  "features": [
+    "แสงกระพริบ",
+    "เซ็นเซอร์เคลื่อนไหว"
+  ],
+  "shop": {
+    "id": "shop-solar-hit",
+    "name": "ลูมารัง",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ไล่ได้ทุกชนิด 100%",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "คนไม่ได้ยินเสียงรบกวน",
+      "source": "description",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 4,
+      "text": "เพิ่งได้รับวันนี้ ดีค่ะ ใช้ได้ผล แนะนำ",
+      "hasMedia": true,
+      "daysAgo": 5,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "แกะกล่องเช้านี้ สีตรงภาพ ยังไม่ได้เปิด",
+      "hasMedia": false,
+      "daysAgo": 9,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 5,
+      "text": "ได้รับเมื่อวาน ส่งไวมากค่ะ",
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "stars": 5,
+      "text": "วันนี้มาถึงแล้ว ให้ดาวไว้ก่อน",
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 4,
+      "text": "เพิ่งรับของ แพ็คแน่นดี",
+      "hasMedia": false,
+      "daysAgo": 21,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "stars": 5,
+      "text": "ลองวันแรก ดูดีค่ะ",
+      "hasMedia": true,
+      "daysAgo": 25,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "stars": 5,
+      "text": "ได้ของวันนี้ ถูกใจราคา",
+      "hasMedia": false,
+      "daysAgo": 29,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "stars": 5,
+      "text": "เปิดกล่องเมื่อวาน ครบทุกชิ้น",
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "stars": 4,
+      "text": "ซื้อมา 2 วัน ดีมาก แนะนำต่อ",
+      "hasMedia": false,
+      "daysAgo": 37,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "stars": 5,
+      "text": "เพิ่งได้รับ รอแดดออกค่อยลอง",
+      "hasMedia": false,
+      "daysAgo": 41,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "stars": 5,
+      "text": "มาถึงวันนี้ ของดูแข็งแรง",
+      "hasMedia": true,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "stars": 5,
+      "text": "ลองมา 1 วัน ใช้ได้ค่ะ",
+      "hasMedia": false,
+      "daysAgo": 49,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "stars": 4,
+      "text": "แกะห่อวันนี้ ให้คะแนนรับเหรียญก่อน",
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "stars": 5,
+      "text": "ได้รับ 2 วันแล้ว ดีค่ะ",
+      "hasMedia": false,
+      "daysAgo": 57,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "stars": 5,
+      "text": "เพิ่งแกะวันนี้ สินค้าคุณภาพดี แพ็คอย่างดี",
+      "hasMedia": false,
+      "daysAgo": 61,
+      "isTemplate": true
+    },
+    {
+      "id": "r16",
+      "stars": 5,
+      "text": "เปิดกล่องตอนบ่าย สีสวยมาก",
+      "hasMedia": true,
+      "daysAgo": 65,
+      "isTemplate": false
+    },
+    {
+      "id": "r17",
+      "stars": 4,
+      "text": "ใช้มา 3 วัน ช่วงเช้าไม่เห็นนกตรงราว",
+      "hasMedia": false,
+      "daysAgo": 69,
+      "isTemplate": false
+    },
+    {
+      "id": "r18",
+      "stars": 5,
+      "text": "ติดมา 4 เดือน นกพิราบกลับมาเกาะระเบียงชั้น 12 เหมือนเดิม",
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r19",
+      "stars": 5,
+      "text": "ลองครบ 3 เดือน ปกเทพ นกยืนข้างเครื่องอย่างสบาย",
+      "hasMedia": false,
+      "daysAgo": 77,
+      "isTemplate": false
+    },
+    {
+      "id": "r20",
+      "stars": 5,
+      "text": "ใช้มา 2 วัน กล่องขาดจากขนส่ง แต่แผงยังเปิดติด",
+      "hasMedia": false,
+      "daysAgo": 81,
+      "isTemplate": false
+    },
+    {
+      "id": "r21",
+      "stars": 4,
+      "text": "ใช้ครบ 5 เดือน แสงยังติดแต่นกพิราบมาทุกเช้า",
+      "hasMedia": true,
+      "daysAgo": 85,
+      "isTemplate": false
+    }
+  ]
+}
