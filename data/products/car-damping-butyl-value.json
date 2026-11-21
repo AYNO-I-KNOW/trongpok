@@ -1,0 +1,179 @@
+{
+  "id": "car-damping-butyl-value",
+  "category": "car-damping",
+  "keywords": [
+    "แดมป์",
+    "แผ่นแดมป์",
+    "damping"
+  ],
+  "title": "แผ่นแดมป์ butyl ฟอยล์ Quietfold ชุด 16 แผ่น",
+  "brand": "Quietfold",
+  "priceThb": 1690,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.5,
+  "ratingCount": 820,
+  "specs": {
+    "material": "butyl-foil",
+    "heatResistC": 110,
+    "thicknessMm": 2,
+    "sheets": 16
+  },
+  "features": [
+    "ลดเสียงถนน",
+    "ลดการสั่นลำโพง",
+    "กาวบิวทิล"
+  ],
+  "shop": {
+    "id": "shop-quietfold",
+    "name": "Quietfold Demo",
+    "years": 2.5,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": true,
+    "verified": true,
+    "chatResponsePct": 94
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ทนความร้อน ไม่ละลาย",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "ประตูละ 4 แผ่น",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "เสียงรบกวนลดลง",
+      "source": "description",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 5,
+      "text": "รับพัสดุมา 2 วัน ฟอยล์มีรอยยับจากขนส่ง แต่กาวบิวทิลยังเรียบ",
+      "hasMedia": true,
+      "daysAgo": 5,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "ติดมา 10 วัน ลดเสียงประตูรถกระบะตอนวิ่งถนนปูนได้พอรู้สึก",
+      "hasMedia": false,
+      "daysAgo": 9,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 5,
+      "text": "ได้รับวันนี้ คุณภาพสินค้าดีมาก คุ้มค่าดีมาก แนะนำค่ะ",
+      "hasMedia": true,
+      "daysAgo": 13,
+      "isTemplate": true
+    },
+    {
+      "id": "r4",
+      "stars": 4,
+      "text": "ใช้มา 3 สัปดาห์ อู่รีดแผ่นเข้าร่องได้ แต่ต้องอุ่นกาวก่อนติด",
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 3,
+      "text": "ติดมา 8 วัน ขอบฟอยล์บาดถุงมือขาดหนึ่งคู่ ต้องตัดช้าๆ",
+      "hasMedia": true,
+      "daysAgo": 21,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "stars": 5,
+      "text": "ลองมา 6 วัน ลำโพงหลังไม่กระพือแล้ว แต่สีฟอยล์เลอะมือเวลาจับ",
+      "hasMedia": false,
+      "daysAgo": 25,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "stars": 3,
+      "text": "ใช้มา 4 เดือน จอดลานกลางแดด แผ่นไม่เยิ้มและไม่มีกลิ่นตอนเปิดรถ",
+      "hasMedia": false,
+      "daysAgo": 54,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "stars": 5,
+      "text": "ติดมา 5 เดือน ขอบกาวยังแน่น เบสประตูไม่สั่น",
+      "hasMedia": true,
+      "daysAgo": 61,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "stars": 5,
+      "text": "ผ่านหน้าร้อน 3 เดือน แผ่นไม่ละลาย เสียงถนนบนทางด่วนเบาลง",
+      "hasMedia": false,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "stars": 3,
+      "text": "ใช้มา 6 สัปดาห์ ปิดประตูเสียงทึบ ฟังเพลงเบสแน่นขึ้น",
+      "hasMedia": false,
+      "daysAgo": 75,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "stars": 5,
+      "text": "ติดมา 2 เดือน อู่ตัดได้ง่ายแต่ฟอยล์ยับตามรอยลูกกลิ้ง",
+      "hasMedia": true,
+      "daysAgo": 82,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "stars": 5,
+      "text": "ใช้มา 3 เดือน ไม่มีกลิ่นในรถ แต่แผ่นหนักกว่าที่คิด",
+      "hasMedia": false,
+      "daysAgo": 89,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "stars": 3,
+      "text": "ติดมา 5 วัน จกตาตรงภาพสีเงา ของจริงด้าน แต่เสียงถนนลดลง",
+      "hasMedia": false,
+      "daysAgo": 96,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "stars": 5,
+      "text": "ใช้มา 8 สัปดาห์ ประตูหลังไม่สั่นตามเบสแล้ว",
+      "hasMedia": true,
+      "daysAgo": 103,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "stars": 5,
+      "text": "ติดมา 4 เดือน ลองเปิดแผงเช็กยังไม่ไหล จอดกลางแจ้งวันละแปดชั่วโมง",
+      "hasMedia": false,
+      "daysAgo": 110,
+      "isTemplate": false
+    }
+  ]
+}

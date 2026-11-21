@@ -1,0 +1,178 @@
+{
+  "id": "car-damping-light-trial",
+  "category": "car-damping",
+  "keywords": [
+    "แดมป์",
+    "แผ่นแดมป์",
+    "damping"
+  ],
+  "title": "แผ่นแดมป์ butyl ฟอยล์ Nimbuff ชุดทดลอง 16 แผ่น",
+  "brand": "Nimbuff",
+  "priceThb": 1390,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.6,
+  "ratingCount": 28,
+  "specs": {
+    "material": "butyl-foil",
+    "heatResistC": 100,
+    "thicknessMm": 1.8,
+    "sheets": 16
+  },
+  "features": [
+    "ลดเสียงประตู",
+    "กาวบิวทิล"
+  ],
+  "shop": {
+    "id": "shop-nimbuff",
+    "name": "Nimbuff Demo",
+    "years": 2.5,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": true,
+    "verified": true,
+    "chatResponsePct": 94
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ทนความร้อน ไม่ละลาย",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "ประตูละ 4 แผ่น",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "เสียงรบกวนลดลง",
+      "source": "description",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 5,
+      "text": "พัสดุมาถึงวันนี้ กล่องฉีกด้านข้าง นับครบสิบหกแผ่น ยังไม่ลอง",
+      "hasMedia": true,
+      "daysAgo": 5,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "ได้รับมา 4 วัน ยังจอดรถรออะไหล่ประตู จึงยังไม่ได้แกะติด",
+      "hasMedia": false,
+      "daysAgo": 9,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 5,
+      "text": "เพิ่งรับวันนี้ ดีมากค่ะ คุ้มค่ามาก แนะนำร้านนี้",
+      "hasMedia": true,
+      "daysAgo": 13,
+      "isTemplate": true
+    },
+    {
+      "id": "r4",
+      "stars": 4,
+      "text": "แกะดูมา 1 สัปดาห์ ขนาดตามฉลาก จะลองตอนเปลี่ยนลำโพง",
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 3,
+      "text": "ติดมา 9 วัน ตัดโค้งง่ายแต่กาวติดถุงมือ ต้องค่อยๆ ลอกกระดาษรอง",
+      "hasMedia": true,
+      "daysAgo": 21,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "stars": 5,
+      "text": "ลองใช้มา 2 สัปดาห์ เสียงกระทบประตูทึบขึ้นเล็กน้อย แผ่นบางกว่าของอู่",
+      "hasMedia": false,
+      "daysAgo": 25,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "stars": 3,
+      "text": "ใช้มา 3 เดือน จอดกลางแดดในโรงงาน ไม่มีกลิ่นและแผ่นไม่เยิ้ม",
+      "hasMedia": false,
+      "daysAgo": 54,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "stars": 5,
+      "text": "ติดมา 4 เดือน เสียงถนนเบาลง แต่ต้องติดซุ้มล้อเพิ่มถ้าอยากเงียบมาก",
+      "hasMedia": true,
+      "daysAgo": 61,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "stars": 5,
+      "text": "ใช้มา 6 สัปดาห์ เบสประตูแน่นขึ้น กาวยังติดดี",
+      "hasMedia": false,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "stars": 3,
+      "text": "เพิ่งได้รับเมื่อเช้า ยังรออู่นัดติดสัปดาห์หน้า",
+      "hasMedia": false,
+      "daysAgo": 75,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "stars": 5,
+      "text": "แกะกล่องมา 2 วัน ยังไม่ได้ลอง ได้แผ่นครบ",
+      "hasMedia": true,
+      "daysAgo": 82,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "stars": 5,
+      "text": "ได้รับเมื่อวาน ดีค่ะ ถูกใจแพ็คเกจ",
+      "hasMedia": false,
+      "daysAgo": 89,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "stars": 3,
+      "text": "สั่งมาครบ 3 วัน ยังไม่ได้ใช้ รถยังอยู่ที่อู่",
+      "hasMedia": false,
+      "daysAgo": 96,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "stars": 5,
+      "text": "ใช้มา 5 วัน ปกเทพตรงคำว่าเงียบกริบ เสียงยางยังมีแต่เสียงประตูดีขึ้น",
+      "hasMedia": true,
+      "daysAgo": 103,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "stars": 5,
+      "text": "ได้รับมา 6 วัน ยังเก็บไว้ในกล่อง จะติดหลังทำสีรถ",
+      "hasMedia": false,
+      "daysAgo": 110,
+      "isTemplate": false
+    }
+  ]
+}

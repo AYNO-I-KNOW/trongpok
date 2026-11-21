@@ -1,0 +1,195 @@
+{
+  "id": "blender-signature-max",
+  "category": "blender",
+  "keywords": [
+    "เครื่องปั่น",
+    "เครื่องปั่นน้ำผลไม้",
+    "blender"
+  ],
+  "title": "เครื่องปั่นครอบเสียง โถ 2 ลิตร 1800W",
+  "brand": "อรุณซิกเนเจอร์",
+  "priceThb": 5990,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.7,
+  "ratingCount": 910,
+  "specs": {
+    "watt": 1800,
+    "capacityL": 2,
+    "iceCrush": true,
+    "jarMaterial": "plastic",
+    "speeds": 2,
+    "warrantyMonths": 12,
+    "dryGrinder": true
+  },
+  "features": [
+    "ปั่นผลไม้ให้เนียน",
+    "ปั่นน้ำแข็ง",
+    "เสียงไม่ดัง",
+    "จอสัมผัส",
+    "เชื่อมแอป",
+    "ไฟเปลี่ยนสี",
+    "โปรแกรมซุป",
+    "ชั่งน้ำหนัก"
+  ],
+  "shop": {
+    "id": "shop-blender-signature-max",
+    "name": "อรุณซิกเนเจอร์ เดโม",
+    "years": 3,
+    "badRatePct": 2,
+    "official": true,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ปั่นน้ำแข็งละเอียดได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "เสียงเบา",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "วัสดุเกรดพิเศษแท้",
+      "source": "live",
+      "checkable": false
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "ใช้มา 3 เดือน ปั่นเบอร์รีแช่แข็งเนียน โปรแกรมหยุดเองแล้วเทได้เลย",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 8,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ลองมา 5 วัน จอสัมผัสไม่ค่อยรับตอนนิ้วเปียก ต้องเช็ดก่อนกด",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "ใช้มา 9 เดือน ขายสมูทตี้วันละเจ็ดสิบแก้ว มอเตอร์ไม่ไหม้และโถยังไม่รั่ว",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 18,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "ใช้ 4 สัปดาห์ ครอบลดเสียงช่วยให้คุยหน้าร้านได้ตอนปั่น",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 23,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "ใช้งาน 2 เดือน โปรแกรมซุปอุ่นได้ แต่แทบไม่ได้ใช้หลังวันแรก",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 28,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ซื้อมา 6 สัปดาห์ แอปเชื่อมต่อยากเลยกดที่เครื่องตลอด",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "ได้รับวันนี้ ขนส่งนัดเลื่อนสองรอบ กล่องสมบูรณ์ ยังไม่ลอง",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "ใช้ 3 วัน ปกเทพ ไฟเปลี่ยนสีสวยแต่ตอนตีห้าสว่างไปหน่อย",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 43,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ใช้มา 1 สัปดาห์ ดีค่ะ ประทับใจ",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 48,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "เพิ่งรับวันนี้ สินค้าคุณภาพดี แพ็คมาอย่างดี",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": true
+    },
+    {
+      "id": "r11",
+      "text": "เปิดร้านมา 5 เดือน ปั่นน้ำแข็งละเอียดเหมือนวันแรกแม้ใช้หลายโถ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 58,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "ใช้มา 8 สัปดาห์ โถสองลิตรทำสี่แก้วใหญ่ได้พอดี",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 63,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "ใช้มา 4 เดือน ปั่นกล้วยเนียนแล้วล้างด้วยโปรแกรมสะอาดง่าย",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "text": "ลอง 12 วัน ฐานหนักมาก ย้ายเก็บทุกคืนไม่สะดวก",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ใช้มา 6 เดือน ฟังก์ชันชั่งน้ำหนักยังตรงกับตาชั่งครัว",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 78,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "text": "ใช้ 10 สัปดาห์ เสียงมอเตอร์หลังครอบไม่กลบเสียงคนรับออร์เดอร์",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 83,
+      "isTemplate": false
+    }
+  ]
+}

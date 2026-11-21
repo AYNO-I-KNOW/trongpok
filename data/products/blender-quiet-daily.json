@@ -1,0 +1,190 @@
+{
+  "id": "blender-quiet-daily",
+  "category": "blender",
+  "keywords": [
+    "เครื่องปั่น",
+    "เครื่องปั่นน้ำผลไม้",
+    "blender"
+  ],
+  "title": "เครื่องปั่นครอบลดเสียง โถ 1.5 ลิตร 1000W",
+  "brand": "ละมุนครัว",
+  "priceThb": 990,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.5,
+  "ratingCount": 640,
+  "specs": {
+    "watt": 1000,
+    "capacityL": 1.5,
+    "iceCrush": true,
+    "jarMaterial": "plastic",
+    "speeds": 2,
+    "warrantyMonths": 12,
+    "dryGrinder": false
+  },
+  "features": [
+    "ปั่นผลไม้ให้เนียน",
+    "ปั่นน้ำแข็ง",
+    "เสียงไม่ดัง"
+  ],
+  "shop": {
+    "id": "shop-blender-quiet-daily",
+    "name": "ละมุนครัว เดโม",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ปั่นน้ำแข็งละเอียดได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "เสียงเบา",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "วัสดุเกรดพิเศษแท้",
+      "source": "live",
+      "checkable": false
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "ใช้ครบ 8 สัปดาห์ ปั่นกล้วยข้าวโอ๊ตตีห้าหลังครอบฝา เสียงไม่ดังจนลูกตื่น",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 8,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ลองมา 6 วัน ครอบลดเสียงหนัก ยกออกล้างมือเดียวไม่ถนัด",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "ใช้มา 4 เดือน ปั่นน้ำแข็งครั้งละโถที่ร้านวันละห้าสิบแก้ว พักทุกสามรอบ เครื่องยังเดินเรียบ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 18,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "ใช้งาน 7 สัปดาห์ สมูทตี้สับปะรดเนียน กากน้อยกว่าตัวเดิม",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 23,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "ใช้มา 3 เดือน น้ำแข็งก้อนใหญ่ต้องแบ่งใส่สองรอบ แต่ไม่มีกลิ่นไหม้",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 28,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ปั่นมา 5 สัปดาห์ โถ 1.5 ลิตรพอสี่แก้วเล็ก ฝาปิดแล้วไม่กระเด็น",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "ได้รับเมื่อวาน กล่องยุบมุมจากขนส่ง เครื่องไม่มีรอย ยังไม่ลอง",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "ลองใช้ 3 วัน ปกเทพ เปิดครอบทีต้องเคลียร์ชั้นวางด้านบนก่อน",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 43,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ใช้มา 10 วัน ดีค่ะ พอใจมาก",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 48,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "เพิ่งรับวันนี้ สินค้าคุณภาพดี แพ็คมาอย่างดี",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": true
+    },
+    {
+      "id": "r11",
+      "text": "ปั่นทุกเช้ามา 6 เดือน ยางกันลื่นยังเกาะโต๊ะหินดี",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 58,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "ใช้มา 2 เดือน ล้างโถด้วยน้ำอุ่นสะดวก แต่ห้ามจุ่มฐาน",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 63,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "ลอง 2 สัปดาห์ มะละกอครึ่งโถไม่ต้องกดแท่งช่วย",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "text": "ใช้มา 9 สัปดาห์ ปั่นน้ำแข็งร้านกาแฟแล้วมอเตอร์ไม่ตัด แม้วันคนเยอะ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ใช้มา 12 วัน สายยาวพอวางห่างซิงก์ แต่เก็บใต้ฐานไม่เรียบร้อย",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 78,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "text": "ใช้ครบ 3 เดือน ครอบใสยังไม่ขุ่นและเสียงปั่นนมยังเบา",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 83,
+      "isTemplate": false
+    }
+  ]
+}

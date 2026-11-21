@@ -1,0 +1,190 @@
+{
+  "id": "blender-ice-station",
+  "category": "blender",
+  "keywords": [
+    "เครื่องปั่น",
+    "เครื่องปั่นน้ำผลไม้",
+    "blender"
+  ],
+  "title": "เครื่องปั่นน้ำแข็ง โถ 1.8 ลิตร 1200W",
+  "brand": "ครัวแรงดี",
+  "priceThb": 2490,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.6,
+  "ratingCount": 480,
+  "specs": {
+    "watt": 1200,
+    "capacityL": 1.8,
+    "iceCrush": true,
+    "jarMaterial": "plastic",
+    "speeds": 2,
+    "warrantyMonths": 12,
+    "dryGrinder": true
+  },
+  "features": [
+    "ปั่นผลไม้ให้เนียน",
+    "ปั่นน้ำแข็ง",
+    "เสียงไม่ดัง"
+  ],
+  "shop": {
+    "id": "shop-blender-ice-station",
+    "name": "ครัวแรงดี เดโม",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ปั่นน้ำแข็งละเอียดได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "เสียงเบา",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "วัสดุเกรดพิเศษแท้",
+      "source": "live",
+      "checkable": false
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "ขายน้ำปั่นมา 2 เดือน วันละหกสิบแก้ว น้ำแข็งเนียน ลูกค้าไม่เจอเกล็ดใหญ่",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 8,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ใช้งาน 1 สัปดาห์ เสียงดังพอควร เปิดร้านไหวแต่คอนโดคงรบกวน",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "ใช้มา 7 เดือน ปั่นน้ำแข็งต่อเนื่องทีละชุดพักตามคู่มือ มอเตอร์ไม่ไหม้",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 18,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "ใช้ครบ 10 สัปดาห์ โถ 1.8 ลิตรแบ่งทำสามออร์เดอร์ได้เร็ว",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 23,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "ลองมา 4 วัน แท่งคนช่วยกับผลไม้แช่แข็งได้จริง",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 28,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ใช้งานร้านมา 3 เดือน ซีลใต้โถไม่รั่ว ล้างทุกเย็น",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "ได้รับวันนี้ ขนส่งวางกล่องเอียง คู่มือยับแต่โถไม่เสียหาย",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "ลองมา 2 วัน ปกเทพ เสียงดังจนต้องย้ายไปหลังเคาน์เตอร์",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 43,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ซื้อมา 8 วัน โอเคค่ะ ถูกใจ",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 48,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "เพิ่งแกะวันนี้ สินค้าคุณภาพดี แพ็คดีมาก",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": true
+    },
+    {
+      "id": "r11",
+      "text": "บดถั่วมา 6 สัปดาห์ ได้ผงละเอียดแต่ต้องล้างกลิ่นก่อนปั่นผลไม้",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 58,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "ใช้มา 5 เดือน ใบมีดยังปั่นน้ำแข็งก้อนร้านได้ละเอียด",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 63,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "ใช้มา 1 เดือน ปั่นเต็มโถต้องล็อกฝาแน่นไม่งั้นน้ำล้นขอบ",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "text": "ทำร้านมา 4 เดือน ใช้วันละสี่สิบถึงห้าสิบแก้ว ยังไม่เคยเครื่องตัด",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ใช้มา 3 สัปดาห์ ตัวเครื่องสูง วางใต้ตู้แขวนไม่สะดวก",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 78,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "text": "ใช้ 11 สัปดาห์ ปั่นส้มแยกกากแล้วเนียน ไม่มีรสขมจากเมล็ด",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 83,
+      "isTemplate": false
+    }
+  ]
+}
