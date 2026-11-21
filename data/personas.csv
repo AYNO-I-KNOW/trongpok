@@ -1,1 +1,7 @@
-persona_id,category,need_text,answers,labeler_a_top3,labeler_b_top3,human_top3,must_notes
+persona_id,category,need_text,link_product_id,answers,labeler_a_top3,labeler_b_top3,human_top3,must_notes
+b1,blender,จะเปิดร้านกาแฟเล็กๆ ต้องปั่นน้ำแข็งวันละ 50 แก้ว,blender-smoothie-pro,use=ice;volume=cap-large;budget=3000,,,,
+b2,blender,ปั่นสมูทตี้ตอนเช้าคนเดียว อยู่คอนโด ไม่อยากให้เสียงดัง,,use=smoothie;volume=cap-small;noise=quiet;budget=1000,,,,
+w1,smartwatch,ชอบวิ่งเทรลกับว่ายน้ำ อยากดูหัวใจตอนซ้อม ใช้ iPhone,,sport=gps+hr-accuracy+swim;phone=ios,,,,
+w2,smartwatch,ซื้อให้แม่อายุ 70 อยู่บ้านคนเดียว กลัวล้มแล้วไม่มีใครรู้ ลูกใช้ iPhone แม่ใช้ Android,,safety=fall+sos+heart-alert+easy;phone=android,,,,
+r1,bird-repeller,นกพิราบมาเกาะระเบียงคอนโดชั้น 12 ขี้เต็ม ไม่มีปลั๊กตรงนั้น,,bird=works-pigeon;place=no-drill;power=solar;people=silent-human;budget=1500,,,,
+d1,car-damping,อยากให้ประตูรถเงียบขึ้นและเสียงเพลงดีขึ้น จอดกลางแดดทุกวัน จะเอาไปให้อู่ติด,car-damping-live-hit,goal=quieter+audio;parking=heat-sun;budget=3000,,,,
