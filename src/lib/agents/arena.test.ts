@@ -39,6 +39,18 @@ it("requires value candidates to pass all musts", () => {
   expect(tools.propose(product.id, []).accepted).toBe(false);
 });
 
+it("rejects a Value proposal with concrete must objections despite a passing spec", () => {
+  const requirement = { id: "ice", text: "ปั่นน้ำแข็ง", kind: "must" as const,
+    spec: { key: "watt", op: ">=" as const, value: 600 } };
+  const tools = createTools({ agent: "value", products: [product], requirements: [requirement], emit: () => {} });
+  const labels = product.reviews.slice(1, 3).map((review) => ({
+    reviewId: review.id, subjectId: requirement.id, stance: "contradict" as const,
+    target: "product" as const, quote: review.text, usage: "short" as const, specific: true,
+  }));
+  expect(tools.propose(product.id, labels).accepted).toBe(false);
+  expect(tools.propose(product.id, []).accepted).toBe(true);
+});
+
 it("streams exact skeptic quotes and exposes only its objections", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   const observed: AgentEvent[] = [];

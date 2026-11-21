@@ -36,8 +36,7 @@ export async function runLlmAgent(input: {
     requirement.id, directReviewMatcher(input.category ?? "", requirement),
   ]));
   const catalog = products.map((product) => {
-    const reviews = input.tools.get_reviews(product.id, "").filter((review) =>
-      reviewUsage(review.text) !== "unboxing" && reviewSpecific(review.text));
+    const reviews = input.tools.get_reviews(product.id, "").filter(({ text }) => reviewUsage(text) !== "unboxing");
     const relevant = reviewRequirements.map((requirement) => ({
       subjectId: requirement.id,
       reviewIds: input.tools.get_reviews(product.id, "", requirement.id).map((review) => review.id),

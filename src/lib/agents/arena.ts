@@ -54,7 +54,7 @@ export async function runArena({ pack, requirements, needText, linkedProductId, 
       return;
     }
     const scored = ruleCandidates(pool);
-    const candidates = agent === "value" ? scored.filter(({ results }) => requirements.every((requirement, index) =>
+    const candidates = agent === "value" ? scored.filter(({ results, fit }) => fit.mustOk && requirements.every((requirement, index) =>
       requirement.kind === "nice" || ["pass", "spec-only"].includes(results[index].status)))
       .sort((a, b) => a.product.priceThb - b.product.priceThb || a.product.id.localeCompare(b.product.id)) : scored;
     for (const { product, labels } of candidates.slice(0, 3)) tools.propose(product.id, labels);

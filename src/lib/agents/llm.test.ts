@@ -75,6 +75,21 @@ it("keeps skeptic evidence as contradictions from the allowed product pool", asy
   expect(tools.proposals.get(failed.id)?.[0]).toMatchObject({ reviewId: "r2", stance: "contradict", quote: failed.reviews[1].text });
 });
 
+it("keeps short reviews describing a failure after long use", async () => {
+  configure();
+  const review = { ...product.reviews[0], text: "ใช้มา 4 เดือน เครื่องดับ" };
+  const failed = { ...product, reviews: [review] };
+  const requirements = [{ id: "durability", text: "ใช้ต่อเนื่องได้", kind: "must" as const, longUse: true }];
+  parse.mockResolvedValue({ output_parsed: { proposals: [{ productId: failed.id, evidence: [
+    { reviewId: review.id, subjectId: "durability", stance: "contradict" },
+  ] }] } });
+  const tools = createTools({ agent: "skeptic", products: [failed], requirements, emit: () => {} });
+  await runLlmAgent({ agent: "skeptic", category: "blender", requirements, tools });
+  expect(tools.proposals.get(failed.id)?.[0]).toMatchObject({
+    reviewId: review.id, usage: "long", stance: "contradict", specific: false, quote: review.text,
+  });
+});
+
 it("allows Value to finish without candidates and rejects an empty Fit result", async () => {
   configure();
   parse.mockResolvedValue({ output_parsed: { proposals: [] } });
