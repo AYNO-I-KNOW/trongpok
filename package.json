@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
+    "test:ui": "node --experimental-strip-types --test scripts/dev2-core.check.mjs scripts/dev2-rules.check.mjs",
+    "test:publish": "node --test scripts/publish-dev2.check.mjs",
     "lint": "eslint",
     "arena:all": "tsx scripts/arena-all.ts",
     "eval": "tsx scripts/eval.ts"
