@@ -1,3 +1,4 @@
+import type {WebProductPick} from '@/lib/product-search/contract';
 import type {MockDetails} from './mock-details';
 export type ProductId='electrolux'|'electrolux-large'|'simplus'|'hoffen';
 export type Container='bottle600'|'mainJar'|'grinder'|'unknown';
@@ -7,5 +8,5 @@ export type Verdict='pass'|'fail'|'unknown';
 export type Evidence={category:'คู่มือ'|'สื่อ'|'รีวิว'|'ร้าน'|'ข้อมูล';summary:string;url?:string;label?:string};
 export type Product={id:string;name:string;option:string;image?:string;price:number|null;priceText:string;store:string;storeUrl?:string;manualUrl?:string;mock?:boolean;capacity?:number};
 export type SourceDetails={fitFor:string;valueAdded:string;capacityText:string;method:string;conditions:string;photo:string;clip:string;returns:string;warranty:string;priceSource:string};
-export type Evaluation={product:Product;verdict:Verdict;reason:string;limitation:string;evidence:Evidence[];rank?:number;mockDetails?:MockDetails;sourceDetails?:SourceDetails};
+export type Evaluation={product:Product;verdict:Verdict;reason:string;limitation:string;evidence:Evidence[];rank?:number;fit?:WebProductPick['fit'];mockDetails?:MockDetails;sourceDetails?:SourceDetails};
 export type ResearchResult={plan:Plan;items:Evaluation[];originalProductId?:string;winner?:Evaluation;mock:boolean;searchKind?:'web'|'demo';broadIce?:boolean;headline:string;reason:string};

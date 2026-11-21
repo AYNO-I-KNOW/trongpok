@@ -1,11 +1,22 @@
-import type { ProductSearchResult } from "@/lib/product-search/contract";
+import type { ProductPick, ProductSearchResult, WebProductPick } from "@/lib/product-search/contract";
 import type { ResearchResult } from "./types";
+
+function describeLimitations(unknowns: string[], fit: WebProductPick["fit"]) {
+  const caveats = unknowns.join(" · ");
+  if (!fit?.meetsRequired) {
+    return caveats || "ยังไม่ยืนยันความเหมาะสมกับการใช้งานจริง";
+  }
+  if (caveats) return `ตรงตามข้อที่จำเป็น · ${caveats}`;
+  return fit.percent === 100 ? "ตรงทุกข้อที่ระบุ" : "ตรงตามข้อที่จำเป็น";
+}
 
 export function liveResult(
   query: string,
   response: Extract<ProductSearchResult, { kind: "web" | "demo" }>,
 ): ResearchResult {
   const demo = response.kind === "demo";
+  const picks: readonly (ProductPick & Pick<WebProductPick, "fit">)[] = response.picks;
+  const recommendation = demo ? picks[0] : picks.find((pick) => pick.fit?.meetsRequired !== false);
   const observed = (value: string) =>
     new Intl.DateTimeFormat("th-TH", {
       dateStyle: "medium",
@@ -28,9 +39,9 @@ export function liveResult(
     },
     mock: false,
     searchKind: response.kind,
-    headline: response.picks[0]
-      ? "แนะนำ " + response.picks[0].model
-      : "ยังไม่มีรุ่นที่ยืนยันได้",
+    headline: recommendation
+      ? `แนะนำ ${recommendation.model}`
+      : picks.length ? "ตัวเลือกใกล้เคียง" : "ยังไม่มีรุ่นที่ยืนยันได้",
     reason: [
       demo ? "โหมดกฎ · ข้อมูลเดโม" : "ค้นจากเว็บ",
       `พบ ${response.picks.length} รุ่นสำหรับ “${query}”`,
@@ -38,7 +49,7 @@ export function liveResult(
     ]
       .filter(Boolean)
       .join(" · "),
-    items: response.picks.map((pick, index) => ({
+    items: picks.map((pick, index) => ({
       product: {
         id: `search-${index}`,
         name: pick.model,
@@ -51,11 +62,11 @@ export function liveResult(
       },
       verdict: "unknown",
       rank: index + 1,
+      ...(pick.fit ? { fit: pick.fit } : {}),
       reason:
         pick.reasons.map((reason) => reason.text).join(" · ") ||
         "ยังไม่มีเหตุผลที่มีแหล่งอ้างอิง",
-      limitation:
-        pick.unknowns.join(" · ") || "ยังไม่ยืนยันความเหมาะสมกับการใช้งานจริง",
+      limitation: describeLimitations(pick.unknowns, pick.fit),
       evidence: [
         ...pick.reasons.map((reason) => ({
           category: "ข้อมูล" as const,

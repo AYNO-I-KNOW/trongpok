@@ -106,7 +106,16 @@ describe("independent retail page verification", () => {
     expect(rankProducts(verified, goal, sources, "now")).toMatchObject([
       { model: item.model, url: offerUrl, price: { baht: 799, url: offerUrl }, reasons: [{ url: offerUrl }] },
     ]);
-    expect(rankProducts(verified, { ...goal, must: ["silent"] }, sources, "now")).toEqual([]);
+    expect(rankProducts(verified, { ...goal, must: ["silent"] }, sources, "now")).toMatchObject([
+      {
+        model: item.model,
+        url: offerUrl,
+        price: { baht: 799, url: offerUrl },
+        fit: { percent: 0, meetsRequired: false },
+        unknowns: ["ข้อมูลไม่พอ · silent"],
+        reasons: [{ text: expect.not.stringContaining("คลิกเงียบ"), url: offerUrl }],
+      },
+    ]);
   });
   it("keeps a verified spec from the unpriced page when the same-model retailer supplies the price", async () => {
     const offerUrl = "https://www.homepro.co.th/p/123";

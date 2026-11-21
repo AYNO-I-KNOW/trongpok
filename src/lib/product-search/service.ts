@@ -149,7 +149,11 @@ export async function searchProducts(
       new Date().toISOString(),
       titles,
     );
-    if (picks.length < 3) {
+    const exactModels: string[] = [];
+    for (const { model, fit } of picks) {
+      if (fit.meetsRequired) exactModels.push(model);
+    }
+    if (exactModels.length < 3) {
       searchRounds++;
       try {
         const knownModels = [
@@ -172,7 +176,7 @@ export async function searchProducts(
           await live.search(
             searchText,
             goal,
-            picks.map((pick) => pick.model),
+            exactModels,
             1,
             {
               strategy: "retail",
@@ -225,15 +229,9 @@ export async function searchProducts(
       }
     }
     if (!picks.length && expansionFailed) return fallback();
-    const constraints =
-      `${goal.budget === null ? "" : ` ภายในงบ ${goal.budget.toLocaleString("th-TH")} บาท`}` +
-      `${goal.must.length ? ` และเงื่อนไข ${goal.must.join(" / ")}` : ""}`;
-    const summary =
-      picks.length === 3
-        ? "เรียงตามเงื่อนไขที่ตรงโจทย์ แล้วจึงเทียบราคา"
-        : picks.length
-          ? `ยืนยันรุ่นและราคาได้ ${picks.length} รุ่น${constraints}`
-          : `ยังไม่พบรุ่นที่ยืนยันราคาได้${constraints}`;
+    const summary = picks.length
+      ? `ยืนยันรุ่นและราคาได้ ${picks.length} รุ่น`
+      : "ยังไม่พบสินค้าที่มีข้อมูลยืนยันทั้งรุ่นและราคาจากแหล่งที่ตรวจสอบ";
     const searchStatus = expansionFailed
       ? " · ค้นเพิ่มไม่สำเร็จ"
       : completedAgents < initial.length

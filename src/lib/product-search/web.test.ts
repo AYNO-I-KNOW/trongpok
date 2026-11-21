@@ -96,6 +96,10 @@ describe("bounded live discovery", () => {
           search_context_size: "low",
           filters: { allowed_domains: expect.arrayContaining(["powerbuy.co.th", "homepro.co.th"]) },
         })]);
+        if (index === 1)
+          expect(request.instructions).toContain("seek same-category alternatives");
+        else
+          expect(request.instructions).not.toContain("seek same-category alternatives");
       } else {
         expect(request.max_output_tokens).toBe(4500);
         expect(request.instructions).toContain("model-specific manuals");
@@ -126,10 +130,59 @@ describe("bounded live discovery", () => {
       expect(request.instructions).toContain("2 to 3 strong distinct products");
       expect(JSON.parse(String(request.input))).toMatchObject({
         goal, discovery: { unpricedModels: ["Model"], preferredOfferDomains: ["jib.co.th"] },
-        instruction: expect.stringContaining("Search exact unpricedModels"),
+        instruction: expect.stringMatching(/Search exact unpricedModels.*include verified same-category offers/),
       });
     },
   );
+
+  it.each([true, false])("skips page extraction only with three verified required matches (all required: %s)", async (meetsRequired) => {
+    const requirement = "temperature control";
+    const excerpt = "Adjustable temperature";
+    const goal = { category: candidate.category, must: [requirement], nice: [], budget: 900, clarification: null };
+    const offers = [123, 124, 125].map((id): SearchCandidate => {
+      const model = `Brand A${id}`;
+      const url = `https://www.homepro.co.th/p/${id}`;
+      return {
+        ...candidate,
+        model,
+        modelFamily: model,
+        pageModel: model,
+        url,
+        price: { ...candidate.price!, url, pageModel: model },
+        stock: { ...candidate.stock, url, pageModel: model },
+        evidence: meetsRequired
+          ? [{ requirement, stance: "yes", excerpt, text: excerpt, url, pageModel: model }]
+          : [],
+      };
+    });
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const offer = offers.find((item) => item.url === url);
+      if (!offer) return new Response(null, { status: 404 });
+      const metadata = { "@type": "Product", name: offer.model };
+      return new Response(
+        `<title>${offer.model}</title><main><h1>${offer.model}</h1><p>฿500</p><p>${excerpt}</p></main>` +
+        `<script type="application/ld+json">${JSON.stringify(metadata)}</script>`,
+      );
+    }));
+    vi.spyOn(Responses.prototype, "create").mockResolvedValue({
+      output: [{
+        type: "web_search_call", id: "search", status: "completed",
+        action: { type: "search", query: goal.category, sources: offers.map(({ url }) => ({ type: "url", url })) },
+      }],
+      output_text: JSON.stringify({ candidates: offers }),
+    } as Awaited<ReturnType<Responses["create"]>>);
+    const parse = vi.spyOn(Responses.prototype, "parse").mockResolvedValue({
+      status: "completed",
+      output_parsed: { candidates: [] },
+    } as Awaited<ReturnType<Responses["parse"]>>);
+
+    const result = await createSearchBackend("test-key", "gpt-6-luna").search(goal.category, goal, [], 1);
+
+    expect(parse).toHaveBeenCalledTimes(meetsRequired ? 0 : 1);
+    expect(rankProducts(result.candidates, goal, result.sources, "now").map(({ fit }) => fit)).toEqual(
+      offers.map(() => ({ percent: meetsRequired ? 100 : 50, meetsRequired })),
+    );
+  });
 });
 
 

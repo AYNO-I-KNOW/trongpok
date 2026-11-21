@@ -7,6 +7,8 @@ import {
   type SearchGoal,
 } from "../product-search/domain";
 
+type RankedProduct = WebProductPick & { fit: NonNullable<WebProductPick["fit"]> };
+
 function identity(name: string) {
   return name
     .normalize("NFKC")
@@ -39,8 +41,14 @@ export function rankProducts(
   sources: Set<string>,
   observedAt: string,
   titles = new Map<string, string>(),
-): WebProductPick[] {
-  const sourced = (raw: string) => sources.has(sourceUrl(raw) ?? "");
+): RankedProduct[] {
+  const checks = new Map<string, "must" | "nice">();
+  for (const need of goal.must) checks.set(need, "must");
+  for (const need of goal.nice) if (!checks.has(need)) checks.set(need, "nice");
+  const budgetPoints = goal.budget === null ? 0 : 2;
+  let totalPoints = budgetPoints;
+  for (const kind of checks.values()) totalPoints += kind === "must" ? 2 : 1;
+
   const models = new Map<string, SearchCandidate[]>();
   for (const offer of candidates) {
     const key = identity(offer.model);
@@ -65,48 +73,44 @@ export function rankProducts(
     models.set(key, group);
   }
 
-  const ranked: { pick: WebProductPick; preferences: number; family: string }[] =
-    [];
+  const ranked: { pick: RankedProduct; points: number; family: string }[] = [];
   for (const [key, offers] of models) {
-    const evidence = offers
-      .flatMap((offer) => offer.evidence)
-      .filter(
-        (item) =>
-          sourced(item.url) &&
-          identity(item.pageModel) === key &&
-          item.text.trim(),
-      );
-    const supports = (requirement: string) =>
-      evidence.some(
-        (item) => item.requirement === requirement && item.stance === "yes",
-      );
-    const contradicts = (requirement: string) =>
-      evidence.some(
-        (item) => item.requirement === requirement && item.stance === "no",
-      );
-    if (
-      goal.must.some(
-        (requirement) => !supports(requirement) || contradicts(requirement),
-      )
-    )
-      continue;
-    const met = goal.nice.filter(
-      (requirement) => supports(requirement) && !contradicts(requirement),
-    );
-    const relevant = new Set([goal.category, ...goal.must, ...met]);
-    const supportingEvidence = evidence.filter(
-      (item) => relevant.has(item.requirement) && item.stance === "yes",
-    );
+    const positiveEvidence: SearchCandidate["evidence"] = [];
+    const stances = new Map<string, "yes" | "no">();
+    for (const offer of offers) {
+      for (const item of offer.evidence) {
+        if (
+          item.stance === "unknown" ||
+          (item.requirement !== goal.category && !checks.has(item.requirement)) ||
+          !item.text.trim() ||
+          identity(item.pageModel) !== key ||
+          !sources.has(sourceUrl(item.url) ?? "")
+        ) continue;
+        const previous = stances.get(item.requirement);
+        if (item.stance === "no") {
+          stances.set(item.requirement, "no");
+        } else if (previous !== "no") {
+          if (!previous) stances.set(item.requirement, "yes");
+          positiveEvidence.push(item);
+        }
+      }
+    }
+    const caveats: string[] = [];
+    let featurePoints = 0;
+    let meetsMust = true;
+    for (const [need, kind] of checks) {
+      const stance = stances.get(need);
+      if (stance === "yes") {
+        featurePoints += kind === "must" ? 2 : 1;
+      } else {
+        if (kind === "must") meetsMust = false;
+        caveats.push(`${stance === "no" ? "ไม่ตรงความต้องการ" : "ข้อมูลไม่พอ"} · ${need}`);
+      }
+    }
 
     for (const offer of offers) {
-      const selectedUrl = sourceUrl(offer.url);
-      const reasons = new Map(
-        [...supportingEvidence.filter((item) => sourceUrl(item.url) !== selectedUrl),
-          ...supportingEvidence.filter((item) => sourceUrl(item.url) === selectedUrl)]
-          .map((item) => [item.requirement, { text: item.text, url: item.url }]),
-      );
       const stock =
-        sourced(offer.stock.url) && identity(offer.stock.pageModel) === key
+        sources.has(sourceUrl(offer.stock.url) ?? "") && identity(offer.stock.pageModel) === key
           ? offer.stock.status
           : "unknown";
       if (stock === "out_of_stock") continue;
@@ -117,26 +121,34 @@ export function rankProducts(
         !Number.isFinite(amount.baht) ||
         amount.baht <= 0 ||
         sourceUrl(amount.url) !== url ||
-        identity(amount.pageModel) !== key ||
-        (goal.budget !== null && amount.baht > goal.budget)
+        identity(amount.pageModel) !== key
       )
         continue;
-      const unknowns = goal.nice
-        .filter((need) => !met.includes(need))
-        .map((need) =>
-          contradicts(need)
-            ? `ไม่ตรงความต้องการ · ${need}`
-            : `ข้อมูลไม่พอ · ${need}`,
-        );
+      const excess = goal.budget === null ? 0 : amount.baht - goal.budget;
+      const withinBudget = excess <= 0;
+      const points = featurePoints + (withinBudget ? budgetPoints : 0);
+      const fit = {
+        percent: totalPoints ? Math.round((points * 100) / totalPoints) : 100,
+        meetsRequired: meetsMust && withinBudget,
+      };
+      const unknowns = [...caveats];
+      if (!withinBudget) unknowns.push(`เกินงบ ${excess.toLocaleString("th-TH")} บาท`);
       if (stock === "unknown") unknowns.push("ร้านยังไม่ยืนยันว่ามีสินค้าพร้อมขาย");
+      const reasons = new Map<string, { text: string; url: string }>();
+      for (const item of positiveEvidence) {
+        if (stances.get(item.requirement) === "no") continue;
+        if (!reasons.has(item.requirement) || sourceUrl(item.url) === url)
+          reasons.set(item.requirement, { text: item.text, url: item.url });
+      }
       ranked.push({
-        preferences: met.length,
+        points,
         family: modelKey(offer),
         pick: {
           model: offer.model,
           ...(offer.image && sourceUrl(offer.image) ? { image: offer.image } : {}),
           url,
           price: { baht: amount.baht, url, observedAt },
+          fit,
           unknowns,
           reasons: reasons.size
             ? [...reasons.values()]
@@ -152,14 +164,15 @@ export function rankProducts(
   }
   ranked.sort(
     (a, b) =>
-      b.preferences - a.preferences ||
+      Number(b.pick.fit.meetsRequired) - Number(a.pick.fit.meetsRequired) ||
+      b.points - a.points ||
       a.pick.price.baht - b.pick.price.baht ||
       a.pick.model.localeCompare(b.pick.model) ||
       a.pick.url.localeCompare(b.pick.url),
   );
   const seenModels = new Set<string>();
   const seenPages = new Set<string>();
-  const picks: WebProductPick[] = [];
+  const picks: RankedProduct[] = [];
   for (const { pick, family } of ranked) {
     if (seenModels.has(family) || seenPages.has(pick.url)) continue;
     seenModels.add(family);

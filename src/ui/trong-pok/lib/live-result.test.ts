@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { liveResult } from "./live-result";
 
 describe("liveResult", () => {
-  it("keeps source facts and unknowns without inventing fit scores", () => {
+  it("keeps source facts, fit, and caveats for a near match", () => {
     const result = liveResult("นาฬิกา", {
       kind: "web",
       picks: [
@@ -15,7 +15,8 @@ describe("liveResult", () => {
             observedAt: "2026-11-21T03:00:00Z",
           },
           reasons: [{ text: "แบตเตอรี่ 7 วัน", url: "https://www.jib.co.th/product/watch" }],
-          unknowns: ["ยังไม่ยืนยัน GPS"],
+          unknowns: ["ข้อมูลไม่พอ · GPS"],
+          fit: { percent: 67, meetsRequired: false },
         },
       ],
       note: "ข้อมูลจากเว็บ",
@@ -31,11 +32,12 @@ describe("liveResult", () => {
     expect(item.product.image).toBeUndefined();
     expect(item.rank).toBe(1);
     expect(item.verdict).toBe("unknown");
+    expect(item.fit).toEqual({ percent: 67, meetsRequired: false });
     expect(item.reason).toBe("แบตเตอรี่ 7 วัน");
-    expect(result.headline).toBe("แนะนำ Watch A");
+    expect(result.headline).toMatch(/^ตัวเลือกใกล้เคียง/);
     expect(result.reason).toContain("พบ 1 รุ่นสำหรับ “นาฬิกา”");
     expect(item.sourceDetails?.capacityText).toBe("แบตเตอรี่ 7 วัน");
-    expect(item.limitation).toBe("ยังไม่ยืนยัน GPS");
+    expect(item.limitation).toBe("ข้อมูลไม่พอ · GPS");
     expect(item.evidence).toContainEqual({
       category: "ข้อมูล",
       summary: "แบตเตอรี่ 7 วัน",

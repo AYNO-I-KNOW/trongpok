@@ -18,12 +18,23 @@ function sourcedReasons(item: Evaluation, fallback: string) {
  return reasons.length ? <>{reasons.map((entry, index) => <p key={index}>{entry.summary} {entry.url && <a className="store-text-link" href={entry.url} target="_blank" rel="noopener noreferrer" aria-label={'ดูแหล่งข้อมูล '+item.product.name+': '+entry.summary+' (เปิดเว็บไซต์ภายนอก)'}>แหล่งข้อมูล ↗</a>}</p>)}</> : fallback;
 }
 
+function comparisonFit(item: Evaluation, index: number, live: boolean): ComparisonColumn['fit'] {
+ if (live) {
+  if (!item.fit) return undefined;
+  const {percent,meetsRequired}=item.fit;
+  return {value:percent,tone:meetsRequired?'high':'low',label:`${item.product.name} ตรงโจทย์ ${percent} เปอร์เซ็นต์`};
+ }
+ const score=previewFitScore(index);
+ return {value:score.value,tone:index===0?'high':index===2?'low':'pending',label:item.product.name+' ค่าทดลอง UI '+score.value+' เปอร์เซ็นต์ ไม่คำนวณจากหลักฐานและไม่ใช้จัดอันดับ'};
+}
+
 export default function Results({result:sourceResult,onReset,onBack,onConditions}:{result:ResearchResult;onReset:()=>void;onBack:()=>void;onConditions:(conditions:Conditions)=>void}){
  const result=sourceResult.searchKind?sourceResult:resultCopy(sourceResult);
  const live=Boolean(result.searchKind);
  const actionLabel=result.searchKind==='demo'?'ดูข้อมูลเดโม':live?'ดูสินค้า':'ซื้อเลย';
  const [openSection, setOpenSection] = useState<string | null>(null);
  const [evidence,setEvidence]=useState<Evaluation|null>(null);const {plan,mock}=result;const items=orderForComparison(result.items);
+ const hasLiveFit=result.searchKind==='web'&&items.some(item=>item.fit);
  const originalId=result.originalProductId||plan.target;const hasReviewData=items.some(item=>item.mockDetails&&Object.values(item.mockDetails.reviews).some(reviews=>reviews.length>0));
  const scenario=plan.conditions.container==='grinder'?'grinder':plan.conditions.cubes===12?'twelve':'five';
  function row(label:string,render:(item:Evaluation)=>ReactNode,className=''){return <tbody key={label}><tr className="row-label"><td colSpan={items.length}>{label}</td></tr><tr className={className}>{items.map(item=><td key={item.product.id} data-product-id={item.product.id}>{render(item)}</td>)}</tr></tbody>}
@@ -32,32 +43,30 @@ export default function Results({result:sourceResult,onReset,onBack,onConditions
   return <ComparisonDisclosure id={`result-panel-${key}`} title={title} open={openSection===key} span={items.length}
     onToggle={()=>setOpenSection(openSection===key?null:key)}>{content}</ComparisonDisclosure>;
  }
- const columns:ComparisonColumn[]=items.map((item,index)=>{
-  const score=previewFitScore(index);
-  return {
+ const columns:ComparisonColumn[]=items.map((item,index)=>({
    id:item.product.id,title:item.product.name,price:productPrice(item.product),image:item.product.image,
    placeholder:live?<span className="purchase-note">ยังไม่มีภาพตรงรุ่น</span>:<MockVisual index={index}/>,
    priceLink:live?item.evidence.find(entry=>entry.category==='ร้าน')?.url:undefined,
-   plainTitle:live,rank:item.rank,context:originalId===item.product.id?'รุ่นที่คุณส่งมา':'',
-   fit:live?undefined:{value:score.value,tone:index===0?'high':index===2?'low':'pending',label:item.product.name+' ค่าทดลอง UI '+score.value+' เปอร์เซ็นต์ ไม่คำนวณจากหลักฐานและไม่ใช้จัดอันดับ'},
+   plainTitle:live,rank:item.fit?.meetsRequired===false?undefined:item.rank,context:originalId===item.product.id?'รุ่นที่คุณส่งมา':'',
+   fit:comparisonFit(item,index,live),
    action:item.product.storeUrl&&!item.product.mock
     ?<a className="product-action" href={item.product.storeUrl} target="_blank" rel="noopener noreferrer" aria-label={actionLabel+' '+item.product.name+' ที่ '+item.product.store+' (เปิดเว็บไซต์ภายนอก)'}>{actionLabel}</a>
     :!item.product.mock&&item.product.id==='hoffen'
       ?<a className="product-action secondary" href="https://hoffen.com.pl/produkty/blender-z-bidonem/" target="_blank" rel="noopener noreferrer" aria-label="ดูข้อมูลรุ่น HOFFEN FB-3025 ที่เว็บไซต์ผู้ผลิต">ดูข้อมูลรุ่น</a>
       :<span className="purchase-note">ไม่มีลิงก์ซื้อ</span>,
-  };
- });
+ }));
  return <ComparisonResults headline={result.headline} reason={result.reason} mock={mock} onBack={onBack} onReset={onReset}
-  notice={mock&&<span className="demo-label">รุ่น หลักฐาน และรีวิวสมมติ</span>}>
+  notice={mock?<span className="demo-label">รุ่น หลักฐาน และรีวิวสมมติ</span>:hasLiveFit?<p>เปอร์เซ็นต์คิดจากข้อที่หลักฐานยืนยันว่าตรงโจทย์ ไม่ใช่คะแนนรีวิวหรือความน่าเชื่อถือ</p>:null}>
  {!live&&!mock&&!result.broadIce&&!plan.designPreview&&<label className="scenario-control">เปลี่ยนเงื่อนไข<select aria-label="เปลี่ยนเงื่อนไข" value={scenario} onChange={e=>onConditions({...plan.conditions,cubes:e.target.value==='twelve'?12:5,pulse:10,container:e.target.value==='grinder'?'grinder':'bottle600'})}><option value="five">ขวด 600 มล., 5 ก้อน, Pulse 10</option><option value="twelve">ขวด 600 มล., 12 ก้อน, Pulse 10</option><option value="grinder">โถบด, 5 ก้อน, Pulse 10</option></select></label>}
  {items.length===0?<p className="purchase-note">ลองปรับคำค้นหรือเริ่มใหม่เพื่อค้นหาอีกครั้ง</p>:<ComparisonTable columns={columns}>
  {!live&&!result.broadIce && group('match','ตรงโจทย์ '+plan.conditions.cubes+' ก้อน')}
  {row('เหตุผล',item=>live?sourcedReasons(item,item.reason):!plan.ice&&!result.broadIce?item.reason:item.verdict==='fail'?item.reason:item.product.id==='electrolux'&&item.verdict==='pass'?'ปั่น 4–5 ก้อนในขวด 600 มล.':item.product.id==='electrolux-large'?'รองรับ 8–10 ก้อนในโถหลัก':'ยังไม่ยืนยันวิธีใช้นี้','reason-row')}
+ {hasLiveFit&&row('ข้อจำกัด',item=>item.limitation,'tradeoff-row')}
  {detailSection('usage', 'วิธีใช้และข้อจำกัด', <>
  {row('วิธีใช้ที่รองรับ',item=>item.sourceDetails?item.sourceDetails.method:item.mockDetails?<>5 ก้อน + น้ำ {item.mockDetails.waterMl} มล.<br/>Pulse 10 ครั้ง</>:item.product.id==='electrolux'?'ขวด 600 มล., 4–5 ก้อน, Pulse 10 ครั้ง':item.product.id==='hoffen'?'คู่มือไม่รองรับการบดน้ำแข็ง':'ยังยืนยันวิธีใช้ไม่ได้')}
  {row(live?'ข้อมูลจำเพาะ':'ปริมาณตามคู่มือ',item=>live?sourcedReasons(item,capacity(item)):<p className="product-option">{capacity(item).replace('ก้อนต่อรอบ','ก้อน/รอบ')}</p>,'capacity-row')}
  {row('เงื่อนไขที่ต้องทำตาม',item=>item.sourceDetails?item.sourceDetails.conditions:item.mockDetails?'เติมน้ำ ใช้โถที่ให้มา ไม่ปั่นแห้ง':item.product.id==='electrolux'?'ใช้ภาชนะตามตาราง โถบดไม่มีคำแนะนำบดน้ำแข็ง':item.limitation)}
- {row('ข้อจำกัด',item=>item.limitation,'tradeoff-row')}
+ {!hasLiveFit&&row('ข้อจำกัด',item=>item.limitation,'tradeoff-row')}
  </>)}
  {detailSection('evidence', 'เหตุผลและหลักฐาน', <>
  {group('ranking','เหตุผลและข้อแลกเปลี่ยน')}

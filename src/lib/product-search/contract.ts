@@ -41,6 +41,10 @@ const webProductPickSchema = productPickSchema.extend({
   url: liveProduct,
   price: priceSchema.extend({ url: liveProduct }),
   reasons: z.array(z.object({ text, url: liveSource })),
+  fit: z.object({
+    percent: z.number().int().min(0).max(100),
+    meetsRequired: z.boolean(),
+  }).optional(),
 });
 
 export const productSearchResultSchema = z.discriminatedUnion("kind", [

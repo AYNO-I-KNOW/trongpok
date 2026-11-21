@@ -18,22 +18,22 @@ const goal: SearchGoal = {
   clarification: null,
 };
 const url = "https://www.jib.co.th/product/m240";
-const candidate = (model = "Logitech M240"): SearchCandidate => ({
+const candidate = (model = "Logitech M240", productUrl = url): SearchCandidate => ({
   model,
   modelFamily: null,
   category: "mouse",
-  url,
+  url: productUrl,
   pageModel: model,
   pageKind: "product",
-  price: { baht: 700, url, pageModel: model, currency: "THB" },
-  stock: { status: "in_stock", url, pageModel: model },
+  price: { baht: 700, url: productUrl, pageModel: model, currency: "THB" },
+  stock: { status: "in_stock", url: productUrl, pageModel: model },
   evidence: [
     {
       requirement: "silent",
       stance: "yes",
       text: "คลิกเงียบ",
       excerpt: "Silent switches",
-      url,
+      url: productUrl,
       pageModel: model,
     },
   ],
@@ -50,10 +50,8 @@ describe("live product validation", () => {
     ])
       expect(sourceUrl(raw)).toBeNull();
   });
-  it("drops unsupported, over-budget, out-of-stock, wrong category and wrong variant products", () => {
+  it("drops unsupported, out-of-stock, wrong category and wrong variant products", () => {
     const noPrice = { ...candidate(), price: null };
-    const costly = candidate();
-    costly.price!.baht = 1100;
     const soldOut = candidate();
     soldOut.stock.status = "out_of_stock";
     const wrongVariant = { ...candidate(), pageModel: "Logitech M240s" };
@@ -61,7 +59,6 @@ describe("live product validation", () => {
       rankProducts(
         [
           noPrice,
-          costly,
           soldOut,
           wrongVariant,
           { ...candidate(), category: "keyboard" },
@@ -79,7 +76,13 @@ describe("live product validation", () => {
     expect(rankProducts([item], goal, sources, "now")).toEqual([]);
     item.price = candidate().price;
     item.evidence[0].pageModel = "M241";
-    expect(rankProducts([item], goal, sources, "now")).toEqual([]);
+    expect(rankProducts([item], goal, sources, "now")).toMatchObject([
+      {
+        fit: { percent: 40, meetsRequired: false },
+        unknowns: expect.arrayContaining(["ข้อมูลไม่พอ · silent"]),
+        reasons: [{ text: expect.stringContaining(item.model), url }],
+      },
+    ]);
   });
   it("deduplicates actual models and ranks evidence before price", () => {
     const cheap = candidate("Logitech M220");
@@ -106,10 +109,16 @@ describe("live product validation", () => {
     ]);
     expect(picks[1].unknowns).toContain("ข้อมูลไม่พอ · wireless");
   });
-  it("excludes explicitly contradicted must requirements", () => {
+  it("shows explicitly contradicted must requirements as caveats, not positive evidence", () => {
     const item = candidate();
     item.evidence[0].stance = "no";
-    expect(rankProducts([item], goal, sources, "now")).toEqual([]);
+    expect(rankProducts([item], goal, sources, "now")).toMatchObject([
+      {
+        fit: { percent: 40, meetsRequired: false },
+        unknowns: expect.arrayContaining(["ไม่ตรงความต้องการ · silent"]),
+        reasons: [{ text: expect.stringContaining(item.model), url }],
+      },
+    ]);
   });
 });
 
@@ -187,7 +196,7 @@ describe("live search rounds", () => {
       }),
     ).toMatchObject({ kind: "unavailable" });
   });
-  it("keeps an empty web outcome when completed discovery finds no qualifying matches", async () => {
+  it("keeps an empty web outcome when completed discovery finds no verifiable offer", async () => {
     const search = vi.fn<SearchBackend["search"]>().mockResolvedValue({
       candidates: [{ ...candidate(), price: null, evidence: [] }],
       sources,
@@ -196,7 +205,11 @@ describe("live search rounds", () => {
     });
     expect(
       await searchProducts("silent mouse", { goal: async () => goal, search }),
-    ).toMatchObject({ kind: "web", picks: [] });
+    ).toMatchObject({
+      kind: "web",
+      picks: [],
+      note: expect.stringContaining("ยืนยันทั้งรุ่นและราคา"),
+    });
   });
   it("offers the agent's preset answers before searching and reserves Other for the UI", async () => {
     const search = vi.fn<SearchBackend["search"]>();
@@ -379,6 +392,114 @@ it("combines same-model spec evidence across shops and links the qualifying offe
   ]);
 });
 
+it("returns only verified, priced alternatives when no pick meets every required check", async () => {
+  const unconfirmed = candidate();
+  unconfirmed.evidence = [{
+    ...unconfirmed.evidence[0],
+    requirement: "wireless",
+    excerpt: "Wireless connectivity",
+    text: "ไร้สาย",
+  }];
+  unconfirmed.stock.status = "unknown";
+  const aboveCap = candidate("Logitech M650", "https://www.jib.co.th/product/m650");
+  aboveCap.price!.baht = 1300;
+  const wrongVariant = candidate("Logitech M220", "https://www.jib.co.th/product/m220s");
+  wrongVariant.pageModel = "Logitech M220s";
+  const unpriced = candidate("Logitech M350", "https://www.jib.co.th/product/m350");
+  unpriced.price = null;
+  const candidates = [aboveCap, wrongVariant, unpriced, unconfirmed];
+  const verifiedSources = new Set(candidates.map((item) => item.url));
+  const search = vi.fn<SearchBackend["search"]>()
+    .mockResolvedValueOnce({ candidates, sources: verifiedSources, usable: true, searchCalls: 1 })
+    .mockResolvedValue({ candidates: [], sources: verifiedSources, usable: true, searchCalls: 1 });
+
+  const result = productSearchResultSchema.parse(
+    await searchProducts("silent wireless mouse", { goal: async () => goal, search }),
+  );
+
+  expect(result).toMatchObject({
+    kind: "web",
+    searchRounds: 2,
+    note: expect.not.stringContaining("ภายในงบ"),
+    picks: [
+      {
+        model: unconfirmed.model,
+        url: unconfirmed.url,
+        price: { baht: 700 },
+        fit: { percent: 60, meetsRequired: false },
+        unknowns: expect.arrayContaining([
+          "ข้อมูลไม่พอ · silent",
+          "ร้านยังไม่ยืนยันว่ามีสินค้าพร้อมขาย",
+        ]),
+      },
+      {
+        model: aboveCap.model,
+        url: aboveCap.url,
+        price: { baht: 1300 },
+        fit: { percent: 40, meetsRequired: false },
+        unknowns: expect.arrayContaining(["เกินงบ 300 บาท", "ข้อมูลไม่พอ · wireless"]),
+      },
+    ],
+  });
+});
+
+it("searches again with three partial picks and puts a newly found required match first", async () => {
+  const preferences = ["wireless", "Bluetooth", "compact"];
+  const buyerGoal = { ...goal, nice: preferences };
+  const partial = candidate();
+  partial.evidence = preferences.map((requirement) => ({
+    ...partial.evidence[0],
+    requirement,
+    excerpt: requirement,
+    text: requirement,
+  }));
+  const contradicted = candidate("Logitech M220", "https://www.jib.co.th/product/m220");
+  contradicted.evidence[0] = {
+    ...contradicted.evidence[0],
+    stance: "no",
+    excerpt: "Audible standard switches",
+    text: "คลิกไม่เงียบ",
+  };
+  const aboveCap = candidate("Logitech M650", "https://www.jib.co.th/product/m650");
+  aboveCap.price!.baht = 1300;
+  const exact = candidate("Logitech M350", "https://www.jib.co.th/product/m350");
+  const candidates = [partial, contradicted, aboveCap];
+  const verifiedSources = new Set(candidates.map((item) => item.url));
+  const search = vi.fn<SearchBackend["search"]>()
+    .mockImplementation(async (_query, _goal, _seen, round) =>
+      round === 0
+        ? { candidates, sources: verifiedSources, usable: true, searchCalls: 1 }
+        : { candidates: [exact], sources: new Set([exact.url]), usable: true, searchCalls: 1 },
+    );
+
+  const result = productSearchResultSchema.parse(
+    await searchProducts("silent mouse", { goal: async () => buyerGoal, search }),
+  );
+
+  expect(search).toHaveBeenCalledTimes(4);
+  expect(search).toHaveBeenNthCalledWith(
+    4,
+    "silent mouse",
+    buyerGoal,
+    [],
+    1,
+    expect.objectContaining({ knownModels: candidates.map((item) => item.model) }),
+  );
+  expect(result).toMatchObject({
+    kind: "web",
+    searchRounds: 2,
+    picks: [
+      { model: exact.model, fit: { percent: 57, meetsRequired: true } },
+      { model: partial.model, fit: { percent: 71, meetsRequired: false } },
+      {
+        model: contradicted.model,
+        fit: { percent: 29, meetsRequired: false },
+        unknowns: expect.arrayContaining(["ไม่ตรงความต้องการ · silent"]),
+      },
+    ],
+  });
+});
+
 it("searches again instead of counting unverified musts toward the top three", async () => {
   const unverified = candidate();
   unverified.evidence = [];
@@ -408,6 +529,17 @@ it("searches again instead of counting unverified musts toward the top three", a
     searchCalls: 5,
     picks: [{ model: "Logitech M240" }],
   });
+});
+
+it("reports full fit for a verified priced category match when there are no other checks", () => {
+  expect(
+    rankProducts(
+      [candidate()],
+      { ...goal, budget: null, must: [], nice: [] },
+      sources,
+      "now",
+    ),
+  ).toMatchObject([{ fit: { percent: 100, meetsRequired: true }, unknowns: [] }]);
 });
 
 it("excludes an unpriced exact model even without a spending cap", () => {
@@ -578,7 +710,15 @@ it.each([false, true])("prefers the chosen SKU's supporting reason regardless of
     { url, price: { baht: 700 }, reasons: [{ text: "คลิกเงียบ", url }] },
   ]);
   other.evidence[0].stance = "no";
-  expect(rankProducts(offers, goal, verifiedSources, "now")).toEqual([]);
+  expect(rankProducts(offers, goal, verifiedSources, "now")).toMatchObject([
+    {
+      url,
+      price: { baht: 700 },
+      fit: { percent: 40, meetsRequired: false },
+      unknowns: expect.arrayContaining(["ไม่ตรงความต้องการ · silent"]),
+      reasons: [{ text: expect.stringContaining(selected.model), url }],
+    },
+  ]);
 });
 
 it("keeps a verified first-round offer when unusable expansion cites the same URL", async () => {
