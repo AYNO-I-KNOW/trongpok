@@ -23,6 +23,7 @@ export const RunRecordSchema = z.object({
   result: ArenaResultSchema,
   products: z.array(ProductSchema),
   linkedProductId: z.string().optional(),
+  font: z.enum(["ibm", "line"]).optional(),
 });
 export const PendingRunSchema = z.object({
   input: RunInputSchema,
@@ -30,6 +31,7 @@ export const PendingRunSchema = z.object({
   pack: CategoryPackSchema,
   products: z.array(ProductSchema),
   linkedProductId: z.string().optional(),
+  font: z.enum(["ibm", "line"]).optional(),
 });
 export type RunInput = z.infer<typeof RunInputSchema>;
 export type RunRecord = z.infer<typeof RunRecordSchema>;

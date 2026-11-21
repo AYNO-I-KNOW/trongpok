@@ -8,6 +8,7 @@ import type { PendingRun } from "@/lib/ui/contracts";
 import { agentInfo, safeAgentEvent } from "@/lib/ui/presentation";
 import { consumeArena } from "@/lib/ui/arena-response";
 import { readPending, saveRun } from "@/lib/ui/storage";
+import DesignerScreen from "@/ui/trong-pok/components/DesignerScreen";
 import { EmptyState, ModeBadge } from "./shared";
 
 export function Arena() {
@@ -48,9 +49,11 @@ export function Arena() {
         }
         const id = crypto.randomUUID();
         saveRun({ id, createdAt: Date.now(), preview: request.preview, products: request.products,
-          linkedProductId: request.linkedProductId, result });
+          linkedProductId: request.linkedProductId, font: request.font, result });
         setDone(true);
-        timer = setTimeout(() => router.push(`/results?run=${encodeURIComponent(id)}`), 550);
+        timer = setTimeout(() => {
+          if (!controller.signal.aborted) router.push(`/results?run=${encodeURIComponent(id)}`);
+        }, 550);
       } catch (cause) {
         if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "วิเคราะห์ไม่สำเร็จ ลองอีกครั้งได้");
       }
@@ -60,24 +63,37 @@ export function Arena() {
   }, [attempt, router]);
 
   if (loaded && !pending) return <EmptyState title="เริ่มจากความต้องการของคุณก่อน" text="เลือกหมวดและตอบคำถามสั้น ๆ เพื่อให้ผู้ช่วยเปรียบเทียบได้ตรงโจทย์" />;
-  const completed = Object.keys(agentInfo).filter((agent) => (agent === "verifier" && pending && !pending.linkedProductId) || events.some((event) => event.agent === agent && event.type === "done")).length;
-  return <main className={`arena-main ${done ? "arena-complete" : ""}`}><Link className="text-button back-link" href="/" onClick={() => controllerRef.current?.abort()}>← เลือกความต้องการใหม่</Link>
-    <div className="flow-heading"><div><p className="eyebrow">เบื้องหลังคำตอบของคุณ</p><h1>{done ? "เจอตัวเลือกของคุณแล้ว" : "ให้ทุกมุมมองช่วยกันเลือก"}</h1><p>ตรวจให้ครบ ทั้งความเหมาะสม ราคา และสิ่งที่ควรระวัง</p></div><ModeBadge preview={pending?.preview ?? false} mode={mode} /></div>
-    <div className="arena-progress"><span style={{ width: `${done ? 100 : completed * 25}%` }} /></div>
-    <div className="arena-context">{pending?.input.requirements?.map((requirement) => <span className="chip" key={requirement.id}>{requirement.text}</span>)}</div>
-    <div className="arena-grid">{Object.entries(agentInfo).map(([agent, info]) => {
-      const laneEvents = events.filter((event) => event.agent === agent);
-      const last = laneEvents.at(-1);
-      const skipped = agent === "verifier" && Boolean(pending && !pending.linkedProductId);
-      const finished = skipped || last?.type === "done";
-      const active = laneEvents.length > 0 && !finished && !error;
-      return <section key={agent} className={`agent-lane ${active ? "active" : ""} ${finished ? "finished" : ""}`} aria-label={info.name}>
-        <div className="lane-top"><span className={`agent-mark ${agent}`}>{info.mark}</span><span className={`lane-status ${active ? "working" : ""}`}>{skipped ? "ไม่มีลิงก์ให้ตรวจ" : finished ? "เรียบร้อย ✓" : active ? "กำลังทำงาน" : "รอเริ่ม"}</span></div>
-        <h2>{info.title}</h2><span className="agent-name">{info.name}</span><p className="agent-goal">{info.goal}</p>
-        <ol className="agent-events">{laneEvents.map((event, index) => <li className={`agent-event ${event.type}`} key={`${index}-${event.type}`}><span className="event-dot" /><p>{event.text}</p>{event.productId && <span className="candidate-chip">{pending?.products.find((product) => product.id === event.productId)?.title ?? event.productId}</span>}{event.quote && <blockquote>“{event.quote}”</blockquote>}</li>)}{!laneEvents.length && <li className="waiting-event">{skipped ? "เริ่มจากความต้องการ จึงข้ามการตรวจสินค้าต้นทาง" : agent === "skeptic" ? "เริ่มหลังจากมีตัวเลือกให้ตรวจ" : "กำลังเตรียมข้อมูล…"}</li>}</ol>
-      </section>;
-    })}</div>
-    <div className="arena-live-status" role="status">{done ? "กำลังเปิดผลเปรียบเทียบ…" : error ? "การเปรียบเทียบหยุดลง" : `เสร็จแล้ว ${completed} จาก 4 มุมมอง`}</div>
-    {error && <div className="error-panel" role="alert"><h2>ยังส่งผลลัพธ์ไม่ได้</h2><p>{error}</p><div className="button-row"><button className="button primary" onClick={() => setAttempt((value) => value + 1)}>ลองอีกครั้ง</button><Link href="/" className="button secondary">กลับไปเลือก / ลองข้อมูลตัวอย่าง</Link></div></div>}
-  </main>;
+  const lanes = Object.entries(agentInfo).map(([agent, info]) => {
+    const updates = events.filter((event) => event.agent === agent);
+    const skipped = agent === "verifier" && Boolean(pending && !pending.linkedProductId);
+    const finished = skipped || updates.some((event) => event.type === "done");
+    return { agent, info, updates, skipped, finished };
+  });
+  const completed = lanes.filter((lane) => lane.finished).length;
+  return <DesignerScreen phase="search" font={pending?.font}>
+    <nav className="question-nav" aria-label="การนำทางระหว่างวิเคราะห์">
+      <Link className="back arena-back" href="/" onClick={() => controllerRef.current?.abort()} aria-label="ยกเลิกและกลับหน้าแรก">←</Link>
+    </nav>
+    <section className="search-copy arena-search">
+      <div role="status">
+        <h1>{done ? "กำลังเปิดผลเปรียบเทียบ" : error ? "ยังวิเคราะห์ไม่สำเร็จ" : "กำลังวิเคราะห์สินค้าของคุณ.."}</h1>
+        <p>{done ? "พบตัวเลือกตามเงื่อนไขแล้ว" : `ตรวจแล้ว ${completed} จาก ${lanes.length} มุมมอง`}</p>
+      </div>
+      <ModeBadge preview={pending?.preview ?? false} mode={mode} />
+      <ul className="arena-agent-status" aria-label="สถานะผู้ช่วยเปรียบเทียบ">
+        {lanes.map(({ agent, info, updates, skipped, finished }) => <li key={agent}>
+          <span>{info.title}</span><span>{skipped ? "ไม่มีลิงก์ให้ตรวจ" : finished ? "เรียบร้อย" : updates.length ? "กำลังทำงาน" : "รอเริ่ม"}</span>
+        </li>)}
+      </ul>
+      {events.length > 0 && <details className="method">
+        <summary>ดูการวิเคราะห์</summary>
+        <ol className="arena-log">{events.map((event, index) => <li key={index}>
+          {event.text}{event.quote && <blockquote>“{event.quote}”</blockquote>}
+        </li>)}</ol>
+      </details>}
+      {error && <div role="alert"><p className="form-error-inline">{error}</p>
+        <button className="primary" type="button" onClick={() => setAttempt((value) => value + 1)}>ลองอีกครั้ง</button>
+      </div>}
+    </section>
+  </DesignerScreen>;
 }

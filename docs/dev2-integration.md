@@ -4,7 +4,9 @@ The working branch is codex/dev2-integration, based on upstream main commit c288
 
 ## User flow
 
-The designer's homepage is preserved. Normal searches go to /compare?q=..., then category questions, editable requirements, /arena, /results?run=..., and /p/<id>?run=.... The input can contain one product link together with a need. Unknown links show a recovery message and are never fetched.
+Normal searches use the design from `thanid-design` throughout: the original search form, one-question cards, the mascot during analysis, the product comparison table, and the evidence dialog. The designer's preview and the actual comparison share the question, comparison and evidence components. The original IBM and Line themes carry through the same flow.
+
+Routes remain /compare?q=..., /arena, /results?run=..., and /p/<id>?run=.... Requirements can be reviewed and edited before analysis. The comparison table uses the backend ranking and fit scores, with additional ranked options available beneath the first three columns. Opening an evidence link displays the designer's dialog over the results. Unknown product links offer category selection without fetching the product site.
 
 The catalog contains 20 team-created products in four categories. Products and reviews are synthetic demonstration data, as described in data/README.md. The comparison pages disclose this. /?demo=ranking remains a labeled design example. The separate /api/ui/preview endpoint is an explicit synthetic preview; the production Fit endpoint never falls back to it.
 
@@ -32,7 +34,7 @@ The local execution environment cannot resolve registry.npmjs.org. Full verifica
 
 On Windows, run Run-Tongpok.cmd from the repository folder. It runs npm ci, npm test, npm run test:ui, npm run test:publish, npm run lint, and npm run build, stopping on the first error and writing dev2-validation.json. If all checks pass, it starts the development server at http://localhost:3000. Use Finish-Tongpok.cmd to also commit and publish the work branch.
 
-The browser smoke test covers home search, reviewed priority changes, Arena completion, result detail and back navigation, result reload in the same tab, empty-tab recovery, invalid links, keyboard selection, explicit preview, and a 390px viewport. Manually check visual appearance and retry after an interrupted stream as well.
+The browser smoke test covers the original design example and the actual flow. It checks that the designer's result table preserves backend order and fit scores, in addition to reviewed requirements, evidence navigation, reload, empty-tab recovery, invalid links, keyboard selection, explicit preview, and a 390px viewport.
 
 Before opening a PR, check for newer main changes, resolve shared-page or backend changes, and rerun the required checks. Commit with the S07/S08/S09/S11 slice ids.
 

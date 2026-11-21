@@ -7,7 +7,7 @@ import type { Product } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function Compare({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function Compare({ searchParams }: { searchParams: Promise<{ q?: string; font?: string }> }) {
   const [params, packs, products] = await Promise.all([searchParams, loadPacks(), loadProducts()]);
   const initialText = (params.q ?? "").slice(0, 2000);
   let initialProduct: Product | undefined;
@@ -29,5 +29,6 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
   }
   const previews = Object.fromEntries(packs.map((pack) => [pack.id, previewProducts(pack)]));
   return <NeedFlow packs={packs} products={products} previews={previews} initialText={initialText}
-    initialProduct={initialProduct} initialPackId={initialPackId} initialError={initialError} />;
+    initialProduct={initialProduct} initialPackId={initialPackId} initialError={initialError}
+    font={params.font === "line" ? "line" : "ibm"} />;
 }
