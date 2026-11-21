@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "main": false,
+      "codex/restore-main-auto-deploy": false,
       "codex/tp-01-live-search": false,
       "codex/tp-02-arena-evidence": false,
       "codex/tp-03-demo-eval": false
