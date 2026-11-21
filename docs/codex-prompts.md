@@ -54,8 +54,9 @@ Tests: one per row of the requirement status table; budget pass/fail; mustOk ord
 ```
 Read AGENTS.md. Implement src/lib/needs and src/lib/labeling.
 needs: requirementsFromAnswers(pack, answers) maps chosen options to requirements and drops null ones. requirementsFromText(pack, text) uses the LLM with structured output to pick the matching options and add at most 2 free-text requirements (kind nice, no spec). With no LLM, use keyword matching on option labels.
-labeling/rules.ts: labelWithRules(product, subjects) where subjects are requirements and claims. Match keywords from the subject text plus Thai negation and complaint lexicons (ไม่, ไม่ได้, ไหม้, ดับ, พัง, ไม่ละเอียด, เสียงดัง, จกตา, ปกเทพ as sarcasm). Logistics words (ส่ง, ขนส่ง, กล่อง, ไรเดอร์) → target logistics. quote = the matched sentence.
-labeling/llm.ts: one structured-output call per product → labels for every non-template review × subject. Look up the current OpenAI structured outputs docs first.
+labeling/rules.ts: labelWithRules(product, subjects) where subjects are requirements and claims. Match keywords from the subject text plus Thai negation and complaint lexicons (ไม่, ไม่ได้, ไหม้, ดับ, พัง, ไม่ละเอียด, เสียงดัง, ละลาย, เยิ้ม, เหม็น, กลับมา, จกตา, ปกเทพ as sarcasm). Logistics words (ส่ง, ขนส่ง, กล่อง, ไรเดอร์) → target logistics. quote = the matched sentence.
+Also set usage and specific per docs/scoring.md. Rules: unboxing when the text has เพิ่งได้รับ / ยังไม่ได้ลอง / แกะกล่อง; long when it has a duration of 2+ weeks (e.g. "ใช้มา 3 เดือน", "ติดไป 2 เดือน"); else short. specific is false when the review has fewer than 25 characters after removing praise words (ดี, มาก, ค่ะ, ครับ, แนะนำ, ใช้ได้ผล, ส่งไว), else true.
+labeling/llm.ts: one structured-output call per product → labels {stance, target, quote, usage, specific} for every non-template review × subject. Look up the current OpenAI structured outputs docs first.
 labeling/index.ts: cache → llm → rules. Return {labels, mode}.
 Tests: on _example.json the rules label r2 and r3 as contradict for the "ice" requirement and r4 as logistics; LLM error → rules; cache hit skips the LLM (mock).
 ```

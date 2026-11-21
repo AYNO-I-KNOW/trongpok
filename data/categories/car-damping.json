@@ -1,0 +1,116 @@
+{
+  "id": "car-damping",
+  "name": "แผ่นแดมป์รถยนต์",
+  "keywords": [
+    "แดมป์",
+    "แผ่นแดมป์",
+    "แดมป์ประตู",
+    "ซับเสียงรถ",
+    "แผ่นซับเสียง",
+    "damping"
+  ],
+  "questions": [
+    {
+      "id": "goal",
+      "text": "อยากได้อะไร",
+      "multi": true,
+      "options": [
+        {
+          "label": "ลดเสียงลม / เสียงถนน",
+          "requirement": {
+            "id": "quieter",
+            "text": "เสียงรบกวนในห้องโดยสารลดลงชัดเจน",
+            "kind": "must"
+          }
+        },
+        {
+          "label": "เสียงเพลงดีขึ้น",
+          "requirement": {
+            "id": "audio",
+            "text": "เสียงลำโพงประตูแน่นขึ้น ไม่สั่น",
+            "kind": "nice"
+          }
+        }
+      ]
+    },
+    {
+      "id": "parking",
+      "text": "จอดรถแบบไหนเป็นประจำ",
+      "multi": false,
+      "options": [
+        {
+          "label": "กลางแดด",
+          "requirement": {
+            "id": "heat-sun",
+            "text": "ไม่ละลาย ไม่เยิ้ม ไม่มีกลิ่น เมื่อใช้งานในรถกลางแดดหลายเดือน",
+            "kind": "must",
+            "longUse": true,
+            "spec": {
+              "key": "heatResistC",
+              "op": ">=",
+              "value": 90
+            }
+          }
+        },
+        {
+          "label": "ในร่ม / อาคาร",
+          "requirement": {
+            "id": "heat-shade",
+            "text": "ไม่ละลาย ไม่เยิ้ม ไม่มีกลิ่น เมื่อใช้งานหลายเดือน",
+            "kind": "must",
+            "longUse": true,
+            "spec": {
+              "key": "heatResistC",
+              "op": ">=",
+              "value": 70
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "text": "ติดเองหรือให้อู่ติด",
+      "multi": false,
+      "options": [
+        {
+          "label": "ติดเอง",
+          "requirement": {
+            "id": "diy",
+            "text": "ติดเองได้ ตัดง่าย กาวติดแน่น",
+            "kind": "nice"
+          }
+        },
+        {
+          "label": "ให้อู่ติด",
+          "requirement": null
+        }
+      ]
+    },
+    {
+      "id": "budget",
+      "text": "งบเท่าไหร่ (ทั้งชุด)",
+      "multi": false,
+      "options": [
+        {
+          "label": "ไม่เกิน 1,000",
+          "requirement": {
+            "id": "budget",
+            "text": "ราคาไม่เกิน 1,000 บาท",
+            "kind": "budget",
+            "value": 1000
+          }
+        },
+        {
+          "label": "ไม่เกิน 3,000",
+          "requirement": {
+            "id": "budget",
+            "text": "ราคาไม่เกิน 3,000 บาท",
+            "kind": "budget",
+            "value": 3000
+          }
+        }
+      ]
+    }
+  ]
+}
