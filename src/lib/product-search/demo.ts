@@ -15,11 +15,15 @@ export async function demoFallback(
       message: "ค้นเว็บไม่ได้ในขณะนี้ และยังไม่มีสินค้าหมวดนี้ในชุดเดโม",
     };
   const normalizedQuery = query.trim().toLowerCase();
-  if (normalizedQuery === pack.name.toLowerCase() || normalizedQuery === pack.id)
-    return {
-      kind: "clarify",
-      question: `อยากใช้${pack.name}ทำอะไรเป็นหลัก?`,
-    };
+  if (normalizedQuery === pack.name.toLowerCase() || normalizedQuery === pack.id) {
+    const [question] = pack.questions;
+    if (question && question.options.length >= 2)
+      return {
+        kind: "clarify",
+        question: question.text.replace(/\s*\(ข้ามได้\)$/u, ""),
+        choices: question.options.slice(0, 3).map(({ label }) => label),
+      };
+  }
   const budget = budgetFromQuery(query);
   const preferences = pack.keywords
     .toSorted((a, b) => b.length - a.length)

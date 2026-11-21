@@ -34,12 +34,17 @@ export const allowedDomains = [
   "makita.co.th",
   "bosch-professional.com",
 ];
+export const clarificationSchema = z.object({
+  question: z.string().trim().min(1),
+  choices: z.array(z.string().trim().min(1)).min(2).max(3),
+});
+
 export const goalSchema = z.object({
   category: z.string(),
   budget: z.number().nullable(),
   must: z.array(z.string()),
   nice: z.array(z.string()),
-  clarification: z.string().nullable(),
+  clarification: clarificationSchema.nullable(),
 });
 export type SearchGoal = z.infer<typeof goalSchema>;
 const evidenceSchema = z.object({

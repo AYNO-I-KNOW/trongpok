@@ -19,9 +19,13 @@ it.each([
 it.each(["เครื่องปั่น", "BLENDER", "สมาร์ทวอทช์"])(
   "asks about intended use before recommending demo products for %s",
   async (query) => {
-    expect(await demoFallback(query)).toEqual({
+    const result = productSearchResultSchema.parse(await demoFallback(query));
+    expect(result).toMatchObject({
       kind: "clarify",
       question: expect.stringContaining("ใช้"),
+      choices: expect.arrayContaining([
+        query === "สมาร์ทวอทช์" ? "ว่ายน้ำ" : "ปั่นสมูทตี้ที่บ้าน",
+      ]),
     });
   },
 );

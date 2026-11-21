@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { rankProducts } from "../scoring/product-search";
+import { productSearchResultSchema } from "./contract";
 import { searchProducts } from "./service";
 import {
   completedSearchSources,
@@ -197,14 +198,24 @@ describe("live search rounds", () => {
       await searchProducts("silent mouse", { goal: async () => goal, search }),
     ).toMatchObject({ kind: "web", picks: [] });
   });
-  it("asks a clarification without searching", async () => {
+  it("offers the agent's preset answers before searching and reserves Other for the UI", async () => {
     const search = vi.fn<SearchBackend["search"]>();
-    expect(
-      await searchProducts("หาอะไรดี", {
-        goal: async () => ({ ...goal, clarification: "อยากได้สินค้าประเภทไหน?" }),
-        search,
+    const question = "จะใช้เมาส์ทำอะไรเป็นหลัก?";
+    const result = await searchProducts("อยากได้เมาส์", {
+      goal: async () => ({
+        ...goal,
+        clarification: {
+          question,
+          choices: ["ทำงานออฟฟิศ", "เล่นเกม", "อื่น ๆ (ระบุเอง)"],
+        },
       }),
-    ).toEqual({ kind: "clarify", question: "อยากได้สินค้าประเภทไหน?" });
+      search,
+    });
+    expect(productSearchResultSchema.parse(result)).toEqual({
+      kind: "clarify",
+      question,
+      choices: ["ทำงานออฟฟิศ", "เล่นเกม"],
+    });
     expect(search).not.toHaveBeenCalled();
   });
 });

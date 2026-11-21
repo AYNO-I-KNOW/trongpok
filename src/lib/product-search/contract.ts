@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isDetailUrl, sourceUrl } from "./domain";
+import { clarificationSchema, isDetailUrl, sourceUrl } from "./domain";
 
 const text = z.string().trim().min(1);
 const source = z.union([
@@ -52,7 +52,7 @@ export const productSearchResultSchema = z.discriminatedUnion("kind", [
     picks: z.array(productPickSchema).max(3),
     note: text,
   }),
-  z.object({ kind: z.literal("clarify"), question: text }),
+  clarificationSchema.extend({ kind: z.literal("clarify") }),
   z.object({ kind: z.literal("unavailable"), message: text }),
 ]);
 

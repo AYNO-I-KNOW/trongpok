@@ -10,6 +10,12 @@ import {
   type SearchCandidate,
 } from "./web";
 
+const productTypeQuestion = {
+  kind: "clarify",
+  question: "กำลังมองหาสินค้าประเภทไหน?",
+  choices: ["เครื่องใช้ไฟฟ้าในบ้าน", "อุปกรณ์ไอที", "อุปกรณ์ออกกำลังกาย"],
+} satisfies ProductSearchResult;
+
 export async function searchProducts(
   query: string,
   backend?: SearchBackend,
@@ -22,11 +28,7 @@ export async function searchProducts(
       (link) => sourceUrl(link) ?? "",
     )
     .trim();
-  if (!searchText)
-    return {
-      kind: "clarify",
-      question: "สินค้าที่ต้องการชื่อรุ่นอะไร หรืออยากใช้ทำอะไร?",
-    };
+  if (!searchText) return productTypeQuestion;
   if (!backend && (!process.env.OPENAI_API_KEY || !process.env.OPENAI_MODEL))
     return demoFallback(searchText);
   const live =
@@ -38,6 +40,15 @@ export async function searchProducts(
     );
   try {
     const extracted = await live.goal(searchText);
+    if (extracted.clarification) {
+      const { question, choices } = extracted.clarification;
+      const presets = [...new Set(choices)].filter(
+        (choice) => !/^(?:อื่น(?:\s*ๆ)?|กรอกเอง|พิมพ์เอง|ระบุเอง|other)(?:$|[\s(:（])/iu.test(choice),
+      );
+      return presets.length >= 2
+        ? { kind: "clarify", question, choices: presets }
+        : productTypeQuestion;
+    }
     const cap = budgetFromQuery(searchText);
     const goal = {
       ...extracted,
@@ -46,16 +57,12 @@ export async function searchProducts(
           ? extracted.budget
           : Math.min(cap, extracted.budget ?? cap),
     };
-    if (goal.clarification)
-      return { kind: "clarify", question: goal.clarification };
-    if (
-      !goal.category.trim() ||
-      (goal.budget !== null &&
-        (!Number.isFinite(goal.budget) || goal.budget <= 0))
-    )
+    if (!goal.category.trim()) return productTypeQuestion;
+    if (goal.budget !== null && (!Number.isFinite(goal.budget) || goal.budget <= 0))
       return {
         kind: "clarify",
-        question: "ต้องการสินค้าประเภทไหน และงบสูงสุดเท่าไร?",
+        question: "ตั้งงบไว้ไม่เกินเท่าไร?",
+        choices: ["ไม่เกิน 1,000 บาท", "ไม่เกิน 3,000 บาท", "ไม่เกิน 5,000 บาท"],
       };
     const candidates: SearchCandidate[] = [];
     const sources = new Set<string>();

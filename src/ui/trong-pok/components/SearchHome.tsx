@@ -12,6 +12,7 @@ import HomeForm from "./HomeForm";
 import HomeHistory from "./HomeHistory";
 import Mascot from "./Mascot";
 import Results from "./Results";
+import SearchQuestion from "./SearchQuestion";
 
 type SearchState = { query: string } & (
   | { kind: "home" }
@@ -30,7 +31,6 @@ export default function SearchHome({
   onSearchComplete: (query: string, response: Extract<ProductSearchResult, { kind: "web" }>) => void;
 }) {
   const [state, setState] = useState<SearchState>({ kind: "home", query: "" });
-  const [answer, setAnswer] = useState("");
   const activeRequest = useRef<AbortController | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -43,7 +43,6 @@ export default function SearchHome({
     activeRequest.current?.abort();
     activeRequest.current = null;
     setState({ kind: "home", query });
-    setAnswer("");
     requestAnimationFrame(() => document.getElementById("query")?.focus());
   }
 
@@ -57,7 +56,6 @@ export default function SearchHome({
     activeRequest.current?.abort();
     const controller = new AbortController();
     activeRequest.current = controller;
-    setAnswer("");
     setState({ kind: "loading", query });
 
     let next: SearchState;
@@ -126,32 +124,14 @@ export default function SearchHome({
           <p>กรุณารอสักครู่</p>
         </section>
       </>}
-      {result?.kind === "clarify" && <section className="clarify">
-        <nav className="question-nav" aria-label="ความคืบหน้าคำถาม">
-          <button type="button" className="back" onClick={edit} aria-label="ย้อนกลับ">←</button>
-          <div className="question-progress" role="progressbar" aria-label="คำถามเพิ่มเติม" aria-valuemin={0} aria-valuemax={1} aria-valuenow={1}>
-            <span className="question-progress-fill" style={{ transform: "scaleX(1)" }} />
-          </div>
-          <span>1 จาก 1</span>
-        </nav>
-        <div className="question-step">
-          <div className="question-copy">
-            <h1 ref={heading} tabIndex={-1}>{result.question}</h1>
-            <p>ขอข้อมูลเพิ่มอีกนิดเพื่อค้นหาให้ตรงกับคุณ</p>
-          </div>
-          <form id="question-form" onSubmit={(event) => {
-            event.preventDefault();
-            if (answer.trim()) void search(query + "\n" + result.question + "\nคำตอบ: " + answer.trim());
-          }}>
-            <label className="custom-label">คำตอบของคุณ
-              <textarea autoFocus rows={1} value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="พิมพ์คำตอบของคุณ" required />
-            </label>
-          </form>
-        </div>
-        <div className="question-footer">
-          <button className="primary" type="submit" form="question-form" disabled={!answer.trim()}>เริ่มค้นหาต่อ</button>
-        </div>
-      </section>}
+      {result?.kind === "clarify" && (
+        <SearchQuestion
+          question={result.question}
+          choices={result.choices}
+          onBack={edit}
+          onAnswer={(answer) => void search(`${query}\n${result.question}\nคำตอบ: ${answer}`)}
+        />
+      )}
       {comparison && <Results result={liveResult(query, comparison)} onReset={() => goHome("")} onBack={edit} onConditions={() => {}} />}
       {phase === "unsupported" && <section className="unsupported">
         <h1 ref={heading} tabIndex={-1}>{searchResult ? "ยังไม่มีรุ่นที่ยืนยันได้" : "ยังตรวจเรื่องนี้ไม่ได้"}</h1>
