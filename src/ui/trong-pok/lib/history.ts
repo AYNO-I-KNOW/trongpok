@@ -1,8 +1,55 @@
-import type {Conditions,Plan,ProductId,ResearchResult} from './types';
-import {researchDesignPreview} from './research';
-export const HISTORY_KEY='trong-pok-history-v1';
-export type HistoryEntry={version:1;key:string;target:ProductId|null;ice:boolean;conditions:Conditions};
-export function historyResult(entry:HistoryEntry):ResearchResult{return researchDesignPreview({raw:'',target:entry.target,supported:true,ice:entry.ice,conditions:entry.conditions,needsContext:false,designPreview:true})}
-export function readHistory():HistoryEntry[]{try{const parsed:unknown=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');if(!Array.isArray(parsed))return [];return parsed.filter((e):e is HistoryEntry=>{const c=e?.conditions;return e?.version===1&&typeof e.key==='string'&&typeof e.ice==='boolean'&&[null,'electrolux','electrolux-large','hoffen','simplus'].includes(e.target)&&c&&['bottle600','mainJar','grinder','unknown'].includes(c.container)&&['cubes','pulse','budget'].every(k=>c[k]===null||typeof c[k]==='number'&&Number.isFinite(c[k])&&c[k]>=0)}).slice(0,3).map(e=>({version:1,key:e.key,target:e.target,ice:e.ice,conditions:{cubes:e.conditions.cubes,container:e.conditions.container,pulse:e.conditions.pulse,budget:e.conditions.budget}}))}catch{return []}}
-export function rememberHistory(result:ResearchResult):HistoryEntry[]{const key=JSON.stringify(result.items.map(i=>[i.product.id,i.verdict,i.rank||null,i.reason,i.limitation]));const {target,ice,conditions}=result.plan;const entry:HistoryEntry={version:1,key,target,ice,conditions:{cubes:conditions.cubes,container:conditions.container,pulse:conditions.pulse,budget:conditions.budget}};const list=[entry,...readHistory().filter(e=>e.key!==key)].slice(0,3);try{localStorage.setItem(HISTORY_KEY,JSON.stringify(list))}catch{}return list}
-export function historyPlan(entry:HistoryEntry):Plan{return historyResult(entry).plan}
+import { z } from 'zod';
+import { productSearchResultSchema, type ProductSearchResult } from '../../../lib/product-search/contract';
+import type { Plan, ResearchResult } from './types';
+import { researchDesignPreview } from './research';
+import { liveResult } from './live-result';
+
+export const HISTORY_KEY = 'trong-pok-history-v1';
+const amount = z.number().finite().nonnegative().nullable();
+const legacyEntrySchema = z.object({
+ version: z.literal(1), key: z.string(),
+ target: z.enum(['electrolux', 'electrolux-large', 'hoffen', 'simplus']).nullable(),
+ ice: z.boolean(),
+ conditions: z.object({ cubes: amount, container: z.enum(['bottle600', 'mainJar', 'grinder', 'unknown']), pulse: amount, budget: amount }),
+});
+const webEntrySchema = z.object({
+ version: z.literal(2), key: z.string(), query: z.string().trim().min(1),
+ response: productSearchResultSchema.transform((response, context) => {
+  if (response.kind === 'web' && response.picks.length) return response;
+  context.addIssue({ code: 'custom', message: 'Expected a nonempty web result' });
+  return z.NEVER;
+ }),
+});
+const entrySchema = z.discriminatedUnion('version', [legacyEntrySchema, webEntrySchema]);
+export type HistoryEntry = z.infer<typeof entrySchema>;
+
+export function historyResult(entry: HistoryEntry): ResearchResult {
+ return entry.version === 2 ? liveResult(entry.query, entry.response) : researchDesignPreview({ raw: '', target: entry.target, supported: true, ice: entry.ice, conditions: entry.conditions, needsContext: false, designPreview: true });
+}
+
+export function readHistory(): HistoryEntry[] {
+ try {
+  const parsed: unknown = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  if (!Array.isArray(parsed)) return [];
+  return parsed.flatMap(value => { const entry = entrySchema.safeParse(value); return entry.success ? [entry.data] : []; }).slice(0, 3);
+ } catch { return []; }
+}
+
+function rememberEntry(entry: HistoryEntry): HistoryEntry[] {
+ const list = [entry, ...readHistory().filter(previous => previous.key !== entry.key)].slice(0, 3);
+ try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch {}
+ return list;
+}
+
+export function rememberSearch(query: string, response: Extract<ProductSearchResult, { kind: 'web' }>): HistoryEntry[] {
+ if (!query.trim() || !response.picks.length) return readHistory();
+ return rememberEntry({ version: 2, key: JSON.stringify([query, response]), query, response });
+}
+
+export function rememberHistory(result: ResearchResult): HistoryEntry[] {
+ const key = JSON.stringify(result.items.map(item => [item.product.id, item.verdict, item.rank || null, item.reason, item.limitation]));
+ const { target, ice, conditions } = result.plan;
+ return rememberEntry({ version: 1, key, target, ice, conditions: { ...conditions } });
+}
+
+export function historyPlan(entry: HistoryEntry): Plan { return historyResult(entry).plan; }
