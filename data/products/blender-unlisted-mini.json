@@ -1,0 +1,181 @@
+{
+  "id": "blender-unlisted-mini",
+  "category": "blender",
+  "keywords": [
+    "เครื่องปั่น",
+    "เครื่องปั่นน้ำผลไม้",
+    "blender"
+  ],
+  "title": "เครื่องปั่นโถแก้ว 0.8 ลิตร รุ่นมินิ",
+  "brand": "บ้านใบไม้",
+  "priceThb": 690,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.4,
+  "ratingCount": 112,
+  "specs": {
+    "capacityL": 0.8,
+    "iceCrush": true,
+    "jarMaterial": "plastic",
+    "speeds": 2,
+    "warrantyMonths": 12,
+    "dryGrinder": false
+  },
+  "features": [
+    "ปั่นผลไม้ให้เนียน",
+    "ปั่นน้ำแข็ง",
+    "เสียงไม่ดัง"
+  ],
+  "shop": {
+    "id": "shop-blender-unlisted-mini",
+    "name": "บ้านใบไม้ เดโม",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ปั่นน้ำแข็งละเอียดได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "เสียงเบา",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "วัสดุเกรดพิเศษแท้",
+      "source": "live",
+      "checkable": false
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "ใช้มา 1 เดือน ปั่นมะละกอกับโยเกิร์ตแก้วเดียว เนื้อเนียนไม่มีเม็ด",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 8,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ลอง 4 วัน ปั่นน้ำแข็งก้อนใหญ่แล้วใบมีดติด ต้องเติมน้ำเยอะ",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "ใช้มา 5 เดือน ปั่นผลไม้นิ่มวันละแก้ว โถแก้วยังไม่บิ่นและไม่รั่ว",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 18,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "ใช้มา 6 สัปดาห์ โถ 0.8 ลิตรพอคนเดียว ถ้าสองคนต้องแบ่งรอบ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 23,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "แกะวันนี้ ฉลากไม่บอกกำลังวัตต์ ต้องถามร้านเพิ่ม",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 28,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ลองมา 8 วัน เสียงไม่ดังตอนปั่นกล้วย แต่ตอนน้ำแข็งสั่นทั้งโต๊ะ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "ซื้อมา 2 สัปดาห์ ขอบกล่องฉีกจากขนส่ง ยังดีที่กันกระแทกหนา",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "ใช้มา 3 วัน ปกเทพ โถเล็กจนสับปะรดต้องหั่นใหม่",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 43,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ลองมา 10 วัน ดีมากค่ะ",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 48,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "เพิ่งรับวันนี้ สินค้าคุณภาพดี ทางร้านมีการแพ็คมาอย่างดี",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": true
+    },
+    {
+      "id": "r11",
+      "text": "ใช้ 2 เดือน ล้างโถแก้วแล้วกลิ่นนมไม่ค้าง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 58,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "ปั่นมา 7 สัปดาห์ สายไฟสั้นแต่พอสำหรับโต๊ะเล็กข้างปลั๊ก",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 63,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "ใช้ 3 เดือน ใบมีดปั่นอะโวคาโดนุ่มได้ดี แต่ไม่กล้าบดถั่ว",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "text": "ลอง 9 วัน ฝาล็อกแน่น ต้องบิดให้สุดก่อนกด",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ใช้มา 4 เดือน ปั่นมื้อเช้าเสียงไม่รบกวนเพื่อนร่วมห้อง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 78,
+      "isTemplate": false
+    }
+  ]
+}

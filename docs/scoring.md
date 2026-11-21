@@ -4,18 +4,22 @@ Code computes every number. LLMs and agents return labels, candidates, and quote
 
 ## Inputs
 
-- **Requirement** `{id, text, kind: 'must'|'nice'|'budget', value?: number, spec?: {key, op: '>='|'<='|'=='|'includes', value}}`, where `value` is the budget in baht for `kind: 'budget'`. It comes from the category pack's question options or from the need-extraction step.
+- **Requirement** `{id, text, kind: 'must'|'nice'|'budget', value?: number, longUse?: boolean, spec?: {key, op: '>='|'<='|'=='|'includes', value}}`, where `value` is the budget in baht for `kind: 'budget'`. `longUse: true` means only reviews from long use can count (durability, "still works after weeks"). It comes from the category pack's question options or from the need-extraction step.
 - **Product** has `specs`, `features`, `priceThb`, `stars`, `ratingCount`, `shop`, `claims`, and `reviews` (see `data/README.md`).
 
 ## Review labels (per review × requirement, and per review × claim)
 
-`stance ∈ {confirm, contradict, none}`, `target ∈ {product, logistics, service, price}`, `quote`.
+`stance ∈ {confirm, contradict, none}`, `target ∈ {product, logistics, service, price}`, `quote`, `usage ∈ {unboxing, short, long}`, `specific: boolean`.
 
+- `usage`: `unboxing` = written on arrival or before real use ("เพิ่งได้รับ", "ยังไม่ได้ลอง", "แกะกล่องแล้วสวย"); `short` = used for days; `long` = states several weeks or months of use, or describes something that only shows after long use.
+- `specific`: true when the review describes a concrete situation or result tied to the subject ("ติดระเบียงชั้น 8 นกพิราบหายไป 3 เดือนแล้ว"). Generic praise ("ดีมาก ใช้ได้ผล แนะนำค่ะ") is false.
 - Drop template reviews first.
 - `target ≠ product` → `none`.
 - If `quote` is not an exact substring of the review, the label becomes `none`.
 - Judge stance from the text, never from the stars.
-- Weight `w = (hasMedia ? 1.5 : 1) × (daysAgo <= 90 ? 1.2 : 1)`.
+- `unboxing` reviews can be labeled on claims about appearance, but never count for a requirement.
+- For a `longUse` requirement, only `usage = long` labels count.
+- Weight `w = (hasMedia ? 1.5 : 1) × (daysAgo <= 90 ? 1.2 : 1) × (stance = confirm and not specific ? 0.3 : 1)`. Contradicts keep full weight because a wrong "fits you" costs the buyer more than a wrong "doesn't fit".
 
 ## Requirement status per product
 
@@ -31,7 +35,14 @@ Code computes every number. LLMs and agents return labels, candidates, and quote
 | `n >= 3` and `r >= 0.6` | `pass` | r |
 | `n >= 3` | `mixed` | r |
 | spec `pass` | `spec-only` ("ตามสเปก ยังไม่มีรีวิวยืนยัน") | 0.6 |
+| `longUse` and fewer than 3 long-use labels | `unknown` ("ยังไม่มีรีวิวจากคนที่ใช้นานพอ") | 0.4 |
 | otherwise | `unknown` | 0.4 |
+
+A `longUse` requirement whose spec passes but which has fewer than 3 long-use labels uses the `spec-only` row. The card adds "Shopee ให้รีวิวได้ภายใน 30 วันหลังได้ของ ของที่พังหลังจากนั้นจึงไม่อยู่ในรีวิว".
+
+## Review-quality warning (per product)
+
+Among non-template reviews, count the ones that are `unboxing`, or confirm without being `specific`. When that share is ≥ 0.6, show "รีวิวส่วนใหญ่เขียนตอนเพิ่งได้ของ หรือชมแบบไม่มีรายละเอียด" with the share as a percent. This is information, not a penalty: the weights above already handle it.
 
 ## Fit
 

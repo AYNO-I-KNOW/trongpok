@@ -1,0 +1,213 @@
+{
+  "id": "bird-repeller-quiet-trial",
+  "category": "bird-repeller",
+  "keywords": [
+    "ไล่นก",
+    "นกพิราบ",
+    "โซลาร์"
+  ],
+  "title": "ลานว่าง โซลาร์รุ่นทดลอง",
+  "brand": "ลานว่าง",
+  "priceThb": 790,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.5,
+  "ratingCount": 42,
+  "specs": {
+    "power": [
+      "solar",
+      "battery"
+    ],
+    "rangeM": 10
+  },
+  "features": [
+    "ฐานหนีบ",
+    "โหมดแสง"
+  ],
+  "shop": {
+    "id": "shop-quiet-trial",
+    "name": "ลานว่าง",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ไล่ได้ทุกชนิด 100%",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "คนไม่ได้ยินเสียงรบกวน",
+      "source": "description",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 4,
+      "text": "แกะกล่องวันนี้ ดีค่ะ",
+      "hasMedia": true,
+      "daysAgo": 5,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "ได้รับตอนเช้า สีเข้ากับระเบียง",
+      "hasMedia": false,
+      "daysAgo": 9,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 5,
+      "text": "เพิ่งมาถึง ยังไม่ได้ใส่ถ่าน",
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "stars": 5,
+      "text": "เปิดห่อเมื่อวาน แนะนำค่ะ",
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 4,
+      "text": "ได้มา 2 วัน สวยดี",
+      "hasMedia": false,
+      "daysAgo": 21,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "stars": 5,
+      "text": "รับของวันนี้ กล่องเล็กพกง่าย",
+      "hasMedia": true,
+      "daysAgo": 25,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "stars": 5,
+      "text": "เพิ่งแกะ ยังรอวันหยุดติด",
+      "hasMedia": false,
+      "daysAgo": 29,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "stars": 5,
+      "text": "ลองวันแรก ดีมาก",
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "stars": 4,
+      "text": "มาถึงเมื่อวาน ประทับใจ",
+      "hasMedia": false,
+      "daysAgo": 37,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "stars": 5,
+      "text": "ซื้อ 3 วันแล้ว ชอบค่ะ",
+      "hasMedia": false,
+      "daysAgo": 41,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "stars": 5,
+      "text": "แกะวันนี้ แพ็คเรียบร้อย",
+      "hasMedia": true,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "stars": 5,
+      "text": "ได้รับเช้านี้ ส่งเร็ว",
+      "hasMedia": false,
+      "daysAgo": 49,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "stars": 4,
+      "text": "ได้มาเมื่อวาน คุณภาพดี ทางร้านแพ็คดี",
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": true
+    },
+    {
+      "id": "r14",
+      "stars": 5,
+      "text": "เปิดกล่อง 2 วันแล้ว ยังไม่ได้ใช้งานจริง",
+      "hasMedia": false,
+      "daysAgo": 57,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "stars": 5,
+      "text": "เพิ่งรับวันนี้ ขอบกล่องบุบจากขนส่ง",
+      "hasMedia": false,
+      "daysAgo": 61,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "stars": 5,
+      "text": "ใช้ 4 วัน ปกเทพ ฝาถ่านแน่นจนเปิดลำบาก",
+      "hasMedia": true,
+      "daysAgo": 65,
+      "isTemplate": false
+    },
+    {
+      "id": "r17",
+      "stars": 4,
+      "text": "ลองมา 3 วัน ไม่เห็นพิราบตรงกระถาง",
+      "hasMedia": false,
+      "daysAgo": 69,
+      "isTemplate": false
+    },
+    {
+      "id": "r18",
+      "stars": 5,
+      "text": "ติดครบ 2 เดือน ระเบียงชั้น 8 มีพิราบน้อยลง แต่วันที่ฝนครึ้มยังมา",
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r19",
+      "stars": 5,
+      "text": "ใช้ 6 วัน ยืนข้างเครื่องไม่ได้ยินเสียง",
+      "hasMedia": false,
+      "daysAgo": 77,
+      "isTemplate": false
+    },
+    {
+      "id": "r20",
+      "stars": 5,
+      "text": "ผ่าน 1 สัปดาห์ แสงสะท้อนเข้าห้อง ต้องย้ายออกมุม",
+      "hasMedia": false,
+      "daysAgo": 81,
+      "isTemplate": false
+    }
+  ]
+}

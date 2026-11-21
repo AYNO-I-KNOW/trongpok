@@ -1,0 +1,139 @@
+{
+  "id": "bird-repeller",
+  "name": "เครื่องไล่นก",
+  "keywords": [
+    "ไล่นก",
+    "เครื่องไล่นก",
+    "ไล่นกพิราบ",
+    "อัลตราโซนิก ไล่นก",
+    "bird repeller"
+  ],
+  "questions": [
+    {
+      "id": "bird",
+      "text": "นกอะไรมากวน",
+      "multi": false,
+      "options": [
+        {
+          "label": "นกพิราบ",
+          "requirement": {
+            "id": "works-pigeon",
+            "text": "ไล่นกพิราบได้จริงเมื่อใช้ต่อเนื่องเกิน 2 สัปดาห์",
+            "kind": "must",
+            "longUse": true
+          }
+        },
+        {
+          "label": "นกกระจอก / นกเล็ก",
+          "requirement": {
+            "id": "works-small",
+            "text": "ไล่นกเล็กได้จริงเมื่อใช้ต่อเนื่องเกิน 2 สัปดาห์",
+            "kind": "must",
+            "longUse": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "place",
+      "text": "ติดตรงไหน",
+      "multi": false,
+      "options": [
+        {
+          "label": "ระเบียงคอนโด",
+          "requirement": {
+            "id": "no-drill",
+            "text": "ติดตั้งได้โดยไม่ต้องเจาะ",
+            "kind": "nice",
+            "spec": {
+              "key": "noDrill",
+              "op": "==",
+              "value": true
+            }
+          }
+        },
+        {
+          "label": "หลังคา / โกดัง / พื้นที่กว้าง",
+          "requirement": {
+            "id": "range",
+            "text": "ครอบคลุมอย่างน้อย 15 เมตร",
+            "kind": "must",
+            "spec": {
+              "key": "rangeM",
+              "op": ">=",
+              "value": 15
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "text": "มีปลั๊กไฟตรงนั้นไหม",
+      "multi": false,
+      "options": [
+        {
+          "label": "มี",
+          "requirement": null
+        },
+        {
+          "label": "ไม่มี",
+          "requirement": {
+            "id": "solar",
+            "text": "ใช้พลังงานแสงอาทิตย์หรือถ่าน ไม่ต้องเสียบปลั๊ก",
+            "kind": "must",
+            "spec": {
+              "key": "power",
+              "op": "includes",
+              "value": "solar"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "people",
+      "text": "คนในบ้านหรือเพื่อนบ้านต้องไม่ได้ยินเสียงไหม",
+      "multi": false,
+      "options": [
+        {
+          "label": "ต้องไม่ได้ยิน",
+          "requirement": {
+            "id": "silent-human",
+            "text": "คนไม่ได้ยินเสียงรบกวน",
+            "kind": "must"
+          }
+        },
+        {
+          "label": "ไม่เป็นไร",
+          "requirement": null
+        }
+      ]
+    },
+    {
+      "id": "budget",
+      "text": "งบเท่าไหร่",
+      "multi": false,
+      "options": [
+        {
+          "label": "ไม่เกิน 500",
+          "requirement": {
+            "id": "budget",
+            "text": "ราคาไม่เกิน 500 บาท",
+            "kind": "budget",
+            "value": 500
+          }
+        },
+        {
+          "label": "ไม่เกิน 1,500",
+          "requirement": {
+            "id": "budget",
+            "text": "ราคาไม่เกิน 1,500 บาท",
+            "kind": "budget",
+            "value": 1500
+          }
+        }
+      ]
+    }
+  ]
+}

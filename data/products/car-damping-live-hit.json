@@ -1,0 +1,193 @@
+{
+  "id": "car-damping-live-hit",
+  "category": "car-damping",
+  "keywords": [
+    "แดมป์",
+    "แผ่นแดมป์",
+    "damping"
+  ],
+  "title": "แผ่นแดมป์ประตู Silentbay Live ชุด 16 แผ่น",
+  "brand": "Silentbay",
+  "priceThb": 890,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.8,
+  "ratingCount": 14820,
+  "specs": {
+    "material": "asphalt-composite",
+    "thicknessMm": 2,
+    "sheets": 16
+  },
+  "features": [
+    "ลดเสียงประตู",
+    "ลดการสั่นลำโพง"
+  ],
+  "shop": {
+    "id": "shop-silentbay",
+    "name": "Silentbay Demo",
+    "years": 2.5,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": true,
+    "verified": true,
+    "chatResponsePct": 94
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ทนความร้อน ไม่ละลาย",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "ประตูละ 4 แผ่น",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "เสียงรบกวนลดลง",
+      "source": "description",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 5,
+      "text": "เพิ่งรับของจากไลฟ์เมื่อเช้า กล่องมีรอยน้ำแต่แผ่นยังห่อพลาสติกอยู่",
+      "hasMedia": true,
+      "daysAgo": 5,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "แกะพัสดุมา 2 วัน นับได้สิบหกแผ่น จะให้อู่ติดวันเสาร์",
+      "hasMedia": false,
+      "daysAgo": 9,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 5,
+      "text": "ได้รับเมื่อวาน สินค้าดีมีคุณภาพ จัดส่งรวดเร็วมาก",
+      "hasMedia": true,
+      "daysAgo": 13,
+      "isTemplate": true
+    },
+    {
+      "id": "r4",
+      "stars": 4,
+      "text": "ติดมา 1 สัปดาห์ อู่บอกต้องซื้อลูกกลิ้งเองเพราะชุดนี้ไม่มีมาให้",
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 3,
+      "text": "ใช้ครบ 2 สัปดาห์ ฟอยล์ขาดตรงมุมที่พับเข้าซอกประตู ตัดใหม่ไปหนึ่งชิ้น",
+      "hasMedia": true,
+      "daysAgo": 21,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "stars": 5,
+      "text": "ติดมา 3 วัน ประตูฟังทึบขึ้นแต่ต้องรอพัสดุนานจนเลื่อนคิวอู่",
+      "hasMedia": false,
+      "daysAgo": 25,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "stars": 3,
+      "text": "ติดมา 3 วัน ประตูปิดเสียงแน่นขึ้น จากเดิมที่ก้องเป็นเสียงทึบ",
+      "hasMedia": false,
+      "daysAgo": 54,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "stars": 5,
+      "text": "ลองมา 5 วัน เบสลำโพงประตูไม่สั่นเหมือนก่อนติด",
+      "hasMedia": true,
+      "daysAgo": 61,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "stars": 5,
+      "text": "ติดให้อู่เมื่อสัปดาห์ก่อน เสียงลมลดลงนิดหน่อย ยังได้ยินยาง",
+      "hasMedia": false,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "stars": 3,
+      "text": "ใช้มา 12 วัน ประตูปิดเสียงแน่นขึ้น ลูกบอกเสียงเพลงฟังง่ายขึ้น",
+      "hasMedia": false,
+      "daysAgo": 75,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "stars": 5,
+      "text": "ติดมา 20 วัน หนักประตูขึ้นแต่ยังเปิดปิดได้ตามปกติ",
+      "hasMedia": true,
+      "daysAgo": 82,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "stars": 5,
+      "text": "ใช้มา 4 วัน ติดเต็มประตูแล้วแผ่นเหลือสองชิ้น",
+      "hasMedia": false,
+      "daysAgo": 89,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "stars": 3,
+      "text": "ผ่านไป 10 วัน กาวยังแน่น ช่วงนี้จอดในตึกตลอด",
+      "hasMedia": false,
+      "daysAgo": 96,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "stars": 5,
+      "text": "ลองมา 6 วัน ปกเทพมาก เคาะประตูยังสั่นอยู่มุมล่าง",
+      "hasMedia": true,
+      "daysAgo": 103,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "stars": 5,
+      "text": "ติดมา 25 วัน เสียงฝนกระทบประตูนุ่มลง ยังไม่เจออากาศร้อนจัด",
+      "hasMedia": false,
+      "daysAgo": 110,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "stars": 3,
+      "text": "ใช้มา 3 เดือน จอดกลางแดดทุกวัน แผ่นเยิ้มไหลลงขอบประตู กลิ่นฉุนในรถ",
+      "hasMedia": false,
+      "daysAgo": 117,
+      "isTemplate": false
+    },
+    {
+      "id": "r17",
+      "stars": 5,
+      "text": "ติดมา 4 เดือน ช่วงแรกเสียงแน่น ตอนนี้กาวละลายและแผ่นหลุด อู่ต้องรื้อออก",
+      "hasMedia": true,
+      "daysAgo": 124,
+      "isTemplate": false
+    }
+  ]
+}

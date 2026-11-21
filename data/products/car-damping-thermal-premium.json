@@ -1,0 +1,182 @@
+{
+  "id": "car-damping-thermal-premium",
+  "category": "car-damping",
+  "keywords": [
+    "แดมป์",
+    "แผ่นแดมป์",
+    "damping"
+  ],
+  "title": "แผ่นแดมป์ butyl ฟอยล์ Sonora ชุด 20 แผ่น",
+  "brand": "Sonora",
+  "priceThb": 2790,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.7,
+  "ratingCount": 460,
+  "specs": {
+    "material": "butyl-foil",
+    "heatResistC": 130,
+    "thicknessMm": 2.5,
+    "sheets": 20
+  },
+  "features": [
+    "ลดเสียงถนน",
+    "ลดการสั่นลำโพง",
+    "โลโก้นูน",
+    "ลายฟอยล์ทอง",
+    "กล่องแม่เหล็ก",
+    "ลูกกลิ้งด้ามไม้"
+  ],
+  "shop": {
+    "id": "shop-sonora",
+    "name": "Sonora Demo",
+    "years": 2.5,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": true,
+    "verified": true,
+    "chatResponsePct": 94
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ทนความร้อน ไม่ละลาย",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "ประตูละ 4 แผ่น",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "เสียงรบกวนลดลง",
+      "source": "description",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 5,
+      "text": "ได้รับเมื่อวาน กล่องแม่เหล็กบี้จากขนส่ง ลูกกลิ้งกับแผ่นยังครบ",
+      "hasMedia": true,
+      "daysAgo": 5,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "ติดมา 2 สัปดาห์ แผ่นหนาเข้าร่องลึกยาก ช่างใช้เวลานานกว่าที่นัด",
+      "hasMedia": false,
+      "daysAgo": 9,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 5,
+      "text": "ได้รับมา 3 วัน ของสวยแพ็คดี ร้านบริการดี ประทับใจค่ะ",
+      "hasMedia": true,
+      "daysAgo": 13,
+      "isTemplate": true
+    },
+    {
+      "id": "r4",
+      "stars": 4,
+      "text": "ใช้มา 12 วัน เสียงสั่นฝั่งคนขับหาย แต่เสียค่าแรงอู่เพิ่มเพราะตัดหนา",
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 3,
+      "text": "ติดครบ 1 เดือน เบสฟังแน่นขึ้น กระจกยังเลื่อนลงได้สุด",
+      "hasMedia": true,
+      "daysAgo": 21,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "stars": 5,
+      "text": "ใช้มา 3 สัปดาห์ ฟอยล์ทองเป็นรอยลูกกลิ้งง่ายแต่ปิดแผงแล้วมองไม่เห็น",
+      "hasMedia": false,
+      "daysAgo": 25,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "stars": 3,
+      "text": "ติดมา 6 เดือน จอดแดดทุกวัน ไม่ละลาย ไม่เยิ้ม เปิดรถไม่มีกลิ่นกาว",
+      "hasMedia": false,
+      "daysAgo": 54,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "stars": 5,
+      "text": "ใช้มา 4 เดือน เสียงถนนลดลงโดยเฉพาะฝั่งประตูหลัง",
+      "hasMedia": true,
+      "daysAgo": 61,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "stars": 5,
+      "text": "ใช้มา 5 เดือน เบสแน่นขึ้น แผงประตูไม่กระพือ",
+      "hasMedia": false,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "stars": 3,
+      "text": "ผ่านไป 3 เดือน เปิดแผงเช็กกาวยังแน่น แผ่นไม่ไหล",
+      "hasMedia": false,
+      "daysAgo": 75,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "stars": 5,
+      "text": "ติดมา 2 เดือน ตัดยากนิดหน่อยเพราะหนา อู่คิดค่าแรงเพิ่ม",
+      "hasMedia": true,
+      "daysAgo": 82,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "stars": 5,
+      "text": "ใช้มา 7 สัปดาห์ ประตูปิดเสียงหนักแน่น แต่รถหนักขึ้นด้วย",
+      "hasMedia": false,
+      "daysAgo": 89,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "stars": 3,
+      "text": "ติดมา 4 วัน ปกเทพเรื่องกล่องหรู แผ่นจริงทำงานดีแต่จ่ายแพง",
+      "hasMedia": false,
+      "daysAgo": 96,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "stars": 5,
+      "text": "ใช้มา 4 เดือน จอดแดดบ่ายแล้วกลิ่นในรถยังปกติ",
+      "hasMedia": true,
+      "daysAgo": 103,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "stars": 5,
+      "text": "ติดมา 9 สัปดาห์ เสียงลมเบาลงแต่เสียงเครื่องยนต์ยังชัด",
+      "hasMedia": false,
+      "daysAgo": 110,
+      "isTemplate": false
+    }
+  ]
+}

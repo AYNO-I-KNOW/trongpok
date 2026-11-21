@@ -1,0 +1,190 @@
+{
+  "id": "blender-smoothie-pro",
+  "category": "blender",
+  "keywords": [
+    "เครื่องปั่น",
+    "เครื่องปั่นน้ำผลไม้",
+    "blender"
+  ],
+  "title": "เครื่องปั่นสมูทตี้ 1.5 ลิตร 600W ใบมีด 6 แฉก",
+  "brand": "Freshmix",
+  "priceThb": 890,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.8,
+  "ratingCount": 3120,
+  "specs": {
+    "watt": 600,
+    "capacityL": 1.5,
+    "iceCrush": true,
+    "jarMaterial": "plastic",
+    "speeds": 2,
+    "warrantyMonths": 6
+  },
+  "features": [
+    "ปั่นสมูทตี้",
+    "ปั่นน้ำแข็ง",
+    "โถพกพา",
+    "ล็อกนิรภัย"
+  ],
+  "shop": {
+    "id": "shop-freshmix-official",
+    "name": "Freshmix Official",
+    "years": 3,
+    "badRatePct": 2,
+    "official": true,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ปั่นน้ำแข็งละเอียดได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "เสียงเบา",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "มอเตอร์ทองแดงแท้ 100%",
+      "source": "description",
+      "checkable": false
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 5,
+      "text": "ปั่นสมูทตี้ทุกเช้า เนียนดี ล้างง่าย",
+      "hasMedia": true,
+      "daysAgo": 20,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "ใช้ปั่นน้ำแข็งขายกาแฟเย็นได้สามวัน มอเตอร์มีกลิ่นไหม้แล้วดับ",
+      "hasMedia": false,
+      "daysAgo": 15,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 4,
+      "text": "น้ำแข็งก้อนใหญ่ปั่นไม่ละเอียด ต้องใส่น้ำเยอะ",
+      "hasMedia": true,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "stars": 5,
+      "text": "ส่งไวมาก กล่องสวย",
+      "hasMedia": false,
+      "daysAgo": 10,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 5,
+      "text": "สินค้าคุณภาพดี ทางร้านมีการแพ็คสินค้ามาอย่างดี",
+      "hasMedia": false,
+      "daysAgo": 30,
+      "isTemplate": true
+    },
+    {
+      "id": "r6",
+      "stars": 3,
+      "text": "เสียงดังพอสมควร แต่ปั่นผลไม้โอเค",
+      "hasMedia": false,
+      "daysAgo": 100,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "ใช้มา 2 เดือน ปั่นกล้วยนมแก้วเช้าสม่ำเสมอ เนียนดีไม่ต้องกรอง",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 8,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "ซื้อมา 4 วัน ลองน้ำแข็งเต็มโถแล้วเครื่องตัด ต้องถอดปลั๊กพัก",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ใช้ครบ 3 เดือน ปั่นแต่ผลไม้นิ่มยังไหว พอลองน้ำแข็งมีกลิ่นไหม้",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 18,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "ใช้มา 5 สัปดาห์ โถใหญ่แต่ปั่นมะม่วงครั้งละน้อยต้องหยุดคน",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 23,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "text": "แกะวันนี้ ใบมีดครบตามรูป ยังไม่ได้ล้างเครื่อง",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 28,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "ลองมา 1 สัปดาห์ เสียงตอนกดสปีดสองลอดไปถึงอีกห้อง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "ใช้ไป 6 สัปดาห์ ปั่นแตงโมไม่มีเม็ดได้ดี แต่ยางฝาเริ่มเก็บกลิ่น",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "text": "ลองมา 9 วัน น้ำแข็งก้อนเล็กยังเหลือเศษ ต้องปั่นหลายรอบ",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 43,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ซื้อมา 3 สัปดาห์ ปั่นสตรอว์เบอร์รีแช่แข็งต้องละลายก่อน",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 48,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "text": "ใช้มา 2 เดือน ตัวล็อกฐานยังแน่น ไม่มีน้ำซึมตอนปั่นกล้วย",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": true
+    }
+  ]
+}

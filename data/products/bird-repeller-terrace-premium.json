@@ -1,0 +1,218 @@
+{
+  "id": "bird-repeller-terrace-premium",
+  "category": "bird-repeller",
+  "keywords": [
+    "ไล่นก",
+    "นกพิราบ",
+    "โซลาร์"
+  ],
+  "title": "อรุณวิง ระเบียงพรีเมียมโซลาร์",
+  "brand": "อรุณวิง",
+  "priceThb": 1490,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.6,
+  "ratingCount": 190,
+  "specs": {
+    "power": [
+      "solar",
+      "battery"
+    ],
+    "noDrill": true,
+    "rangeM": 20
+  },
+  "features": [
+    "แคลมป์หุ้มยาง",
+    "เซ็นเซอร์ปรับมุม",
+    "สีมุก",
+    "ฝาครอบตกแต่ง",
+    "กล่องของขวัญ",
+    "ไฟขอบฐาน"
+  ],
+  "shop": {
+    "id": "shop-terrace-premium",
+    "name": "อรุณวิง",
+    "years": 3,
+    "badRatePct": 2,
+    "official": true,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ไล่ได้ทุกชนิด 100%",
+      "source": "live",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "คนไม่ได้ยินเสียงรบกวน",
+      "source": "description",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "stars": 4,
+      "text": "ใช้มา 5 เดือน นกพิราบไม่กลับมาทำรังใต้กันสาดชั้น 11",
+      "hasMedia": true,
+      "daysAgo": 5,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "stars": 5,
+      "text": "ครบ 3 เดือน วางริมระเบียงชั้น 12 ราวฝั่งนี้สะอาดขึ้น",
+      "hasMedia": false,
+      "daysAgo": 9,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "stars": 5,
+      "text": "เปิดมา 7 สัปดาห์ ไม่ได้ยินเสียงเครื่องจากโต๊ะกินข้าว",
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "stars": 5,
+      "text": "ใช้ครบ 4 เดือน โซลาร์ชาร์จได้แม้แดดมาแค่บ่าย",
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "stars": 4,
+      "text": "ติดมา 6 สัปดาห์ ราวเหล็กไม่ต้องเจาะรู",
+      "hasMedia": false,
+      "daysAgo": 21,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "stars": 5,
+      "text": "ลอง 2 เดือน ย้ายไปช่องแอร์แล้วพิราบเลิกนอนตรงนั้น",
+      "hasMedia": true,
+      "daysAgo": 25,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "stars": 5,
+      "text": "ผ่าน 10 สัปดาห์ ยังต้องเช็ดมูลเก่า แต่ไม่มีมูลใหม่",
+      "hasMedia": false,
+      "daysAgo": 29,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "stars": 5,
+      "text": "ติด 3 เดือน แคลมป์ไม่คลายหลังฝนหนัก",
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "stars": 4,
+      "text": "ใช้ 5 วัน ตัวฐานใหญ่จนบังที่ตากผ้า",
+      "hasMedia": false,
+      "daysAgo": 37,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "stars": 5,
+      "text": "ได้รับวันนี้ กล่องของขวัญยับเพราะส่งตก",
+      "hasMedia": false,
+      "daysAgo": 41,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "stars": 5,
+      "text": "ซื้อมา 1 สัปดาห์ ปกเทพ ฝาครอบสวยแต่เกะกะราวแคบ",
+      "hasMedia": true,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "stars": 5,
+      "text": "ลอง 3 วัน ดีมากค่ะ",
+      "hasMedia": false,
+      "daysAgo": 49,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "stars": 4,
+      "text": "วันนี้เพิ่งแกะ สีมุกสวย",
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "stars": 5,
+      "text": "ได้รับเมื่อวาน แพ็คเรียบร้อย สินค้าคุณภาพดี",
+      "hasMedia": false,
+      "daysAgo": 57,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "stars": 5,
+      "text": "ใช้งาน 8 เดือน ไฟขอบฐานยังติดแต่แทบไม่ได้เปิด",
+      "hasMedia": false,
+      "daysAgo": 61,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "stars": 5,
+      "text": "ผ่านมาเดือนครึ่ง ต้องปิดไฟประดับเองตอนนอน",
+      "hasMedia": true,
+      "daysAgo": 65,
+      "isTemplate": true
+    },
+    {
+      "id": "r17",
+      "stars": 4,
+      "text": "ครบ 4 เดือน นกกระจอกยังลงกระถางอีกฝั่ง",
+      "hasMedia": false,
+      "daysAgo": 69,
+      "isTemplate": false
+    },
+    {
+      "id": "r18",
+      "stars": 5,
+      "text": "ใช้ 2 สัปดาห์ ปรับความไวมากเกินไปแล้วติดบ่อย",
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r19",
+      "stars": 5,
+      "text": "ผ่าน 6 เดือน ฝาครอบเป็นรอยแดดนิดหน่อย",
+      "hasMedia": false,
+      "daysAgo": 77,
+      "isTemplate": false
+    },
+    {
+      "id": "r20",
+      "stars": 5,
+      "text": "ใช้ 9 สัปดาห์ สายรัดสำรองสั้นไปสำหรับราวปูน",
+      "hasMedia": false,
+      "daysAgo": 81,
+      "isTemplate": false
+    }
+  ]
+}

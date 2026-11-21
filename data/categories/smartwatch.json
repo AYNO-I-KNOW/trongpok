@@ -1,18 +1,37 @@
 {
   "id": "smartwatch",
   "name": "สมาร์ทวอทช์",
-  "keywords": ["นาฬิกา", "smartwatch", "สมาร์ทวอทช์", "นาฬิกาอัจฉริยะ"],
+  "keywords": ["นาฬิกา", "smartwatch", "สมาร์ทวอทช์", "นาฬิกาอัจฉริยะ", "นาฬิกาออกกำลังกาย", "นาฬิกาผู้สูงอายุ"],
   "questions": [
     {
-      "id": "use",
-      "text": "อยากให้นาฬิกาช่วยเรื่องอะไร",
+      "id": "sport",
+      "text": "ใช้ออกกำลังกายแบบไหน (ข้ามได้)",
       "multi": true,
       "options": [
-        { "label": "แจ้งเตือน LINE เป็นภาษาไทย", "requirement": { "id": "line-th", "text": "แจ้งเตือน LINE แสดงภาษาไทยได้", "kind": "must", "spec": { "key": "thaiNotifications", "op": "==", "value": true } } },
-        { "label": "นับก้าว / การนอน", "requirement": { "id": "health-basic", "text": "นับก้าวและวัดการนอนแม่น", "kind": "must" } },
-        { "label": "วิ่ง / ปั่นจักรยานกลางแจ้ง", "requirement": { "id": "gps", "text": "มี GPS ในตัว", "kind": "must", "spec": { "key": "gps", "op": "==", "value": true } } },
-        { "label": "ว่ายน้ำ", "requirement": { "id": "swim", "text": "กันน้ำ 5ATM ขึ้นไป", "kind": "must", "spec": { "key": "waterAtm", "op": ">=", "value": 5 } } },
-        { "label": "รับสายจากข้อมือ", "requirement": { "id": "call", "text": "รับสายผ่านนาฬิกาได้", "kind": "nice", "spec": { "key": "bluetoothCall", "op": "==", "value": true } } }
+        { "label": "วิ่ง / ปั่นกลางแจ้ง", "requirement": { "id": "gps", "text": "มี GPS ในตัว วัดระยะได้โดยไม่ต้องพกมือถือ", "kind": "must", "spec": { "key": "gps", "op": "==", "value": true } } },
+        { "label": "ดูหัวใจตอนซ้อม", "requirement": { "id": "hr-accuracy", "text": "วัดชีพจรตอนออกกำลังกายได้แม่น", "kind": "must" } },
+        { "label": "ว่ายน้ำ", "requirement": { "id": "swim", "text": "กันน้ำ 5ATM ขึ้นไปและนับรอบว่ายได้", "kind": "must", "spec": { "key": "waterAtm", "op": ">=", "value": 5 } } }
+      ]
+    },
+    {
+      "id": "safety",
+      "text": "ซื้อให้ผู้สูงอายุหรือต้องการความปลอดภัย (ข้ามได้)",
+      "multi": true,
+      "options": [
+        { "label": "ล้มแล้วแจ้งลูกหลาน", "requirement": { "id": "fall", "text": "ตรวจจับการล้มแล้วโทรหรือส่งข้อความแจ้งอัตโนมัติ", "kind": "must", "spec": { "key": "fallDetection", "op": "==", "value": true } } },
+        { "label": "ปุ่มขอความช่วยเหลือ (SOS)", "requirement": { "id": "sos", "text": "กดปุ่มเดียวโทรขอความช่วยเหลือได้", "kind": "must", "spec": { "key": "sos", "op": "==", "value": true } } },
+        { "label": "เตือนหัวใจเต้นผิดปกติ", "requirement": { "id": "heart-alert", "text": "แจ้งเตือนหัวใจเต้นผิดจังหวะ / วัด ECG ได้", "kind": "must", "spec": { "key": "ecg", "op": "==", "value": true } } },
+        { "label": "วัดออกซิเจนในเลือด", "requirement": { "id": "spo2", "text": "วัดออกซิเจนในเลือดได้", "kind": "nice", "spec": { "key": "spo2", "op": "==", "value": true } } },
+        { "label": "ตัวหนังสือใหญ่ ใช้ง่าย", "requirement": { "id": "easy", "text": "หน้าจออ่านง่าย ผู้สูงอายุใช้เองได้", "kind": "nice" } }
+      ]
+    },
+    {
+      "id": "daily",
+      "text": "ใช้ทุกวันเรื่องอะไร",
+      "multi": true,
+      "options": [
+        { "label": "แจ้งเตือน LINE ภาษาไทย", "requirement": { "id": "line-th", "text": "แจ้งเตือน LINE แสดงภาษาไทยได้", "kind": "must", "spec": { "key": "thaiNotifications", "op": "==", "value": true } } },
+        { "label": "นับก้าว / การนอน", "requirement": { "id": "health-basic", "text": "นับก้าวและวัดการนอนแม่น", "kind": "nice" } }
       ]
     },
     {
@@ -29,18 +48,18 @@
       "text": "ใช้มือถืออะไร",
       "multi": false,
       "options": [
-        { "label": "iPhone", "requirement": { "id": "ios", "text": "ใช้กับ iPhone ได้ครบ", "kind": "must", "spec": { "key": "platforms", "op": "includes", "value": "ios" } } },
-        { "label": "Android", "requirement": { "id": "android", "text": "ใช้กับ Android ได้ครบ", "kind": "must", "spec": { "key": "platforms", "op": "includes", "value": "android" } } }
+        { "label": "iPhone", "requirement": { "id": "ios", "text": "ใช้กับ iPhone ได้ครบทุกฟีเจอร์ที่เลือก", "kind": "must", "spec": { "key": "platforms", "op": "includes", "value": "ios" } } },
+        { "label": "Android", "requirement": { "id": "android", "text": "ใช้กับ Android ได้ครบทุกฟีเจอร์ที่เลือก", "kind": "must", "spec": { "key": "platforms", "op": "includes", "value": "android" } } }
       ]
     },
     {
       "id": "budget",
-      "text": "งบเท่าไหร่",
+      "text": "มีงบจำกัดไหม",
       "multi": false,
       "options": [
-        { "label": "ไม่เกิน 2,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 2,000 บาท", "kind": "budget", "value": 2000 } },
-        { "label": "ไม่เกิน 5,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 5,000 บาท", "kind": "budget", "value": 5000 } },
-        { "label": "ไม่เกิน 15,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 15,000 บาท", "kind": "budget", "value": 15000 } }
+        { "label": "ไม่จำกัด ขอตัวที่ตรงที่สุด", "requirement": null },
+        { "label": "ไม่เกิน 3,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 3,000 บาท", "kind": "budget", "value": 3000 } },
+        { "label": "ไม่เกิน 10,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 10,000 บาท", "kind": "budget", "value": 10000 } }
       ]
     }
   ]
