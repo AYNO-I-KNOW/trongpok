@@ -38,7 +38,7 @@ try {
   }
   assert.ok(ready, "Production server did not become ready");
   browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   page = await context.newPage();
   page.setDefaultTimeout(20000);
   page.on("pageerror", (error) => errors.push(error.message));
@@ -50,19 +50,24 @@ try {
   await page.locator("main.phone.home img[src='/assets/home.png']").waitFor();
   const homeSearch = () => page.getByRole("textbox", { name: "คำถามหรือลิงก์สินค้า", exact: true });
   const submitSearch = () => page.getByRole("button", { name: "เริ่มค้นหา", exact: true }).click();
-  const searchResponse = page.waitForResponse((response) =>
+  const waitForProductSearch = () => page.waitForResponse((response) =>
     new URL(response.url()).pathname === "/api/product-search" && response.request().method() === "POST");
+  const initialSearch = waitForProductSearch();
   await homeSearch().fill("เครื่องปั่น");
   await submitSearch();
-  const fallback = await (await searchResponse).json();
-  assert.equal(fallback.kind, "demo", "Homepage search keeps the new product-search fallback");
+  assert.equal((await (await initialSearch).json()).kind, "clarify");
+  await page.getByRole("heading", { name: "จะเอาไปใช้ทำอะไร", exact: true }).waitFor();
+  await page.getByRole("radio", { name: "ปั่นน้ำแข็ง / เปิดร้าน", exact: true }).check();
+  const answeredSearch = waitForProductSearch();
+  await page.getByRole("button", { name: "เริ่มค้นหาต่อ", exact: true }).click();
+  const fallback = await (await answeredSearch).json();
+  assert.equal(fallback.kind, "demo", "Answered homepage search falls back to the demo catalog without a key");
   assert.ok(fallback.picks.length > 0);
   await comparison().waitFor();
   assert.equal(await comparison().locator(".fit-score-row").count(), 0);
   await comparison().getByRole("link", { name: /^ดูข้อมูลเดโม / }).first().waitFor();
   const designerWidth = await page.locator("main.phone.result").evaluate((node) => getComputedStyle(node).maxWidth);
 
-  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + "/arena");
   await homeSearch().fill("เครื่องปั่นไว้ปั่นน้ำแข็งเปิดร้าน งบ 3,000 บาท");
   await submitSearch();
