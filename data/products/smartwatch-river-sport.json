@@ -1,0 +1,189 @@
+{
+  "id": "smartwatch-river-sport",
+  "category": "smartwatch",
+  "keywords": [
+    "นาฬิกา",
+    "smartwatch"
+  ],
+  "title": "Riverdial นาฬิกาอัจฉริยะ",
+  "brand": "Riverdial",
+  "priceThb": 4590,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.5,
+  "ratingCount": 1100,
+  "features": [
+    "แจ้งเตือนภาษาไทย",
+    "นับก้าว",
+    "GPS",
+    "นับรอบว่าย"
+  ],
+  "specs": {
+    "gps": true,
+    "waterAtm": 5,
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "fallDetection": false,
+    "sos": false,
+    "ecg": false,
+    "spo2": true,
+    "batteryDays": 6,
+    "thaiNotifications": true
+  },
+  "shop": {
+    "id": "shop-river-sport",
+    "name": "Riverdial Demo",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "วัดชีพจรขณะออกกำลังได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "ใช้งานกับ Android และ iPhone ได้",
+      "source": "title",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "ใช้มา 4 เดือน ว่ายสระทุกเย็น นับระยะตรงกับจำนวนรอบ",
+      "stars": 5,
+      "hasMedia": true,
+      "daysAgo": 10,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ใช้ครบ 10 วัน ปุ่มย้อนกลับเล็ก กดผิดตอนเหนื่อย",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "วิ่งทางดินมา 3 เดือน GPS จับได้แม้ไม่พก iPhone",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 24,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "เทียบชีพจรตอนวิ่งกับสายคาดอกมา 6 สัปดาห์ ต่างกันไม่กี่ครั้งต่อนาที",
+      "stars": 5,
+      "hasMedia": true,
+      "daysAgo": 31,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "ใช้กับ iPhone มาเดือนครึ่ง ดูตารางซ้อมย้อนหลังสะดวก",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ใส่ลงสระ 8 สัปดาห์ สายซิลิโคนไม่เปื่อย",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "ใช้สองเดือน แบตหมดเร็วเมื่อเปิดติดตามทั้งวัน",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 52,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "หลังวิ่ง 15 วัน ล้างน้ำแล้วปุ่มยังเด้งดี",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 59,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ใช้มา 5 เดือน นับรอบพลาดหนึ่งรอบตอนหยุดคุยกลางสระ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 66,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "ใส่สัปดาห์แรก ปกเทพเรื่องน้ำ แต่เมนูตั้งค่าหายาก",
+      "stars": 3,
+      "hasMedia": true,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "text": "เพิ่งได้รับ Riverdial วันนี้ ส่งกล่องบุบ สายอยู่ครบ ยังไม่ได้ใส่",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 80,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "แกะกล่อง Riverdial เมื่อวาน สีสวยมาก ชอบค่ะ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 87,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "ได้รับ Riverdial มา 2 วัน สินค้าคุณภาพดี ทางร้านแพ็คอย่างดี",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 94,
+      "isTemplate": true
+    },
+    {
+      "id": "r14",
+      "text": "ใช้ Riverdial มา 2 วัน เก็บสายส่วนเกินใต้ห่วงแล้วไม่เกี่ยวเสื้อ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 101,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ใช้ Riverdial มา 3 วัน ตั้งปลุกเช้าแล้วสั่นจนตื่น",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 108,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "text": "ใช้ Riverdial มา 4 วัน ใส่เดินซื้อของหนึ่งชั่วโมงไม่หลุด",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 115,
+      "isTemplate": false
+    }
+  ]
+}

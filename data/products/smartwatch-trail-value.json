@@ -1,0 +1,189 @@
+{
+  "id": "smartwatch-trail-value",
+  "category": "smartwatch",
+  "keywords": [
+    "นาฬิกา",
+    "smartwatch"
+  ],
+  "title": "Trailnest นาฬิกาอัจฉริยะ",
+  "brand": "Trailnest",
+  "priceThb": 3290,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.4,
+  "ratingCount": 820,
+  "features": [
+    "แจ้งเตือนภาษาไทย",
+    "นับก้าว",
+    "GPS",
+    "นับรอบว่าย"
+  ],
+  "specs": {
+    "gps": true,
+    "waterAtm": 5,
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "fallDetection": false,
+    "sos": false,
+    "ecg": false,
+    "spo2": true,
+    "batteryDays": 6,
+    "thaiNotifications": true
+  },
+  "shop": {
+    "id": "shop-trail-value",
+    "name": "Trailnest Demo",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "วัดชีพจรขณะออกกำลังได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "ใช้งานกับ Android และ iPhone ได้",
+      "source": "title",
+      "checkable": true
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "ใช้มา 3 เดือน วิ่งเทรลสิบกิโลเส้นทางตรงกับมือถือ แม้ทิ้งโทรศัพท์ไว้รถ",
+      "stars": 5,
+      "hasMedia": true,
+      "daysAgo": 10,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ลองมา 5 วัน สายแข็งเสียดข้อมือตอนเหงื่อออก",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 17,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "ว่ายสัปดาห์ละสองวันมา 4 เดือน นับรอบสระ 25 เมตรได้ครบ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 24,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "ซ้อมขึ้นเขา 6 สัปดาห์ ชีพจรเพิ่มตามความเหนื่อย เทียบสายคาดอกต่างเล็กน้อย",
+      "stars": 5,
+      "hasMedia": true,
+      "daysAgo": 31,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "ใช้กับ iPhone มา 2 เดือน ซิงก์กิจกรรมหลังวิ่งได้ทุกครั้ง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ใส่ว่ายมา 3 สัปดาห์ น้ำไม่เข้า แต่หน้าจอเปียกกดลำบาก",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 45,
+      "isTemplate": false
+    },
+    {
+      "id": "r7",
+      "text": "ใช้มาเดือนครึ่ง GPS ใต้ต้นไม้หน่วงประมาณสิบวินาที",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 52,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "วิ่งเช้ามา 8 สัปดาห์ แบตอยู่ได้หกวันเมื่อเปิด GPS วันละชั่วโมง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 59,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "ใช้สองเดือน ปุ่มกดง่ายตอนใส่ถุงมือบาง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 66,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "วิ่งมา 12 วัน ปกเทพตรงเส้นทาง แต่สายแถมแข็งจริง",
+      "stars": 3,
+      "hasMedia": true,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "text": "เพิ่งได้รับ Trailnest วันนี้ ส่งกล่องบุบ สายอยู่ครบ ยังไม่ได้ใส่",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 80,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "แกะกล่อง Trailnest เมื่อวาน สีสวยมาก ชอบค่ะ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 87,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "ได้รับ Trailnest มา 2 วัน สินค้าคุณภาพดี ทางร้านแพ็คอย่างดี",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 94,
+      "isTemplate": true
+    },
+    {
+      "id": "r14",
+      "text": "ใช้ Trailnest มา 2 วัน เก็บสายส่วนเกินใต้ห่วงแล้วไม่เกี่ยวเสื้อ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 101,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ใช้ Trailnest มา 3 วัน ตั้งปลุกเช้าแล้วสั่นจนตื่น",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 108,
+      "isTemplate": false
+    },
+    {
+      "id": "r16",
+      "text": "ใช้ Trailnest มา 4 วัน ใส่เดินซื้อของหนึ่งชั่วโมงไม่หลุด",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 115,
+      "isTemplate": false
+    }
+  ]
+}
