@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   productSearchResultSchema,
@@ -100,6 +101,11 @@ export default function SearchHome({
         <HomeForm
           initial={query}
           onSubmit={search}
+          action={
+            <Link className="evidence-link" href={fontTheme === "line" ? "/compare?font=line" : "/compare"}>
+              เปรียบเทียบจากรีวิวใน Arena →
+            </Link>
+          }
           history={history.length > 0 && (
             <HomeHistory
               items={history}
