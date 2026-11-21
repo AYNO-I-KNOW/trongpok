@@ -57,9 +57,10 @@ try {
   await submitSearch();
   assert.equal((await (await initialSearch).json()).kind, "clarify");
   await page.getByRole("heading", { name: "จะเอาไปใช้ทำอะไร", exact: true }).waitFor();
+  await page.getByText("1 จาก 1", { exact: true }).waitFor();
   await page.getByRole("radio", { name: "ปั่นน้ำแข็ง / เปิดร้าน", exact: true }).check();
   const answeredSearch = waitForProductSearch();
-  await page.getByRole("button", { name: "ส่งคำตอบ", exact: true }).click();
+  await page.getByRole("button", { name: "เริ่มค้นหาต่อ", exact: true }).click();
   const fallback = await (await answeredSearch).json();
   assert.equal(fallback.kind, "demo", "Answered homepage search falls back to the demo catalog without a key");
   assert.ok(fallback.picks.length > 0);

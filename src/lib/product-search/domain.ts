@@ -39,12 +39,15 @@ export const clarificationSchema = z.object({
   choices: z.array(z.string().trim().min(1)).min(2).max(3),
 });
 
+export const MAX_CLARIFICATION_QUESTIONS = 5;
+export const questionnaireSchema = z.array(clarificationSchema).min(1).max(MAX_CLARIFICATION_QUESTIONS);
+
 export const goalSchema = z.object({
   category: z.string(),
   budget: z.number().nullable(),
   must: z.array(z.string()),
   nice: z.array(z.string()),
-  clarification: clarificationSchema.nullable(),
+  clarification: questionnaireSchema.nullable(),
 });
 export type SearchGoal = z.infer<typeof goalSchema>;
 const evidenceSchema = z.object({

@@ -130,11 +130,9 @@ export default function SearchHome({
       </>}
       {result?.kind === "clarify" && (
         <SearchQuestion
-          question={result.question}
-          choices={result.choices}
-          number={clarifications.length + 1}
+          questions={result.questions}
           onBack={edit}
-          onAnswer={(answer) => void search(query, [...clarifications, { question: result.question, answer }])}
+          onComplete={(answers) => void search(query, answers)}
         />
       )}
       {comparison && <Results result={liveResult(buyerQuery, comparison)} onReset={() => goHome("")} onBack={edit} onConditions={() => {}} />}

@@ -1,8 +1,13 @@
 import { z } from "zod";
-import { clarificationSchema, isDetailUrl, sourceUrl } from "./domain";
+import {
+  MAX_CLARIFICATION_QUESTIONS,
+  clarificationSchema,
+  isDetailUrl,
+  questionnaireSchema,
+  sourceUrl,
+} from "./domain";
 
 const text = z.string().trim().min(1);
-export const MAX_CLARIFICATION_QUESTIONS = 5;
 export const MAX_SEARCH_TEXT_LENGTH = 1200;
 const buyerText = text.max(MAX_SEARCH_TEXT_LENGTH);
 const clarificationTurnSchema = z.object({
@@ -69,7 +74,7 @@ export const productSearchResultSchema = z.discriminatedUnion("kind", [
     picks: z.array(productPickSchema).max(3),
     note: text,
   }),
-  clarificationSchema.extend({ kind: z.literal("clarify") }),
+  z.object({ kind: z.literal("clarify"), questions: questionnaireSchema }),
   z.object({ kind: z.literal("needs-specifics"), message: text }),
   z.object({ kind: z.literal("unavailable"), message: text }),
 ]);

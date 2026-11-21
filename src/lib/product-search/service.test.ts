@@ -214,42 +214,40 @@ describe("live search rounds", () => {
   it("offers the agent's preset answers before searching and reserves Other for the UI", async () => {
     const search = vi.fn<SearchBackend["search"]>();
     const question = "จะใช้เมาส์ทำอะไรเป็นหลัก?";
+    const grip = { question: "ถนัดมือข้างไหน?", choices: ["ขวา", "ซ้าย"] };
+    const connection = { question: "ต่อเมาส์กับอุปกรณ์ไหน?", choices: ["คอมพิวเตอร์", "แท็บเล็ต"] };
     const result = await searchProducts("อยากได้เมาส์", {
       goal: async () => ({
         ...goal,
-        clarification: {
-          question,
-          choices: ["ทำงานออฟฟิศ", "เล่นเกม", "อื่น ๆ (ระบุเอง)"],
-        },
+        clarification: [
+          { question, choices: ["ทำงานออฟฟิศ", "เล่นเกม", "อื่น ๆ (ระบุเอง)"] },
+          grip,
+          connection,
+        ],
       }),
       search,
     });
     expect(productSearchResultSchema.parse(result)).toEqual({
       kind: "clarify",
-      question,
-      choices: ["ทำงานออฟฟิศ", "เล่นเกม"],
+      questions: [
+        { question, choices: ["ทำงานออฟฟิศ", "เล่นเกม"] },
+        grip,
+        connection,
+      ],
     });
     expect(search).not.toHaveBeenCalled();
   });
 
-  it("offers a fifth question but asks no sixth when intent remains unclear", async () => {
+  it("returns no second questionnaire after a buyer submits answers", async () => {
     const search = vi.fn<SearchBackend["search"]>();
     const backend = {
       goal: async () => ({
         ...goal,
-        clarification: {
-          question: "จะใช้เมาส์ทำอะไรเป็นหลัก?",
-          choices: ["ทำงานออฟฟิศ", "เล่นเกม"],
-        },
+        clarification: [{ question: "ถนัดมือข้างไหน?", choices: ["ขวา", "ซ้าย"] }],
       }),
       search,
     };
-    const turns = Array.from({ length: 5 }, (_, index) => ({
-      question: `คำถาม ${index + 1}`,
-      answer: "ยังไม่แน่ใจ",
-    }));
-    await expect(searchProducts("อยากได้เมาส์", backend, undefined, turns.slice(0, 4)))
-      .resolves.toMatchObject({ kind: "clarify" });
+    const turns = [{ question: "จะใช้เมาส์ทำอะไรเป็นหลัก?", answer: "ยังไม่แน่ใจ" }];
     const result = await searchProducts("อยากได้เมาส์", backend, undefined, turns);
     expect(productSearchResultSchema.parse(result)).toMatchObject({ kind: "needs-specifics" });
     expect(search).not.toHaveBeenCalled();

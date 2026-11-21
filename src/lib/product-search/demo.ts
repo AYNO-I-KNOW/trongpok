@@ -20,8 +20,10 @@ export async function demoFallback(
     if (question && question.options.length >= 2)
       return {
         kind: "clarify",
-        question: question.text.replace(/\s*\(ข้ามได้\)$/u, ""),
-        choices: question.options.slice(0, 3).map(({ label }) => label),
+        questions: [{
+          question: question.text.replace(/\s*\(ข้ามได้\)$/u, ""),
+          choices: question.options.slice(0, 3).map(({ label }) => label),
+        }],
       };
   }
   const budget = budgetFromQuery(query);

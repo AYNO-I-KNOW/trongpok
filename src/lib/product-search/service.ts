@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { rankProducts } from "../scoring/product-search";
-import { MAX_CLARIFICATION_QUESTIONS, type ClarificationTurn, type ProductSearchResult } from "./contract";
+import type { ClarificationTurn, ProductSearchResult } from "./contract";
 import { demoFallback } from "./demo";
 import { sourceUrl } from "./domain";
 import { budgetFromQuery } from "./budget";
@@ -12,8 +12,10 @@ import {
 
 const productTypeQuestion = {
   kind: "clarify",
-  question: "กำลังมองหาสินค้าประเภทไหน?",
-  choices: ["เครื่องใช้ไฟฟ้าในบ้าน", "อุปกรณ์ไอที", "อุปกรณ์ออกกำลังกาย"],
+  questions: [{
+    question: "กำลังมองหาสินค้าประเภทไหน?",
+    choices: ["เครื่องใช้ไฟฟ้าในบ้าน", "อุปกรณ์ไอที", "อุปกรณ์ออกกำลังกาย"],
+  }],
 } satisfies ProductSearchResult;
 const needsSpecifics = {
   kind: "needs-specifics",
@@ -42,7 +44,7 @@ export async function searchProducts(
     answer: cleanBuyerText(answer),
   }));
   const searchText = [original, ...turns.map(({ answer }) => answer)].filter(Boolean).join("\n");
-  const canClarify = turns.length < MAX_CLARIFICATION_QUESTIONS;
+  const canClarify = turns.length === 0;
   const askProductType = canClarify ? productTypeQuestion : needsSpecifics;
   const fallback = async () => {
     const result = await demoFallback(searchText);
@@ -62,12 +64,14 @@ export async function searchProducts(
     const extracted = await live.goal(original, turns);
     if (extracted.clarification) {
       if (!canClarify) return needsSpecifics;
-      const { question, choices } = extracted.clarification;
-      const presets = [...new Set(choices)].filter(
-        (choice) => !/^(?:อื่น(?:\s*ๆ)?|กรอกเอง|พิมพ์เอง|ระบุเอง|other)(?:$|[\s(:（])/iu.test(choice),
-      );
-      return presets.length >= 2
-        ? { kind: "clarify", question, choices: presets }
+      const questions = extracted.clarification.flatMap(({ question, choices }) => {
+        const presets = [...new Set(choices)].filter(
+          (choice) => !/^(?:อื่น(?:\s*ๆ)?|กรอกเอง|พิมพ์เอง|ระบุเอง|other)(?:$|[\s(:（])/iu.test(choice),
+        );
+        return presets.length >= 2 ? [{ question, choices: presets }] : [];
+      });
+      return questions.length
+        ? { kind: "clarify", questions }
         : askProductType;
     }
     const cap = budgetFromQuery(searchText);
@@ -82,8 +86,10 @@ export async function searchProducts(
     if (goal.budget !== null && (!Number.isFinite(goal.budget) || goal.budget <= 0))
       return !canClarify ? needsSpecifics : {
         kind: "clarify",
-        question: "ตั้งงบไว้ไม่เกินเท่าไร?",
-        choices: ["ไม่เกิน 1,000 บาท", "ไม่เกิน 3,000 บาท", "ไม่เกิน 5,000 บาท"],
+        questions: [{
+          question: "ตั้งงบไว้ไม่เกินเท่าไร?",
+          choices: ["ไม่เกิน 1,000 บาท", "ไม่เกิน 3,000 บาท", "ไม่เกิน 5,000 บาท"],
+        }],
       };
     const candidates: SearchCandidate[] = [];
     const sources = new Set<string>();

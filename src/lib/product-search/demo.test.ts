@@ -22,10 +22,12 @@ it.each(["เครื่องปั่น", "BLENDER", "สมาร์ทว�
     const result = productSearchResultSchema.parse(await demoFallback(query));
     expect(result).toMatchObject({
       kind: "clarify",
-      question: expect.stringContaining("ใช้"),
-      choices: expect.arrayContaining([
-        query === "สมาร์ทวอทช์" ? "ว่ายน้ำ" : "ปั่นสมูทตี้ที่บ้าน",
-      ]),
+      questions: [{
+        question: expect.stringContaining("ใช้"),
+        choices: expect.arrayContaining([
+          query === "สมาร์ทวอทช์" ? "ว่ายน้ำ" : "ปั่นสมูทตี้ที่บ้าน",
+        ]),
+      }],
     });
   },
 );
