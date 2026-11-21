@@ -393,3 +393,5 @@ button,select,.scenario-control,.question-nav,.eyebrow{font-weight:500}
   width: 4ch;
   text-align: right;
 }
+
+.prototype-label{position:fixed;z-index:20;top:12px;left:50%;transform:translateX(-50%);max-width:90%;border-radius:12px;padding:8px 14px;background:#fff3df;color:#70582e;font-size:12px;text-align:center}
