@@ -1,0 +1,3 @@
+import type {MockDetails,ReviewGroup} from '@/ui/buy-buddy/lib/mock-details';
+import {reviewSummary} from '@/ui/buy-buddy/lib/mock-details';
+export default function ReviewSummary({details}:{details?:MockDetails}){return <div className="review-breakdown">{details&&<p className="review-note">คะแนนรีวิวจำลอง / 5 · ไม่ใช้จัดอันดับ</p>}<dl>{(['สินค้า','บริการ','จัดส่ง'] as ReviewGroup[]).map(category=>{const result=details?reviewSummary(details.reviews[category]):null;return <div key={category}><dt>{category}</dt><dd>{result?<><strong>{result.mean.toFixed(1)} / 5</strong><span>n = {result.n}</span></>:'ข้อมูลไม่พอ'}</dd></div>})}</dl>{!details&&<p className="review-note">ยังไม่มีชุดรีวิวพร้อมจำนวนในข้อมูลที่บันทึกไว้</p>}</div>}
