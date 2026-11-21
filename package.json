@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "lint": "eslint"
+    "lint": "eslint",
+    "arena:all": "tsx scripts/arena-all.ts"
   },
   "dependencies": {
+    "@next/env": "16.4.6",
     "next": "16.4.6",
     "openai": "^7.62.0",
     "react": "19.3.0",
@@ -22,6 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^10.15.0",
     "eslint-config-next": "16.4.6",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.1.1"
   },
