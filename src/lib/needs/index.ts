@@ -24,7 +24,7 @@ const extractionSchema = z.object({
   extraNeeds: z.array(z.string()),
 });
 
-function rules(pack: CategoryPack, text: string) {
+export function requirementsFromTextWithRules(pack: CategoryPack, text: string) {
   const normalized = text.toLocaleLowerCase();
   const amounts = [...normalized.replaceAll(",", "").matchAll(/\d+(?:\.\d+)?/g)]
     .map((match) => Number(match[0]));
@@ -49,7 +49,7 @@ function rules(pack: CategoryPack, text: string) {
 export async function requirementsFromText(pack: CategoryPack, text: string): Promise<Requirement[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
-  if (!apiKey || !model) return rules(pack, text);
+  if (!apiKey || !model) return requirementsFromTextWithRules(pack, text);
   try {
     const response = await new OpenAI({ apiKey, timeout: 20_000, maxRetries: 0 }).responses.parse({
       model,
@@ -75,6 +75,6 @@ export async function requirementsFromText(pack: CategoryPack, text: string): Pr
       })),
     ];
   } catch {
-    return rules(pack, text);
+    return requirementsFromTextWithRules(pack, text);
   }
 }

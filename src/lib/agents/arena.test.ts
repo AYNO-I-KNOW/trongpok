@@ -46,9 +46,13 @@ it("streams exact skeptic quotes and exposes only its objections", async () => {
   expect(observed).toEqual(result.events);
   const objections = result.events.filter((event) => event.type === "objection");
   expect(objections).toHaveLength(1);
-  expect(result.ranked[0].objections).toHaveLength(1);
-  expect(objections[0].quote).toBe(result.ranked[0].objections[0].quote);
-  expect(product.reviews.some((review) => review.text.includes(objections[0].quote!))).toBe(true);
+  const returned = result.ranked[0].objections;
+  expect(returned.length).toBeGreaterThan(0);
+  expect(objections[0]).toMatchObject({ agent: "skeptic", productId: product.id, quote: returned[0].quote });
+  for (const objection of returned) {
+    expect(objection).toMatchObject({ stance: "contradict", target: "product" });
+    expect(product.reviews.find((review) => review.id === objection.reviewId)?.text).toContain(objection.quote);
+  }
 });
 it("allows skeptic to finish without an objection", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");

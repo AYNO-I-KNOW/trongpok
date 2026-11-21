@@ -1,0 +1,137 @@
+.product-search.search-detail {
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
+}
+.search-content {
+  padding-top: max(20px, env(safe-area-inset-top));
+}
+.search-edit {
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--brown);
+  padding: 8px 0;
+  font: inherit;
+}
+.search-query {
+  padding: 14px 16px;
+  background: #faf6f3;
+  border-radius: 18px;
+  margin: 8px 0 24px;
+  white-space: pre-wrap;
+}
+.search-progress {
+  text-align: center;
+  padding: 24px 0;
+  display: grid;
+  gap: 24px;
+  justify-items: center;
+}
+.search-progress h1,
+.search-message h1,
+.search-results h1 {
+  font-size: 23px;
+  line-height: 1.5;
+}
+.search-progress p,
+.search-note {
+  color: var(--muted);
+  margin-top: 8px;
+  font-size: 14px;
+}
+.search-message {
+  display: grid;
+  gap: 20px;
+}
+.search-message form {
+  display: grid;
+  gap: 16px;
+}
+.search-message textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #c9bfba;
+  border-radius: 16px;
+  font: inherit;
+  resize: vertical;
+  min-height: 90px;
+}
+.search-message textarea:focus-visible {
+  outline: 2px solid var(--brown);
+  outline-offset: 3px;
+}
+.search-mode,
+.pick-rank {
+  display: inline-block;
+  background: var(--peach);
+  color: var(--brown);
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.product-picks {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+}
+.product-pick {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 20px;
+}
+.product-pick:first-child {
+  border-color: var(--coral);
+}
+.product-pick h2 {
+  font-size: 20px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+.product-pick a {
+  text-underline-offset: 3px;
+}
+.product-pick h3 {
+  margin-top: 18px;
+  font-size: 15px;
+}
+.product-pick ul {
+  padding-left: 22px;
+  margin: 8px 0;
+}
+.product-pick li {
+  margin: 8px 0;
+  font-size: 14px;
+}
+.product-pick li a {
+  display: inline-block;
+  min-height: 32px;
+  padding-top: 4px;
+}
+.pick-price > a {
+  font-size: 20px;
+  font-weight: 600;
+}
+.pick-price p,
+.pick-unknown,
+.pick-review,
+.product-pick h3 + p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.pick-review {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 18px;
+}
+.product-search h1:focus {
+  outline: none;
+}
+.product-search .primary {
+  margin-top: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-search * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
