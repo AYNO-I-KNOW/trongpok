@@ -63,6 +63,11 @@
           "run": "npm run test:ui"
         },
         {
+          "name": "Publisher checks",
+          "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
+          "run": "npm run test:publish"
+        },
+        {
           "name": "Lint",
           "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
           "run": "npm run lint"
@@ -72,6 +77,11 @@
           "id": "build",
           "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
           "run": "npm run build"
+        },
+        {
+          "name": "TypeScript diagnostics",
+          "if": "${{ !cancelled() && steps.build.outcome == 'failure' }}",
+          "run": "npm exec -- tsc --noEmit --pretty false"
         },
         {
           "name": "Install browser verification tools",
