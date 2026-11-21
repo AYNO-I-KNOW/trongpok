@@ -11,6 +11,7 @@ const productSchema = z
     image: z.unknown().optional(),
   })
   .passthrough();
+const availabilitySchema = z.object({ availability: z.string() });
 const offerSchema = z.object({
   price: z.union([z.string(), z.number()]),
   priceCurrency: z.string(),
@@ -165,15 +166,18 @@ function inspect(html: string, model: string) {
     return null;
   const visible = productText(html);
   if (!same.length && !matches(title || visible, model)) return null;
-  const offers = same
-    .flatMap((product) => objects(product.offers))
-    .flatMap((value) => {
+  const offerObjects = same.flatMap((product) => objects(product.offers));
+  const availability = offerObjects.flatMap((value) => {
+    const parsed = availabilitySchema.safeParse(value);
+    return parsed.success ? [parsed.data.availability] : [];
+  });
+  const offers = offerObjects.flatMap((value) => {
       const parsed = offerSchema.safeParse(value);
       return parsed.success ? [parsed.data] : [];
     });
   if (
-    offers.some((offer) =>
-      /OutOfStock|SoldOut|Discontinued/i.test(offer.availability ?? ""),
+    availability.some((value) =>
+      /OutOfStock|SoldOut|Discontinued/i.test(value),
     )
   )
     return null;
@@ -235,8 +239,8 @@ function inspect(html: string, model: string) {
   return {
     image: same.flatMap((product) => productImages(product.image)).map(safeUrl).find((url) => url !== null),
     price: prices.length === 1 ? prices[0] : null,
-    inStock: offers.some((offer) =>
-      /\/InStock$/i.test(offer.availability ?? ""),
+    inStock: availability.some((value) =>
+      /\/InStock$/i.test(value),
     ),
   };
 }
