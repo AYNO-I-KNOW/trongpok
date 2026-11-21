@@ -1,0 +1,182 @@
+{
+  "id": "blender-compact-flex",
+  "category": "blender",
+  "keywords": [
+    "เครื่องปั่น",
+    "เครื่องปั่นน้ำผลไม้",
+    "blender"
+  ],
+  "title": "เครื่องปั่นตั้งโต๊ะ โถ 1.5 ลิตร 1000W",
+  "brand": "พอดีโฮม",
+  "priceThb": 950,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.3,
+  "ratingCount": 19,
+  "specs": {
+    "watt": 1000,
+    "capacityL": 1.5,
+    "iceCrush": true,
+    "jarMaterial": "plastic",
+    "speeds": 2,
+    "warrantyMonths": 12,
+    "dryGrinder": false
+  },
+  "features": [
+    "ปั่นผลไม้ให้เนียน",
+    "ปั่นน้ำแข็ง",
+    "เสียงไม่ดัง"
+  ],
+  "shop": {
+    "id": "shop-blender-compact-flex",
+    "name": "พอดีโฮม เดโม",
+    "years": 3,
+    "badRatePct": 2,
+    "official": false,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    {
+      "id": "c1",
+      "text": "ปั่นน้ำแข็งละเอียดได้",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c2",
+      "text": "เสียงเบา",
+      "source": "description",
+      "checkable": true
+    },
+    {
+      "id": "c3",
+      "text": "วัสดุเกรดพิเศษแท้",
+      "source": "live",
+      "checkable": false
+    }
+  ],
+  "reviews": [
+    {
+      "id": "r1",
+      "text": "ลองมา 5 วัน ปั่นกล้วยครึ่งโถเนียนพอสำหรับมื้อเช้าคนเดียว",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 8,
+      "isTemplate": false
+    },
+    {
+      "id": "r2",
+      "text": "ใช้มา 1 สัปดาห์ ปุ่มหมุนลื่นตอนมือเปียก ต้องเช็ดมือก่อน",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 13,
+      "isTemplate": false
+    },
+    {
+      "id": "r3",
+      "text": "ใช้มา 2 เดือน ปั่นน้ำแข็งวันเสาร์สัปดาห์ละครั้งยังหมุนปกติ ไม่เคยลองขายทั้งวัน",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 18,
+      "isTemplate": false
+    },
+    {
+      "id": "r4",
+      "text": "เพิ่งได้รับวันนี้ กล่องบุบจากขนส่ง โถไม่แตก ยังไม่ได้เสียบไฟ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 23,
+      "isTemplate": false
+    },
+    {
+      "id": "r5",
+      "text": "แกะเมื่อเช้า ปกเทพ ฐานกินที่กว่าที่วัดไว้ ยังไม่ลอง",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 28,
+      "isTemplate": false
+    },
+    {
+      "id": "r6",
+      "text": "ได้รับวันนี้ สินค้าคุณภาพดี ทางร้านแพ็คมาอย่างดี",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 33,
+      "isTemplate": true
+    },
+    {
+      "id": "r7",
+      "text": "เพิ่งได้ของวันนี้ สีสวยค่ะ",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 38,
+      "isTemplate": false
+    },
+    {
+      "id": "r8",
+      "text": "มาถึงเมื่อวาน อุปกรณ์ครบ จะลองวันหยุด",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 43,
+      "isTemplate": false
+    },
+    {
+      "id": "r9",
+      "text": "เพิ่งแกะวันนี้ โถดูใส ยังไม่ได้ล้าง",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 48,
+      "isTemplate": false
+    },
+    {
+      "id": "r10",
+      "text": "ได้รับวันนี้ ส่งเร็วดี ยังไม่ทราบเสียงตอนใช้",
+      "stars": 5,
+      "hasMedia": false,
+      "daysAgo": 53,
+      "isTemplate": false
+    },
+    {
+      "id": "r11",
+      "text": "ซื้อมา 2 วัน ยังวางอยู่ในกล่อง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 58,
+      "isTemplate": false
+    },
+    {
+      "id": "r12",
+      "text": "เพิ่งมาวันนี้ ดีค่ะ แนะนำ",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 63,
+      "isTemplate": false
+    },
+    {
+      "id": "r13",
+      "text": "รับมาเมื่อวาน คู่มืออ่านง่าย ยังไม่ได้ปั่นผลไม้",
+      "stars": 4,
+      "hasMedia": true,
+      "daysAgo": 68,
+      "isTemplate": false
+    },
+    {
+      "id": "r14",
+      "text": "แกะวันนี้ ปลั๊กครบ รอหาพื้นที่วาง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 73,
+      "isTemplate": false
+    },
+    {
+      "id": "r15",
+      "text": "ได้รับ 3 วัน ยังไม่เคยเปิดสปีดสูง",
+      "stars": 4,
+      "hasMedia": false,
+      "daysAgo": 78,
+      "isTemplate": false
+    }
+  ]
+}
