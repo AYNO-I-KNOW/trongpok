@@ -105,26 +105,86 @@ it("discards partial model proposals before falling back", async () => {
   expect(result.ranked).toHaveLength(1);
 });
 
-it("starts all three independent roles before any returns and keeps the linked product", async () => {
+it.each([false, true])("scopes Skeptic after parallel Fit and Value, with linked reserve: %s", async (withLink) => {
   vi.stubEnv("OPENAI_API_KEY", "test");
   vi.stubEnv("OPENAI_MODEL", "test");
   let release = () => {};
   const gate = new Promise<void>((resolve) => { release = resolve; });
-  const alternative = { ...product, id: "alternative" };
-  const third = { ...product, id: "third" };
+  const [linked, cheapest, second, third, expensive] = [5000, 500, 1000, 1500, 2000].map((priceThb, index) => ({
+    ...product, id: `candidate-${index}`, priceThb,
+  }));
+  let skepticPool: string[] | undefined;
+  let inspectedExcluded: unknown[] = [];
+  let finishedBeforeSkeptic: string[] = [];
+  const finished: string[] = [];
   vi.mocked(runLlmAgent).mockImplementation(async ({ agent, tools }) => {
     await gate;
-    if (agent === "fit") tools.propose(alternative.id, []);
+    if (agent === "fit") {
+      for (const item of [expensive, third, second]) tools.propose(item.id, []);
+    } else if (agent === "value") {
+      tools.propose(cheapest.id, []);
+    } else {
+      finishedBeforeSkeptic = finished.slice();
+      skepticPool = tools.search_catalog(pack.id).map(({ id }) => id);
+      inspectedExcluded = [tools.get_product(expensive.id), tools.get_reviews(expensive.id, "")];
+    }
+    finished.push(agent);
   });
-  const pending = runArena({ pack, requirements: [], products: [product, alternative, third], linkedProductId: product.id });
+  const pending = runArena({
+    pack, requirements: [{ id: "budget", kind: "budget", text: "ราคาไม่เกิน 3,000 บาท", value: 3000 }],
+    products: [linked, expensive, third, second, cheapest], linkedProductId: withLink ? linked.id : undefined,
+  });
   const started = vi.mocked(runLlmAgent).mock.calls.map(([input]) => input.agent);
   release();
   const result = await pending;
-  expect(started).toEqual(["fit", "value", "skeptic"]);
-  expect(result.ranked.map(({ productId }) => productId)).toEqual(expect.arrayContaining([product.id, alternative.id, third.id]));
-  expect(result.mode).toBe("rules");
-  expect(result.events).toEqual(expect.arrayContaining([expect.objectContaining({ agent: "judge", productId: product.id })]));
+  expect(started).toEqual(["fit", "value"]);
+  expect(finishedBeforeSkeptic).toEqual(["fit", "value"]);
+  expect(inspectedExcluded).toEqual([null, []]);
+  const expected = [cheapest.id, second.id, withLink ? linked.id : third.id];
+  expect(skepticPool?.toSorted()).toEqual(expected.toSorted());
+  expect(result.ranked.map(({ productId }) => productId)).toEqual(expected);
+  if (withLink) {
+    expect(result.mode).toBe("rules");
+    expect(result.events).toContainEqual(expect.objectContaining({ agent: "judge", productId: linked.id }));
+  }
 });
+
+it("fills unused shortlist slots with catalog candidates before Skeptic starts", async () => {
+  vi.stubEnv("OPENAI_API_KEY", "test");
+  vi.stubEnv("OPENAI_MODEL", "test");
+  const linked = { ...product, id: "linked" };
+  const alternative = { ...product, id: "alternative" };
+  let scope: string[] | undefined;
+  vi.mocked(runLlmAgent).mockImplementation(async ({ agent, tools }) => {
+    if (agent === "fit") tools.propose(alternative.id, []);
+    if (agent === "skeptic") scope = tools.search_catalog(pack.id).map(({ id }) => id);
+  });
+  const result = await runArena({ pack, requirements: [], products: [product, linked, alternative], linkedProductId: linked.id });
+  expect(scope).toEqual([product.id, linked.id, alternative.id]);
+  expect(result.ranked.map(({ productId }) => productId).toSorted()).toEqual([product.id, linked.id, alternative.id].toSorted());
+  expect(result.mode).toBe("rules");
+  expect(result.events).toContainEqual(expect.objectContaining({ agent: "judge", productId: product.id }));
+});
+
+it("reranks the vetted finalists after concrete Skeptic objections", async () => {
+  vi.stubEnv("OPENAI_API_KEY", "test");
+  vi.stubEnv("OPENAI_MODEL", "test");
+  const requirement = { id: "ice", kind: "must" as const, text: "ปั่นน้ำแข็ง", spec: { key: "watt", op: ">=" as const, value: 600 } };
+  const first = { ...product, id: "first", priceThb: 500 };
+  const second = { ...product, id: "second", priceThb: 1000 };
+  const warnings = first.reviews.slice(1, 3).map(({ id, text }) => ({
+    reviewId: id, quote: text, subjectId: requirement.id, stance: "contradict" as const, target: "product" as const, usage: "short" as const, specific: true,
+  }));
+  vi.mocked(runLlmAgent).mockImplementation(async ({ agent, tools }) => {
+    if (agent === "fit") tools.propose(second.id, []);
+    if (agent === "value") tools.propose(first.id, []);
+    if (agent === "skeptic") tools.propose(first.id, warnings);
+  });
+  const result = await runArena({ pack, requirements: [requirement], products: [first, second] });
+  expect(result.ranked.map(({ productId, mustOk }) => [productId, mustOk])).toEqual([[second.id, true], [first.id, false]]);
+  expect(result.ranked[1].objections).toEqual(warnings);
+});
+
 it("orders equally fitting products by evidence independently of input order", async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
   const reviews = Array.from({ length: 5 }, (_, index) => ({

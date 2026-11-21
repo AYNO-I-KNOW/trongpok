@@ -145,7 +145,10 @@ export const AgentEventSchema = z.object({
   text: textSchema,
   productId: textSchema.optional(),
   quote: z.string().optional(),
-});
+  objections: z.array(LabelSchema).min(1).optional(),
+}).refine((event) => event.type !== "objection" || (
+  event.agent === "skeptic" && Boolean(event.productId && event.objections?.length && event.quote === event.objections[0].quote)
+), "Objection events must include their product and exact review evidence");
 export type AgentEvent = z.infer<typeof AgentEventSchema>;
 
 export const ArenaResultSchema = z.object({
@@ -153,5 +156,7 @@ export const ArenaResultSchema = z.object({
   ranked: z.array(RankedSchema),
   events: z.array(AgentEventSchema),
   mode: z.enum(["llm", "rules", "cache"]),
+  cachedMode: z.enum(["llm", "rules"]).optional(),
+  modelContributed: z.boolean().optional(),
 });
 export type ArenaResult = z.infer<typeof ArenaResultSchema>;

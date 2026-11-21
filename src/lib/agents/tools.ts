@@ -70,7 +70,9 @@ export function createTools({ agent, products, requirements, allowedIds, emit }:
       if (invalid) return { accepted: false, reason: "หลักฐานหรือข้อความอ้างอิงไม่ถูกต้อง" };
       if (agent === "skeptic" && eligibleLabels(product, requirements, labels).length !== labels.length) return { accepted: false, reason: "หลักฐานยังไม่ผ่านระยะเวลาการใช้งาน" };
       proposals.set(productId, labels);
-      emit({ agent, type: agent === "skeptic" ? "objection" : "candidate", text: "พบสินค้าพร้อมหลักฐาน", productId, ...(agent === "skeptic" && labels[0] ? { quote: labels[0].quote } : {}) });
+      emit(agent === "skeptic"
+        ? { agent, type: "objection", text: "พบสินค้าพร้อมหลักฐาน", productId, quote: labels[0].quote, objections: labels }
+        : { agent, type: "candidate", text: "พบสินค้าพร้อมหลักฐาน", productId });
       return { accepted: true };
     },
   };

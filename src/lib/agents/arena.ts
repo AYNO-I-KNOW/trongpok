@@ -2,11 +2,10 @@ import { byCategory } from "../catalog";
 import { labelWithRules } from "../labeling/rules";
 import { fit, rank, requirementResult, reviewWeight, eligibleLabels } from "../scoring";
 import type { AgentEvent, ArenaResult, CategoryPack, Label, Product, Requirement } from "../types";
-import { createTools } from "./tools";
+import { createTools, type ArenaAgent, type ArenaTools } from "./tools";
 import { runLlmAgent } from "./llm";
 
-const roles = ["fit", "value", "skeptic"] as const;
-type Role = (typeof roles)[number];
+const shortlistSize = 3;
 
 export async function runArena({ pack, requirements, needText, linkedProductId, products: supplied }: {
   pack: CategoryPack; requirements: Requirement[]; needText?: string; linkedProductId?: string; products?: Product[];
@@ -38,7 +37,7 @@ export async function runArena({ pack, requirements, needText, linkedProductId, 
       b.confirmations - a.confirmations || a.product.id.localeCompare(b.product.id));
   }
 
-  function rules(agent: Role, tools: ReturnType<typeof createTools>) {
+  function rules(agent: ArenaAgent, tools: ArenaTools) {
     const pool = tools.search_catalog(pack.id);
     if (agent === "skeptic") {
       const objections = pool.flatMap((product) => {
@@ -50,21 +49,21 @@ export async function runArena({ pack, requirements, needText, linkedProductId, 
       }).sort((a, b) => Number(b.product.id === linkedProductId) - Number(a.product.id === linkedProductId) ||
         b.labels.filter((label) => requirementIds.has(label.subjectId)).length -
         a.labels.filter((label) => requirementIds.has(label.subjectId)).length);
-      for (const { product, labels } of objections.slice(0, 3)) tools.propose(product.id, labels);
+      for (const { product, labels } of objections) tools.propose(product.id, labels);
       return;
     }
     const scored = ruleCandidates(pool);
     const candidates = agent === "value" ? scored.filter(({ results, fit }) => fit.mustOk && requirements.every((requirement, index) =>
       requirement.kind === "nice" || ["pass", "spec-only"].includes(results[index].status)))
       .sort((a, b) => a.product.priceThb - b.product.priceThb || a.product.id.localeCompare(b.product.id)) : scored;
-    for (const { product, labels } of candidates.slice(0, 3)) tools.propose(product.id, labels);
+    for (const { product, labels } of candidates.slice(0, shortlistSize)) tools.propose(product.id, labels);
   }
 
-  async function runRole(agent: Role) {
+  async function runRole(agent: ArenaAgent, allowedIds?: string[]) {
     publish({ agent, type: "start", text: "เริ่มตรวจสอบสินค้า" });
     if (useLlm) {
       const staged: AgentEvent[] = [];
-      const tools = createTools({ agent, products, requirements, emit: (event) => {
+      const tools = createTools({ agent, products, requirements, allowedIds, emit: (event) => {
         if (event.type === "candidate" || event.type === "objection") staged.push(event);
         else publish(event);
       } });
@@ -77,13 +76,13 @@ export async function runArena({ pack, requirements, needText, linkedProductId, 
         publish({ agent, type: "step", text: "ใช้โหมดกฎ" });
       }
     }
-    const tools = createTools({ agent, products, requirements, emit: publish });
+    const tools = createTools({ agent, products, requirements, allowedIds, emit: publish });
     rules(agent, tools);
     publish({ agent, type: "done", text: "ตรวจสอบเสร็จแล้ว" });
     return { proposals: tools.proposals, usedRules: true };
   }
 
-  const [fitRole, valueRole, skepticRole] = await Promise.all(roles.map(runRole));
+  const [fitRole, valueRole] = await Promise.all([runRole("fit"), runRole("value")]);
   const merged: Record<string, Label[]> = Object.fromEntries(products.map(({ id }) => [id, []]));
   const candidateIds = new Set([...fitRole.proposals.keys(), ...valueRole.proposals.keys()]);
   let supplemented = false;
@@ -96,8 +95,8 @@ export async function runArena({ pack, requirements, needText, linkedProductId, 
     }
     candidateIds.add(linked.id);
   }
-  if (candidateIds.size < Math.min(3, products.length)) {
-    const missing = Math.min(3, products.length) - candidateIds.size;
+  const missing = Math.min(shortlistSize, products.length) - candidateIds.size;
+  if (missing > 0) {
     const reserve = ruleCandidates(products.filter(({ id }) => !candidateIds.has(id))).slice(0, missing);
     for (const { product, labels } of reserve) {
       candidateIds.add(product.id);
@@ -106,11 +105,16 @@ export async function runArena({ pack, requirements, needText, linkedProductId, 
       publish({ agent: "judge", type: "step", text: "เพิ่มตัวเลือกเปรียบเทียบจากกฎ", productId: product.id });
     }
   }
-  for (const { proposals } of [valueRole, fitRole, skepticRole]) {
+  for (const { proposals } of [valueRole, fitRole]) {
     for (const [id, labels] of proposals) merged[id].push(...labels);
   }
   const candidates = products.filter(({ id }) => candidateIds.has(id));
-  const ranked = rank(candidates, requirements, merged, products).map((row) => ({
+  const allowedIds = rank(candidates, requirements, merged, products).slice(0, shortlistSize).map(({ productId }) => productId);
+  if (linked && !allowedIds.includes(linked.id)) allowedIds[shortlistSize - 1] = linked.id;
+  const skepticRole = await runRole("skeptic", allowedIds);
+  for (const [id, labels] of skepticRole.proposals) merged[id].push(...labels);
+  const finalists = candidates.filter(({ id }) => allowedIds.includes(id));
+  const ranked = rank(finalists, requirements, merged, products).map((row) => ({
     ...row, objections: skepticRole.proposals.get(row.productId) ?? [],
   }));
   const outcomes = [fitRole, valueRole, skepticRole];

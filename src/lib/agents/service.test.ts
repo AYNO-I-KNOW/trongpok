@@ -1,13 +1,17 @@
-import { mkdtemp, mkdir, writeFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import example from "../../../data/products/_example.json";
 import category from "../../../data/categories/blender.json";
 import { POST } from "../../app/api/arena/route";
+import { readArenaStream } from "../../ui/trong-pok/lib/arena-stream";
+import { loadPacks, loadProducts } from "../catalog";
 import { runLlmAgent } from "./llm";
 import { requirementsFromText } from "../needs";
-import { RequirementSchema } from "../types";
+import { RequirementSchema, type AgentEvent, type ArenaResult } from "../types";
+import { consumeArena } from "../ui/arena-response";
+import { cacheHash, requestCacheKey, writeArenaCache } from "./cache";
 import { runArenaRequest } from "./service";
 
 vi.mock("./llm", () => ({ runLlmAgent: vi.fn(async () => { throw new Error("offline"); }) }));
@@ -24,6 +28,15 @@ async function fixtureRoot() {
   await writeFile(join(root, "data/products", example.id + ".json"), JSON.stringify(example));
   vi.stubEnv("OPENAI_API_KEY", "");
   vi.stubEnv("VERCEL", "");
+}
+
+async function replaceCachedResult(input: { category: string; answers: Record<string, string> }, result: ArenaResult, index: boolean) {
+  const dataRoot = join(root, "data");
+  const cacheRoot = join(dataRoot, "cache", "arena");
+  const ref = join(cacheRoot, `${requestCacheKey(input, await loadPacks(dataRoot), await loadProducts(dataRoot))}.ref`);
+  const target = (await readFile(ref, "utf8")).trim();
+  await writeArenaCache(cacheRoot, target, result, true);
+  if (!index) await rm(ref);
 }
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -51,25 +64,105 @@ it("streams two fixture products and replays the persona request without model c
   const last = JSON.parse(frames.at(-1)!.split("\ndata: ")[1]);
   expect(last.ranked).toHaveLength(2);
   expect(last.mode).toBe("rules");
+  expect(frames[0]).toBe('event: mode\ndata: {"mode":"llm"}');
+  expect(frames.at(-3)).toBe('event: mode\ndata: {"mode":"rules"}');
   expect(frames.some((frame) => frame.includes('"agent":"judge"'))).toBe(true);
   const calls = vi.mocked(runLlmAgent).mock.calls.length;
   expect(calls).toBeGreaterThan(0);
   vi.stubEnv("OPENAI_API_KEY", "");
   vi.stubEnv("VERCEL", "1");
   const replay = await POST(request());
-  const replayFrames = (await replay.text()).trim().split("\n\n");
+  const [reviewedResult, landingResult, wire] = await Promise.all([
+    consumeArena(replay.clone(), () => {}),
+    readArenaStream(replay.clone(), () => {}),
+    replay.text(),
+  ]);
+  const replayFrames = wire.trim().split("\n\n");
   const cached = JSON.parse(replayFrames.at(-1)!.split("\ndata: ")[1]);
   expect(cached.mode).toBe("cache");
   expect(cached.ranked).toEqual(last.ranked);
-  expect(replayFrames.filter((frame) => frame.startsWith("event: agent"))).toEqual(frames.filter((frame) => frame.startsWith("event: agent")));
+  expect(replayFrames.filter((frame) => frame.startsWith("event: agent\n"))).toEqual(frames.filter((frame) => frame.startsWith("event: agent\n")));
   expect(replayFrames[0]).toBe('event: mode\ndata: {"mode":"cache"}');
+  expect(cached.cachedMode).toBe("rules");
+  expect(reviewedResult).toEqual(cached);
+  expect(landingResult).toEqual(cached);
   expect(runLlmAgent).toHaveBeenCalledTimes(calls);
   expect(requirementsFromText).toHaveBeenCalledTimes(1);
 });
 
+it("streams accepted review ids and exact Skeptic quotations for the shop ice request", async () => {
+  await fixtureRoot();
+  vi.spyOn(process, "cwd").mockReturnValue(root);
+  const response = await POST(new Request("http://localhost/api/arena", {
+    method: "POST",
+    body: JSON.stringify({
+      category: "blender",
+      needText: "เครื่องปั่นไว้ปั่นน้ำแข็งเปิดร้าน งบ 3,000 บาท",
+      answers: { blenderUsage: "ice", iceCubes: "5", container: "mainJar" },
+    }),
+  }));
+  const frames = (await response.text()).trim().split("\n\n");
+  const events = frames.filter((frame) => frame.startsWith("event: agent\n")).map((frame) => JSON.parse(frame.split("\ndata: ")[1]));
+  const result = JSON.parse(frames.at(-1)!.split("\ndata: ")[1]);
+  expect(frames.at(-1)).toMatch(/^event: result\n/);
+  expect(result.mode).toBe("rules");
+  const data = events.find((event) => event.agent === "skeptic" && event.type === "objection");
+  expect(data).toMatchObject({ productId: example.id, objections: expect.arrayContaining([
+    expect.objectContaining({ reviewId: "r2", subjectId: "ice", quote: example.reviews[1].text }),
+  ]) });
+  expect(result.ranked[0].objections).toEqual(data.objections);
+  expect(data.quote).toBe(data.objections[0].quote);
+  expect(result.ranked[0].requirements).toEqual(expect.arrayContaining([
+    expect.objectContaining({ requirementId: "ice-condition", status: "unknown", quotes: [] }),
+    expect.objectContaining({ requirementId: "budget", status: "pass" }),
+  ]));
+});
+
+it.each([true, false])("recomputes a cache with fabricated objection evidence, indexed: %s", async (index) => {
+  await fixtureRoot();
+  const options = { dataRoot: join(root, "data"), replayDelayMs: 0 };
+  const input = { category: "blender", answers: { use: "ice" } };
+  const first = await runArenaRequest(input, undefined, options);
+  const row = first.ranked[0];
+  const bogus = { ...row.objections[0], quote: "invented review quote" };
+  expect(row.objections.length).toBeGreaterThan(0);
+  await replaceCachedResult(input, {
+    ...first,
+    ranked: [{ ...row, objections: [bogus] }],
+    events: first.events.map((event) => event.type === "objection"
+      ? { ...event, quote: bogus.quote, objections: [bogus] } : event),
+  }, index);
+  const emit = vi.fn();
+  const fresh = await runArenaRequest(input, emit, options);
+  expect(fresh.mode).toBe("rules");
+  expect(fresh.ranked).toEqual(first.ranked);
+  expect(emit.mock.calls.flat()).toEqual(first.events);
+});
+
+it.each(["OPENAI_API_KEY", "OPENAI_MODEL"] as const)("does not replay a cached LLM result without %s", async (missing) => {
+  await fixtureRoot();
+  const options = { dataRoot: join(root, "data"), replayDelayMs: 0 };
+  const input = { category: "blender", answers: { use: "ice" } };
+  const first = await runArenaRequest(input, undefined, options);
+  await replaceCachedResult(input, { ...first, mode: "llm" }, true);
+  vi.stubEnv("OPENAI_API_KEY", "test");
+  vi.stubEnv("OPENAI_MODEL", "test");
+  vi.stubEnv(missing, "");
+  expect((await runArenaRequest(input, undefined, options)).mode).toBe("rules");
+});
+
+it("recomputes a cached mixed run without a configured model", async () => {
+  await fixtureRoot();
+  const options = { dataRoot: join(root, "data"), replayDelayMs: 0 };
+  const input = { category: "blender", answers: { use: "ice" } };
+  const first = await runArenaRequest(input, undefined, options);
+  const mixed = { ...first, modelContributed: true };
+  await replaceCachedResult(input, mixed, true);
+  expect((await runArenaRequest(input, undefined, options)).mode).toBe("rules");
+});
+
 it("does not reuse request cache keys from the previous scoring formula", async () => {
-  const { cacheHash, requestCacheKey } = await import("./cache");
-  expect(requestCacheKey({}, [], [])).not.toBe(cacheHash(["request", {}, cacheHash([[], []])]));
+  expect(requestCacheKey({}, [], [])).not.toBe(cacheHash(["request", "parallel-requirement-arena-v7", {}, cacheHash([[], []])]));
 });
 
 it("evaluates a product linked by local id and keeps its cache distinct", async () => {
@@ -198,4 +291,21 @@ it("stops cancelled requests before catalog access", async () => {
   const controller = new AbortController();
   controller.abort();
   await expect(runArenaRequest({ category: "blender" }, undefined, { signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
+});
+
+it.each(["first", "last"] as const)("stops cached replay when cancelled on the %s agent event", async (point) => {
+  await fixtureRoot();
+  const input = { category: "blender", answers: { use: "ice" } };
+  const options = { dataRoot: join(root, "data"), replayDelayMs: 0 };
+  const first = await runArenaRequest(input, undefined, options);
+  const controller = new AbortController();
+  const events: AgentEvent[] = [];
+  const stopAfter = point === "first" ? 1 : first.events.length;
+  const mode = vi.fn();
+  await expect(runArenaRequest(input, (event) => {
+    events.push(event);
+    if (events.length === stopAfter) controller.abort();
+  }, { ...options, signal: controller.signal, onMode: mode })).rejects.toMatchObject({ name: "AbortError" });
+  expect(events).toEqual(first.events.slice(0, stopAfter));
+  expect(mode.mock.calls).toEqual([["cache"]]);
 });

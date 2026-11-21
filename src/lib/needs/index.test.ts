@@ -4,7 +4,8 @@ import smoothiePro from "../../../data/products/blender-smoothie-pro.json";
 import { eligibleLabels, specCheck } from "../scoring";
 import { labelWithRules } from "../labeling/rules";
 import { CategoryPackSchema, ProductSchema } from "../types";
-import { requirementsFromAnswers, requirementsFromText } from "./index";
+import { requirementsFromAnswers } from "./answers";
+import { requirementsFromText } from "./index";
 
 const pack = CategoryPackSchema.parse(blender);
 afterEach(() => vi.unstubAllEnvs());
@@ -45,6 +46,31 @@ it("translates designer answers and keeps explicit text budget", () => {
     { id: "ice-condition", text: "ปั่นน้ำแข็ง 5 ก้อน ในขวดพกพา 600 มล.", kind: "must", specOnly: true, spec: { key: "maxIceCubesBottle600", op: ">=", value: 5 } },
     { id: "budget", text: "ราคาไม่เกิน 2,500 บาท", kind: "budget", value: 2500 },
   ]);
+});
+
+it("uses the shop-duty ice requirement and exact budget even with designer answers", async () => {
+  vi.stubEnv("OPENAI_API_KEY", "");
+  const query = "เครื่องปั่นไว้ปั่นน้ำแข็งเปิดร้าน งบ 3,000 บาท";
+  const product = ProductSchema.parse(smoothiePro);
+  const requirements = requirementsFromAnswers(pack, { blenderUsage: "ice", iceCubes: "5", container: "mainJar" }, query);
+  const shopIce = pack.questions[0].options[1].requirement;
+  expect(requirements[0]).toEqual(shopIce);
+  expect(requirements[1]).toMatchObject({ id: "ice-condition", specOnly: true });
+  expect(specCheck(product, requirements[1])).toBe("unknown");
+  expect(requirements[2]).toMatchObject({ id: "budget", value: 3000 });
+  expect(await requirementsFromText(pack, query)).toEqual(expect.arrayContaining([
+    shopIce, expect.objectContaining({ id: "budget", value: 3000 }),
+  ]));
+});
+
+it("does not require commercial wattage when the buyer rules out shop use", () => {
+  const requirements = requirementsFromAnswers(pack, { blenderUsage: "ice" }, "ปั่นน้ำแข็งที่บ้าน ไม่ได้เปิดร้าน");
+  expect(requirements[0].spec?.key).toBe("iceCrush");
+});
+
+it("keeps commercial ice use alongside an iced smoothie choice", () => {
+  const requirements = requirementsFromAnswers(pack, { blenderUsage: "smoothie" }, "เครื่องปั่นไว้ปั่นน้ำแข็งเปิดร้าน งบ 3,000 บาท");
+  expect(requirements.map(({ id }) => id)).toEqual(["smoothie", "ice", "ice-condition", "budget"]);
 });
 
 it.each(["งบไม่เกิน 3000 บาท", "งบ ไม่เกิน 3000 บาท", "งบประมาณ ไม่เกิน 3000 บาท"])("keeps the designer budget from %s", (text) => {

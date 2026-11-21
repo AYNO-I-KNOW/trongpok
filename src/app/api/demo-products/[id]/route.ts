@@ -8,5 +8,5 @@ export async function GET(
   const product = (await loadProducts()).find((entry) => entry.id === id);
   if (!product)
     return Response.json({ message: "ไม่มีรุ่นนี้ในชุดเดโม" }, { status: 404 });
-  return Response.json({ source: "โหมดกฎ · ข้อมูลเดโมสังเคราะห์", product });
+  return Response.json({ source: "ข้อมูลเดโมสังเคราะห์", product });
 }

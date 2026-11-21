@@ -1,19 +1,20 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
-import type { ArenaResult } from "@/lib/types";
+import type { ArenaResult, Product } from "@/lib/types";
+import { findSourceReview } from "@/ui/trong-pok/lib/arena-evidence";
+import { EvidenceDialogShell } from "./EvidenceDialog";
 import FitPill from "./FitPill";
-export type CatalogProduct = {
-  id: string;
-  title: string;
-  priceThb: number;
-  imageUrl: string;
-  shopeeUrl: string;
-  outboundUrl: string;
-  stars: number;
-  ratingCount: number;
-  shopName: string;
-};
+export type CatalogProduct = Pick<
+  Product,
+  "id" | "title" | "priceThb" | "imageUrl" | "stars" | "ratingCount" | "reviews" | "claims"
+> & { shopName: string };
+
+const noObjection = "ไม่พบข้อทักท้วงที่ตรวจสอบกับรีวิวต้นทางได้";
+
+function catalogUrl(productId: string) {
+  return `/api/demo-products/${productId}`;
+}
 const statusText = {
   pass: "ผ่าน",
   fail: "ไม่ผ่าน",
@@ -28,16 +29,33 @@ export default function ArenaResults({
   onBack,
   onReset,
 }: {
-  result: ArenaResult;
+  result: Omit<ArenaResult, "events">;
   products: CatalogProduct[];
   onBack: () => void;
   onReset: () => void;
 }) {
   const [open, setOpen] = useState<string | null>(null);
-  const items = result.ranked.slice(0, 3).map((ranked) => ({
-    ranked,
-    product: products.find((product) => product.id === ranked.productId),
-  }));
+  const [evidenceId, setEvidenceId] = useState<string | null>(null);
+  const items = result.ranked.slice(0, 3).map((ranked) => {
+    const product = products.find((product) => product.id === ranked.productId);
+    const objections = ranked.objections.flatMap((label) => {
+      if (label.stance !== "contradict" || label.target !== "product") return [];
+      const review = findSourceReview(product, ranked.productId, label);
+      if (!review) return [];
+      const subject = result.requirements.find(({ id }) => id === label.subjectId)
+        ?? product?.claims.find(({ id, checkable }) => checkable && id === label.subjectId);
+      return subject ? [{ label, review, subject: subject.text }] : [];
+    });
+    return { ranked, product, objections };
+  });
+  const evidence = items.find(({ ranked }) => ranked.productId === evidenceId);
+  const objectionsByReview = new Map<string, (typeof items)[number]["objections"]>();
+  for (const objection of evidence?.objections ?? []) {
+    const group = objectionsByReview.get(objection.review.id);
+    if (group) group.push(objection);
+    else objectionsByReview.set(objection.review.id, [objection]);
+  }
+  const mode = result.mode === "cache" ? result.cachedMode : result.mode;
   function row(
     label: string,
     render: (item: (typeof items)[number]) => ReactNode,
@@ -128,11 +146,11 @@ export default function ArenaResults({
         <h1>เครื่องปั่นที่เหมาะกับคุณ</h1>
         <p>เรียงตามความเหมาะกับโจทย์และหลักฐานรีวิว</p>
         <span className="demo-label">
-          {result.mode === "rules"
-            ? "โหมดกฎ"
-            : result.mode === "cache"
-              ? "ผลจากแคช"
-              : "โหมด AI"}
+          ข้อมูลเดโมสังเคราะห์ · ราคาและรีวิวไม่ใช่ข้อมูลจริง
+        </span>
+        <span className="demo-label">
+          {[mode === "rules" ? result.modelContributed ? "โหมดกฎร่วมกับ AI" : "โหมดกฎ" : mode === "llm" ? "โหมด AI" : null,
+            result.mode === "cache" ? "ผลจากแคช" : null].filter(Boolean).join(" · ")}
         </span>
       </header>
       {!items.length ? (
@@ -169,7 +187,7 @@ export default function ArenaResults({
                         unoptimized
                       />
                     ) : (
-                      <span>ไม่มีภาพสินค้า</span>
+                      <span className="purchase-note">ไม่มีภาพในชุดเดโม</span>
                     )}
                   </div>
                   <h2>{product?.title ?? ranked.productId}</h2>
@@ -201,17 +219,16 @@ export default function ArenaResults({
             <tr className="purchase-row">
               {items.map(({ ranked, product }) => (
                 <td key={ranked.productId}>
-                  {product?.outboundUrl ? (
+                  {product && (
                     <a
-                      className="product-action"
-                      href={product.outboundUrl}
+                      className="product-action secondary"
+                      href={catalogUrl(product.id)}
+                      aria-label={"ดูข้อมูลเดโม " + product.title}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {product.shopeeUrl ? "ดูสินค้า" : "ค้นหาบน Shopee"} ↗
+                      ดูข้อมูลเดโม ↗
                     </a>
-                  ) : (
-                    <span className="purchase-note">ไม่มีลิงก์ซื้อ</span>
                   )}
                 </td>
               ))}
@@ -224,7 +241,7 @@ export default function ArenaResults({
               ? "ข้อมูลไม่พอ"
               : Math.round(ranked.trust * 100) + "%",
           )}
-          {row("ประหยัดเทียบรุ่นอ้างอิง", ({ ranked }) =>
+          {row("ประหยัดเทียบรุ่นอ้างอิงในชุดเดโม", ({ ranked }) =>
             ranked.savings === null
               ? "ข้อมูลไม่พอ"
               : "฿" + ranked.savings.toLocaleString("th-TH"),
@@ -234,7 +251,7 @@ export default function ArenaResults({
             "วิธีใช้และข้อจำกัด",
             <>
               {result.requirements.map((requirement) =>
-                row(requirement.text, ({ ranked }) => {
+                row(requirement.text, ({ ranked, product }) => {
                   const evidence = ranked.requirements.find(
                     (item) => item.requirementId === requirement.id,
                   );
@@ -244,9 +261,12 @@ export default function ArenaResults({
                         {evidence ? statusText[evidence.status] : "ข้อมูลไม่พอ"}
                       </strong>
                       {evidence?.message && <p>{evidence.message}</p>}
-                      {evidence?.quotes.map((quote, index) => (
-                        <blockquote key={index}>{quote.quote}</blockquote>
-                      ))}
+                      {evidence?.quotes.map((quote, index) =>
+                        quote.subjectId === requirement.id &&
+                        findSourceReview(product, ranked.productId, quote) ? (
+                          <blockquote key={index}>{quote.quote}</blockquote>
+                        ) : null
+                      )}
                     </>
                   );
                 }),
@@ -259,26 +279,40 @@ export default function ArenaResults({
             "evidence",
             "เหตุผลและหลักฐาน",
             <>
-              {row("ข้อทักท้วงจาก Skeptic", ({ ranked }) =>
-                ranked.objections.length
-                  ? ranked.objections.map((quote, index) => (
-                      <blockquote key={index}>{quote.quote}</blockquote>
-                    ))
-                  : "ไม่มีข้อทักท้วงในหลักฐานที่ตรวจได้",
+              <tbody className="evidence-actions">
+                <tr>
+                  {items.map(({ ranked, product }) => (
+                    <td key={ranked.productId} data-product-id={ranked.productId}>
+                      <button
+                        className="evidence-link"
+                        type="button"
+                        aria-haspopup="dialog"
+                        aria-label={"ดูหลักฐาน " + (product?.title ?? ranked.productId)}
+                        onClick={(event) => {
+                          event.currentTarget.focus({ preventScroll: true });
+                          setEvidenceId(ranked.productId);
+                        }}
+                      >
+                        ดูหลักฐาน ↗
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+              {row("ข้อทักท้วงจาก Skeptic", ({ objections }) =>
+                objections.length ? `${objections.length} ข้อ` : noObjection,
               )}
               {row(
                 "คุณภาพรีวิว",
                 ({ ranked }) =>
                   ranked.reviewQualityWarning?.message || "ไม่มีคำเตือนเพิ่มเติม",
               )}
-              {row("หลักฐานจากคู่มือ", () => "ข้อมูลไม่พอ")}
-              {row("คลิป: สิ่งที่เห็นและยังไม่ยืนยัน", () => "ข้อมูลไม่พอ")}
-              {row("สิ่งที่เห็นในรูป", () => "ข้อมูลไม่พอ")}
+              {row("ที่มาของหลักฐาน", () => "รีวิวสังเคราะห์ในชุดเดโม")}
             </>,
           )}
           {section(
             "stores",
-            "ร้านค้า ประกัน และรีวิว",
+            "ร้านค้า ประกัน และรีวิวในชุดเดโม",
             <>
               {row("ร้านค้า", ({ product }) => product?.shopName || "ข้อมูลไม่พอ")}
               {row("คะแนนและจำนวนรีวิวในชุดข้อมูล", ({ product }) =>
@@ -298,6 +332,42 @@ export default function ArenaResults({
           )}
         </table>
       )}
+      <EvidenceDialogShell
+        open={!!evidence}
+        title={evidence?.product?.title ?? evidence?.ranked.productId ?? ""}
+        eyebrow="ข้อมูลเดโมสังเคราะห์ · ไม่ใช่รีวิวจริง"
+        onClose={() => setEvidenceId(null)}
+      >
+        {evidence && (
+          <>
+            <section className="arena-objections">
+              <h3>ข้อทักท้วงจาก Skeptic</h3>
+              {!evidence.objections.length && <p>{noObjection}</p>}
+              {[...objectionsByReview.values()].map((objections) => {
+                const { review } = objections[0];
+                const subjects = [...new Set(objections.map(({ subject }) => subject))];
+                const excerpts = [...new Set(objections.map(({ label }) => label.quote))]
+                  .filter((quote) => quote !== review.text);
+                return (
+                  <article key={review.id}>
+                    <p>{subjects.join(" · ")}</p>
+                    {excerpts.map((quote) => <blockquote key={quote}>{quote}</blockquote>)}
+                    <p className="evidence-gap">รีวิวต้นทาง {review.id} · {review.stars}/5 ดาว</p>
+                    <blockquote>{review.text}</blockquote>
+                  </article>
+                );
+              })}
+            </section>
+            {evidence.product && (
+              <section>
+                <a href={catalogUrl(evidence.product.id)} target="_blank" rel="noopener noreferrer">
+                  เปิดข้อมูลต้นทางในแคตตาล็อกเดโม ↗
+                </a>
+              </section>
+            )}
+          </>
+        )}
+      </EvidenceDialogShell>
     </section>
   );
 }

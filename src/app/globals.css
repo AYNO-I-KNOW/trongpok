@@ -473,8 +473,6 @@ button,select,.scenario-control,.question-nav,.eyebrow{font-weight:500}
   color: var(--brown);
 }
 
-.prototype-label{position:fixed;z-index:20;top:12px;left:50%;transform:translateX(-50%);max-width:90%;border-radius:12px;padding:8px 14px;background:#fff3df;color:#70582e;font-size:12px;text-align:center}
-
 .compare-entry-options{padding-bottom:136px}
 .compare-entry-options .method{margin-bottom:0}
 .requirement-edit{padding:12px 0}
@@ -489,3 +487,70 @@ button,select,.scenario-control,.question-nav,.eyebrow{font-weight:500}
 .arena-agent-status li span:last-child{color:var(--muted)}
 .arena-log{max-height:180px;overflow:auto;padding-left:24px;margin:0}
 .arena-log li{padding:3px 0}
+
+.arena-entry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  padding-inline: 8px;
+  font-size: 14px;
+}
+
+.arena-intro p {
+  margin: 0 auto;
+  max-width: 30ch;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.arena-requirements .question-copy { margin-bottom: 20px; }
+
+.arena-requirement-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.arena-requirement-groups h2 {
+  margin-bottom: 4px;
+  color: var(--brown);
+  font-size: 14px;
+}
+
+.arena-requirement-groups ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arena-requirement-groups li {
+  padding: 5px 12px;
+  border-radius: 18px;
+  background: #f5f4f2;
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.arena-requirement-groups li[data-kind="must"] {
+  background: var(--peach);
+  color: var(--brown);
+}
+
+.arena-objections article {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.arena-objections blockquote {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-left: 2px solid var(--coral);
+  background: #fff5f1;
+  font-size: 14px;
+  line-height: 24px;
+}
