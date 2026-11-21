@@ -1,0 +1,17 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #fafaf9;
+  color: #1c1917;
+  font-family: system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+main {
+  width: min(100%, 48rem);
+  margin-inline: auto;
+  padding: 3rem 1.5rem;
+}
