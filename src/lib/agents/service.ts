@@ -11,10 +11,13 @@ import { scoringVersion, cacheHash, requestCacheKey, readArenaCache, writeArenaC
 import { judge } from "./judge";
 
 export const ArenaRequestSchema = z.object({
-  category: z.string().optional(),
-  needText: z.string().optional(),
+  category: z.string().max(80).optional(),
+  needText: z.string().max(2000).optional(),
   answers: z.record(z.string(), z.union([z.string(), z.number(), z.array(z.union([z.string(), z.number()]))])).optional(),
-  link: z.string().optional(),
+  link: z.string().max(2000).optional(),
+  requirements: z.array(RequirementSchema).min(1).max(30).refine((items) =>
+    new Set(items.map((item) => item.id)).size === items.length && items.every((item) => item.kind !== "budget" || item.value !== undefined),
+  { message: "เงื่อนไขที่ยืนยันไม่ถูกต้อง" }).optional(),
 });
 
 const InternalArenaRequestSchema = ArenaRequestSchema.extend({ linkedProductId: z.string().min(1).optional() });
@@ -57,7 +60,7 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
     cacheMatchesCatalog(result, products);
   const replay = async (result: ArenaResult & { mode: "llm" | "rules" }): Promise<ArenaResult> => {
     for (const event of result.events) {
-      await setTimeout(options.replayDelayMs ?? 15);
+      await setTimeout(options.replayDelayMs ?? 15, undefined, { signal: options.signal });
       emit(event);
     }
     return { ...result, mode: "cache", cachedMode: result.mode };
@@ -73,7 +76,9 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
   const category = selectedProduct?.category ?? request.category;
   const pack = packs.find((item) => item.id === category) ?? (!category ? packs.find((item) => item.keywords.some((keyword) => request.needText?.toLowerCase().includes(keyword.toLowerCase()))) : undefined);
   if (!pack) throw new Error("กรุณาระบุหมวดสินค้า");
-  const requirements = request.answers ? requirementsFromAnswers(pack, request.answers, request.needText) : await requirementsFromText(pack, request.needText ?? "");
+  const requirements = request.requirements ?? (request.answers
+    ? requirementsFromAnswers(pack, request.answers, request.needText)
+    : await requirementsFromText(pack, request.needText ?? ""));
   const linkedProductId = selectedProduct?.id;
   const key = cacheHash([scoringVersion, requirements, request.needText, linkedProductId, pack.id, version]);
   const cached = await readArenaCache(cacheRoot, key);
@@ -81,7 +86,14 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
     await writeRequestCache(cacheRoot, requestKey, key, options.strictCache);
     return replay(cached);
   }
-  const { usedModel, ...result } = await runArena({ pack, requirements, needText: request.needText, linkedProductId, products }, emit);
+  options.signal?.throwIfAborted();
+  options.onMode?.(process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL ? "llm" : "rules");
+  const { usedModel, ...result } = await runArena({ pack, requirements, needText: request.needText, linkedProductId, products }, (event) => {
+    options.signal?.throwIfAborted();
+    if (event.text === "ใช้โหมดกฎ") options.onMode?.("rules");
+    emit(event);
+  });
+  options.signal?.throwIfAborted();
   emit({ agent: "judge", type: "start", text: "กำลังสรุปเหตุผล" });
   result.events.push({ agent: "judge", type: "start", text: "กำลังสรุปเหตุผล" });
   const summary = await judge(result.ranked, requirements, usedModel ? "llm" : "rules", request.needText, result.events);
