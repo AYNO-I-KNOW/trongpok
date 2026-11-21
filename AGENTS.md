@@ -1,6 +1,13 @@
 # trongpok (ตรงปก): เหมาะกับเราไหม
 
-Hackathon build, Sea x OpenAI, 2026-11-21, 10:00–17:00. Only work committed in this window counts.
+Regional Codex Hackathon Thailand (Sea × OpenAI), 2026-11-21. Official hacking starts at **10:25 ICT**; code freeze and submission are at **17:00 ICT**. See [hackathon rules, judging, and submission](docs/hackathon.md).
+
+## Hackathon
+
+- Work on-site; only work built during the event is judged. Use a new public GitHub repo. If extending an existing project, make substantial additions and disclose the source repos and what was built during the event in the README and submission form.
+- Submit once per team via Google Form by **17:00 ICT**: public repo, write-up (problem, solution, build direction, and how Codex was used), live demo or prototype link, and declarations. Late submissions are disqualified.
+- Judges assess problem–solution fit, build quality, originality, real-world value, build direction, and depth of Codex use. Lead with **AI-Native Products & Operations** for trongpok and show a working purchase decision backed by review evidence. Keep concrete examples of how Codex helped build the product.
+- Demo/pitch: **6 minutes** in both rounds; Q&A: **2 minutes** in round one, **4 minutes** in the top-five final. Cover the problem, solution, and use of Codex.
 
 ## Product
 
