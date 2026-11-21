@@ -61,3 +61,13 @@ src/app/                 pages and route handlers
 
 - One slice from `docs/codex-prompts.md` per task. Finish with `npm test` and `npm run build` passing, then commit with the slice id in the subject, e.g. `feat(s02): fit scoring`.
 - No code comments. Small pure functions. Tests for scoring, fallbacks, and the quote check.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

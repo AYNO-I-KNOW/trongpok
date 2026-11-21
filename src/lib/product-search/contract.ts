@@ -1,33 +1,39 @@
 import { z } from "zod";
-import { sourceUrl } from "./domain";
+import { isDetailUrl, sourceUrl } from "./domain";
 
 const text = z.string().trim().min(1);
 const source = z.union([
   z.url({ protocol: /^https$/ }),
   z.string().regex(/^\/api\/demo-products\/[a-z0-9-]+$/),
 ]);
+const liveSource = z.string().refine((value) => sourceUrl(value) !== null);
+const liveProduct = z.string().refine((value) => {
+  const url = sourceUrl(value);
+  return url !== null && isDetailUrl(url);
+});
+const priceSchema = z.object({
+  baht: z.number().positive(),
+  url: source,
+  observedAt: z.iso.datetime(),
+});
 const productPickSchema = z.object({
   model: text,
-  image: z
-    .string()
-    .refine((value) => sourceUrl(value) !== null)
-    .optional(),
+  image: liveSource.optional(),
   url: source,
-  price: z
-    .object({
-      baht: z.number().positive(),
-      url: source,
-      observedAt: z.iso.datetime(),
-    })
-    .nullable(),
+  price: priceSchema.nullable(),
   reasons: z.array(z.object({ text, url: source })),
   unknowns: z.array(text),
+});
+const webProductPickSchema = productPickSchema.extend({
+  url: liveProduct,
+  price: priceSchema.extend({ url: liveProduct }),
+  reasons: z.array(z.object({ text, url: liveSource })),
 });
 
 export const productSearchResultSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("web"),
-    picks: z.array(productPickSchema).max(3),
+    picks: z.array(webProductPickSchema).max(3),
     note: z.string(),
     searchCalls: z.number().int().positive(),
     discovery: z
@@ -51,4 +57,5 @@ export const productSearchResultSchema = z.discriminatedUnion("kind", [
 ]);
 
 export type ProductPick = z.infer<typeof productPickSchema>;
+export type WebProductPick = z.infer<typeof webProductPickSchema>;
 export type ProductSearchResult = z.infer<typeof productSearchResultSchema>;

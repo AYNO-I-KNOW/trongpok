@@ -119,6 +119,7 @@ describe("live search rounds", () => {
       .mockResolvedValueOnce({
         candidates: [candidate()],
         sources,
+        usable: true,
         searchCalls: 1,
       })
       .mockRejectedValue(new Error("timeout"));
@@ -126,8 +127,11 @@ describe("live search rounds", () => {
       goal: async () => goal,
       search,
     });
-    expect(result.kind).toBe("web");
-    if (result.kind === "web") expect(result.picks).toHaveLength(1);
+    expect(result).toMatchObject({
+      kind: "web",
+      picks: [{ model: "Logitech M240" }],
+      note: expect.stringContaining("ค้นเพิ่มไม่สำเร็จ"),
+    });
     expect(search).toHaveBeenNthCalledWith(
       4,
       "silent mouse",
@@ -136,6 +140,62 @@ describe("live search rounds", () => {
       1,
       expect.objectContaining({ knownModels: ["Logitech M240"] }),
     );
+  });
+  it("reports unavailable when discovery completes without any usable sources", async () => {
+    const query = "เครื่องวัดรังสีนิวตรอน";
+    const search = vi.fn<SearchBackend["search"]>().mockResolvedValue({
+      candidates: [],
+      sources: new Set(),
+      usable: false,
+      searchCalls: 1,
+    });
+    expect(
+      await searchProducts(query, {
+        goal: async () => ({ ...goal, category: query }),
+        search,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+  });
+  it("does not present zero matches when discovery sources could not be verified", async () => {
+    const query = "เครื่องวัดรังสีนิวตรอน";
+    const blocked = "https://www.powerbuy.co.th/th/product/neutron-meter";
+    const search = vi.fn<SearchBackend["search"]>().mockResolvedValue({
+      candidates: [],
+      sources: new Set([blocked]),
+      usable: false,
+      searchCalls: 1,
+      unavailableDomains: ["powerbuy.co.th"],
+    });
+    expect(
+      await searchProducts(query, {
+        goal: async () => ({ ...goal, category: query }),
+        search,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+  });
+  it("reports unavailable when an empty first round is followed by a failed search", async () => {
+    const query = "เครื่องวัดรังสีนิวตรอน";
+    const search = vi
+      .fn<SearchBackend["search"]>()
+      .mockResolvedValueOnce({ candidates: [], sources, usable: true, searchCalls: 1 })
+      .mockRejectedValue(new Error("timeout"));
+    expect(
+      await searchProducts(query, {
+        goal: async () => ({ ...goal, category: query }),
+        search,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+  });
+  it("keeps an empty web outcome when completed discovery finds no qualifying matches", async () => {
+    const search = vi.fn<SearchBackend["search"]>().mockResolvedValue({
+      candidates: [{ ...candidate(), price: null, evidence: [] }],
+      sources,
+      usable: true,
+      searchCalls: 1,
+    });
+    expect(
+      await searchProducts("silent mouse", { goal: async () => goal, search }),
+    ).toMatchObject({ kind: "web", picks: [] });
   });
   it("asks a clarification without searching", async () => {
     const search = vi.fn<SearchBackend["search"]>();
@@ -277,13 +337,15 @@ it("searches again instead of counting unverified musts toward the top three", a
     .mockResolvedValueOnce({
       candidates: [unverified],
       sources,
+      usable: true,
       searchCalls: 2,
     })
-    .mockResolvedValueOnce({ candidates: [], sources, searchCalls: 1 })
-    .mockResolvedValueOnce({ candidates: [], sources, searchCalls: 1 })
+    .mockResolvedValueOnce({ candidates: [], sources, usable: true, searchCalls: 1 })
+    .mockResolvedValueOnce({ candidates: [], sources, usable: true, searchCalls: 1 })
     .mockResolvedValueOnce({
       candidates: [candidate()],
       sources,
+      usable: true,
       searchCalls: 1,
     });
   const result = await searchProducts("silent mouse", {
@@ -298,7 +360,7 @@ it("searches again instead of counting unverified musts toward the top three", a
   });
 });
 
-it("keeps an unpriced exact model when the buyer has no spending cap", () => {
+it("excludes an unpriced exact model even without a spending cap", () => {
   expect(
     rankProducts(
       [{ ...candidate(), price: null }],
@@ -306,14 +368,14 @@ it("keeps an unpriced exact model when the buyer has no spending cap", () => {
       sources,
       "now",
     ),
-  ).toMatchObject([{ model: "Logitech M240", price: null }]);
+  ).toEqual([]);
 });
 
 it("keeps excluded buyer URLs out of both provider requests", async () => {
   const extract = vi.fn().mockResolvedValue(goal);
   const search = vi
     .fn<SearchBackend["search"]>()
-    .mockResolvedValue({ candidates: [], sources: new Set(), searchCalls: 1 });
+    .mockResolvedValue({ candidates: [], sources: new Set(), usable: false, searchCalls: 1 });
   const backend = { goal: extract, search };
   const link = "https://shopee.co.th/product/12/34";
   expect(await searchProducts(link, backend)).toMatchObject({
@@ -334,7 +396,12 @@ it("counts two finishes of the same model sold on separate product pages only on
     const item = candidate(name);
     item.modelFamily = index === 2 ? name : "Logitech M240";
     item.url = url + index;
-    item.price = null;
+    item.price = {
+      baht: 650 + index * 50,
+      currency: "THB",
+      url: item.url,
+      pageModel: name,
+    };
     item.stock.url = item.url;
     return item;
   });
@@ -375,6 +442,7 @@ it("starts three complementary agents before awaiting any and ranks their combin
     resolve({
       candidates: [item],
       sources: new Set([item.url]),
+      usable: true,
       searchCalls: 1,
     });
   }
@@ -397,7 +465,7 @@ it("propagates cancellation after discovery without starting a follow-up", async
     .fn<SearchBackend["search"]>()
     .mockImplementation(async () => {
       controller.abort();
-      return { candidates: [], sources, searchCalls: 1 };
+      return { candidates: [], sources, usable: true, searchCalls: 1 };
     });
   await expect(
     searchProducts(
@@ -413,6 +481,7 @@ it("targets missing coverage and avoids blocked domains in the follow-up", async
   const search = vi.fn<SearchBackend["search"]>().mockResolvedValue({
     candidates: [candidate()],
     sources,
+    usable: true,
     searchCalls: 1,
     unavailableDomains: ["www.powerbuy.co.th"],
   });
@@ -460,4 +529,14 @@ it.each([false, true])("prefers the chosen SKU's supporting reason regardless of
   ]);
   other.evidence[0].stance = "no";
   expect(rankProducts(offers, goal, verifiedSources, "now")).toEqual([]);
+});
+
+it("keeps a verified first-round offer when unusable expansion cites the same URL", async () => {
+  const search = vi.fn<SearchBackend["search"]>()
+    .mockResolvedValueOnce({ candidates: [candidate()], sources, usable: true, searchCalls: 1 })
+    .mockRejectedValueOnce(new Error("offline"))
+    .mockRejectedValueOnce(new Error("offline"))
+    .mockResolvedValueOnce({ candidates: [], sources, usable: false, titles: new Map([[url, "JIB homepage"]]), searchCalls: 1 });
+  await expect(searchProducts("silent mouse", { goal: async () => goal, search }))
+    .resolves.toMatchObject({ kind: "web", picks: [{ model: "Logitech M240", price: { baht: 700 } }] });
 });

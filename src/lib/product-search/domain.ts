@@ -106,3 +106,22 @@ export function sourceUrl(raw: string): string | null {
     return null;
   }
 }
+
+export function isDetailUrl(raw: string, allowSpecs = false): boolean {
+  let url: URL;
+  let path: string;
+  try {
+    url = new URL(raw);
+    path = decodeURIComponent(url.pathname).replace(/\/+$/, "");
+  } catch {
+    return false;
+  }
+  for (const key of url.searchParams.keys()) {
+    if (/^(?:q|search)$/i.test(key)) return false;
+  }
+  return (
+    path.length > 1 &&
+    !/(?:^|\/)(?:search|search-results?|searchresult|product_search|category|categories|collections?|brands?|promotions?|productcatalog|product-catalog|catalog|pricelist|plp|listings?|product-listings?)(?:\/|$)/i.test(path) &&
+    (allowSpecs || !/(?:^|\/)(?:manuals?|support|blogs?|news|articles?)(?:\/|$)|\.(?:pdf|jpe?g|png|webp|gif|svg)$/i.test(path))
+  );
+}

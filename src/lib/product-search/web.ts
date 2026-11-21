@@ -59,7 +59,7 @@ export function createSearchBackend(
   apiKey: string,
   model: string,
   requestSignal?: AbortSignal,
-) {
+): SearchBackend {
   const deadlineSignal = AbortSignal.timeout(270_000);
   const signal = requestSignal
     ? AbortSignal.any([requestSignal, deadlineSignal])
@@ -208,6 +208,7 @@ export function createSearchBackend(
           candidates: preverified,
           unavailableDomains: [...pageCache.unavailableDomains],
           sources,
+          usable: true,
           searchCalls,
           titles,
         };
@@ -225,6 +226,7 @@ export function createSearchBackend(
         signal,
         pageCache,
       );
+      let extractedPages = false;
       if (pages.length) {
         try {
           const shortlist = pages.slice(0, 12);
@@ -262,8 +264,9 @@ export function createSearchBackend(
             { signal, timeout: 25_000 },
           );
           if (extraction.status === "completed") {
-            for (const item of pageResultsSchema.parse(extraction.output_parsed)
-              .candidates) {
+            const parsed = pageResultsSchema.parse(extraction.output_parsed);
+            extractedPages = true;
+            for (const item of parsed.candidates) {
               const page = shortlist[item.page];
               if (!page || !item.matchesCategory || !item.model.trim())
                 continue;
@@ -299,13 +302,15 @@ export function createSearchBackend(
         }
       }
       const distinct = mergeSearchCandidates(discovered, sources);
+      const candidates = await verifyProductPages(
+        distinct,
+        sources,
+        signal,
+        pageCache,
+      );
       return {
-        candidates: await verifyProductPages(
-          distinct,
-          sources,
-          signal,
-          pageCache,
-        ),
+        candidates,
+        usable: candidates.length > 0 || extractedPages,
         unavailableDomains: [...pageCache.unavailableDomains],
         sources,
         searchCalls,
@@ -325,6 +330,7 @@ export type SearchBackend = {
   ): Promise<{
     candidates: import("./domain").SearchCandidate[];
     sources: Set<string>;
+    usable: boolean;
     searchCalls: number;
     titles?: Map<string, string>;
     unavailableDomains?: string[];

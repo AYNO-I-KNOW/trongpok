@@ -44,9 +44,8 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
 
   await page.goto(base + "/?demo=ranking");
-  await comparison().waitFor();
-  assert.ok(await comparison().getByRole("img", { name: /ค่าทดลอง UI/ }).count() > 0);
-  const designerWidth = await page.locator("main.phone.result").evaluate((node) => getComputedStyle(node).maxWidth);
+  await page.getByRole("heading", { name: "เริ่มค้นหาของที่คุณต้องการ", exact: true }).waitFor();
+  assert.equal(await page.locator(".prototype-label, .fit-score-row").count(), 0);
   await page.goto(base);
   await page.locator("main.phone.home img[src='/assets/home.png']").waitFor();
   const homeSearch = () => page.getByRole("textbox", { name: "คำถามหรือลิงก์สินค้า", exact: true });
@@ -61,6 +60,7 @@ try {
   await comparison().waitFor();
   assert.equal(await comparison().locator(".fit-score-row").count(), 0);
   await comparison().getByRole("link", { name: /^ดูข้อมูลเดโม / }).first().waitFor();
+  const designerWidth = await page.locator("main.phone.result").evaluate((node) => getComputedStyle(node).maxWidth);
 
   await page.goto(base + "/arena");
   await homeSearch().fill("เครื่องปั่นปั่นน้ำแข็ง");

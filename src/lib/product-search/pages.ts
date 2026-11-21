@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { matchesProductModel as matches, sourceUrl, type SearchCandidate } from "./domain";
+import { isDetailUrl, matchesProductModel as matches, sourceUrl, type SearchCandidate } from "./domain";
 
 const productSchema = z
   .object({
@@ -25,17 +25,14 @@ export function createProductPageCache() {
   return { pages: new Map<string, Promise<Page>>(), unavailableDomains: new Set<string>() };
 }
 type ProductPageCache = ReturnType<typeof createProductPageCache>;
+const visiblePriceRange =
+  /(?:฿|THB)\s*[\d,]+(?:\.\d+)?\s*(?:[-–—−~]|ถึง|\bto\b)\s*(?:(?:฿|THB)\s*)?\d|[\d,]+(?:\.\d+)?\s*(?:[-–—−~]|ถึง|\bto\b)\s*(?:฿|THB)\s*\d/i;
+const compatibilityText =
+  /\b(?:case|cover|mount|charger|adapter|replacement|accessor(?:y|ies)|protector|sleeve|strap)\b.{0,40}\b(?:for|fits|compatible with)\b|(?:เคส|ฝาครอบ|ฟิล์ม|อะไหล่|อะแดปเตอร์|สายชาร์จ|สายรัด|อุปกรณ์เสริม|ซอง).{0,30}(?:สำหรับ|ใช้กับ|รองรับ)/iu;
+const productMetadata = /<meta\b(?=[^>]*\bproperty\s*=\s*["']og:type["'])(?=[^>]*\bcontent\s*=\s*["']product["'])[^>]*>/i;
 function safeUrl(raw: string) {
   const url = sourceUrl(raw);
   return url && !new URL(url).port ? url : null;
-}
-function detail(raw: string, spec = false) {
-  const path = new URL(raw).pathname;
-  return (
-    path !== "/" &&
-    !/(?:^|\/)(?:search|searchresult|product_search|category|categories|collections|brands?|promotions?|productcatalog|pricelist)(?:\/|$)/i.test(path) &&
-    (spec || !/(?:^|\/)(?:manual|support)(?:\/|$)/i.test(path))
-  );
 }
 function objects(value: unknown): unknown[] {
   if (Array.isArray(value)) return value.flatMap(objects);
@@ -147,23 +144,19 @@ function structuredProducts(html: string) {
 }
 function inspect(html: string, model: string) {
   const products = structuredProducts(html);
-  const same = products.filter((product) =>
-    matches(
-      [
-        product.name,
-        typeof product.model === "string" ? product.model : product.model?.name,
-        product.sku,
-      ]
-        .filter(Boolean)
-        .join(" "),
-      model,
-    ),
-  );
+  const same = products.filter((product) => {
+    if (product.isAccessoryOrSparePartFor !== undefined || compatibilityText.test(product.name ?? ""))
+      return false;
+    const namedModel = typeof product.model === "string" ? product.model : product.model?.name;
+    return matches([product.name, namedModel, product.sku].filter(Boolean).join(" "), model);
+  });
   const title = decode(
     html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "",
   );
-  if ((products.length && !same.length) || (title && !matches(title, model)))
-    return null;
+  if (
+    (products.length && !same.length) ||
+    (title && (!matches(title, model) || compatibilityText.test(title)))
+  ) return null;
   const visible = productText(html);
   if (!same.length && !matches(title || visible, model)) return null;
   const offerObjects = same.flatMap((product) => objects(product.offers));
@@ -195,7 +188,7 @@ function inspect(html: string, model: string) {
         .filter((price) => Number.isFinite(price) && price > 0),
     ),
   ];
-  if (!prices.length) {
+  if (!prices.length && !visiblePriceRange.test(visible) && (same.length || productMetadata.test(html))) {
     const metadata = [...html.matchAll(/<meta\b[^>]*>/gi)].map(
       (match) => match[0],
     );
@@ -259,7 +252,7 @@ function pageReader(
   const deadline = Date.now() + 15_000;
   async function fetchPage(raw: string): Promise<Page> {
     const initial = safeUrl(raw);
-    if (!initial || !normalizedSources.has(initial) || !detail(initial, true))
+    if (!initial || !normalizedSources.has(initial) || !isDetailUrl(initial, true))
       return { kind: "invalid" };
     const existing = cache.get(initial);
     if (existing) {
@@ -300,7 +293,7 @@ function pageReader(
               !next ||
               !normalizedSources.has(next) ||
               new URL(next).hostname.replace(/^www\./, "") !== host ||
-              !detail(next, true)
+              !isDetailUrl(next, true)
             )
               return { kind: "invalid" };
             current = next;
@@ -369,7 +362,7 @@ export async function readProductPages(sources: Set<string>, signal?: AbortSigna
   const fetchPage = pageReader(sources, signal, context);
   const urls = [...sources].filter((raw) => {
     const url = safeUrl(raw);
-    return url && detail(url) && !/\.(?:pdf|jpg|png|webp)$/i.test(new URL(url).pathname);
+    return url && isDetailUrl(url);
   }).slice(0, 20);
   const pages: { url: string; title: string; modelNames: string[]; text: string; offers: { modelName: string; baht: number; currency: string; availability?: string }[] }[] = [];
   await Promise.all(Array.from({ length: 3 }, async () => {
@@ -377,11 +370,11 @@ export async function readProductPages(sources: Set<string>, signal?: AbortSigna
       const url = urls.shift();
       if (!url) break;
       const page = await fetchPage(url);
-      if (page.kind !== "html") continue;
+      if (page.kind !== "html" || !isDetailUrl(page.url)) continue;
       const title = passage(page.html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
       const products = structuredProducts(page.html);
       const modelNames = products.flatMap((product) => product.name ? [product.name] : []);
-      if (!modelNames.length && !/(?:^|\/)(?:p|products?|shop|item)(?:\/|$)/i.test(new URL(url).pathname)) continue;
+      if (!modelNames.length && !/(?:^|\/)(?:p|products?|shop|item)(?:\/|$)/i.test(new URL(page.url).pathname)) continue;
       const offers = products.flatMap((product) => objects(product.offers).flatMap((value) => {
         const offer = offerSchema.safeParse(value);
         if (!offer.success || !product.name) return [];
@@ -416,38 +409,29 @@ export async function verifyProductPages(
     )
       return null;
     const primaryUrl = safeUrl(candidate.url);
-    if (!primaryUrl || !detail(primaryUrl)) return null;
-    const primary = await fetchPage(candidate.url);
+    if (!primaryUrl || !isDetailUrl(primaryUrl)) return null;
+    const primary = await fetchPage(primaryUrl);
     if (primary.kind === "invalid") return null;
-    const proof =
-      primary.kind === "html" ? inspect(primary.html, candidate.model) : null;
-    const directEvidence =
-      matches(decode(new URL(candidate.url).pathname), candidate.model) &&
-      candidate.evidence.some(
-        (item) =>
-          item.url === candidate.url && matches(item.text, candidate.model),
-      );
-    if (!proof && (primary.kind === "html" || !directEvidence)) return null;
-    let price = null;
-    if (candidate.price) {
-      const page = await fetchPage(candidate.price.url);
-      const priceProof =
-        page.kind === "html" ? inspect(page.html, candidate.model) : null;
-      if (priceProof?.price)
-        price = {
-          ...candidate.price,
-          baht: priceProof.price,
-          currency: "THB",
-          pageModel: candidate.model,
-        };
+    let url = primaryUrl;
+    let proof = null;
+    if (primary.kind === "html") {
+      if (!isDetailUrl(primary.url)) return null;
+      proof = inspect(primary.html, candidate.model);
+      if (!proof) return null;
+      url = primary.url;
     }
-    if (proof?.price)
-      price = {
-        baht: proof.price,
-        currency: "THB",
-        pageModel: candidate.model,
-        url: candidate.url,
-      };
+    const offerUrl = !proof?.price && candidate.price && safeUrl(candidate.price.url);
+    if (offerUrl && offerUrl !== primaryUrl && offerUrl !== url && isDetailUrl(offerUrl)) {
+      const offer = await fetchPage(offerUrl);
+      if (offer.kind === "html" && isDetailUrl(offer.url)) {
+        const offerProof = inspect(offer.html, candidate.model);
+        if (offerProof?.price) {
+          proof = offerProof;
+          url = offer.url;
+        }
+      }
+    }
+    if (!proof) return null;
     const evidence = [];
     for (const item of candidate.evidence) {
       const evidencePage = await fetchPage(item.url);
@@ -458,17 +442,22 @@ export async function verifyProductPages(
         inspect(evidencePage.html, candidate.model) &&
         productText(evidencePage.html, true).includes(excerpt)
       )
-        evidence.push({ ...item, pageModel: candidate.model });
+        evidence.push({ ...item, url: evidencePage.url, pageModel: candidate.model });
     }
     return {
       ...candidate,
-      image: proof?.image,
+      url,
+      image: proof.image,
       evidence,
       pageModel: candidate.model,
-      price,
-      stock: proof?.inStock
-        ? { status: "in_stock", url: candidate.url, pageModel: candidate.model }
-        : { status: "unknown", url: candidate.url, pageModel: candidate.model },
+      price: proof.price === null
+        ? null
+        : { baht: proof.price, currency: "THB", pageModel: candidate.model, url },
+      stock: {
+        status: proof.inStock ? "in_stock" : "unknown",
+        url,
+        pageModel: candidate.model,
+      },
     };
   }
   const verified = new Map<number, SearchCandidate>();

@@ -1,111 +1,119 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import {
   productSearchResultSchema,
   type ProductSearchResult,
 } from "@/lib/product-search/contract";
+import type { SearchHistoryEntry } from "@/ui/trong-pok/lib/history";
 import { liveResult } from "@/ui/trong-pok/lib/live-result";
 import HomeForm from "./HomeForm";
+import HomeHistory from "./HomeHistory";
 import Mascot from "./Mascot";
 import Results from "./Results";
 
-type SearchState =
+type SearchState = { query: string } & (
   | { kind: "home" }
   | { kind: "loading" }
-  | { kind: "error"; message: string }
-  | { kind: "result"; result: ProductSearchResult };
+  | { kind: "error" }
+  | { kind: "result"; result: ProductSearchResult }
+);
 
 export default function SearchHome({
   fontTheme,
-  initialQuery = "",
-  autoSearch = false,
   history,
   onSearchComplete,
 }: {
   fontTheme: "ibm" | "line";
-  initialQuery?: string;
-  autoSearch?: boolean;
-  history?: ReactNode;
-  onSearchComplete?: (query: string, response: Extract<ProductSearchResult, { kind: "web" }>) => void;
+  history: SearchHistoryEntry[];
+  onSearchComplete: (query: string, response: Extract<ProductSearchResult, { kind: "web" }>) => void;
 }) {
-  const [state, setState] = useState<SearchState>({
-    kind: initialQuery && autoSearch ? "loading" : "home",
-  });
-  const [query, setQuery] = useState(initialQuery);
+  const [state, setState] = useState<SearchState>({ kind: "home", query: "" });
   const [answer, setAnswer] = useState("");
-  const onComplete = useRef(onSearchComplete);
-  useEffect(() => { onComplete.current = onSearchComplete; }, [onSearchComplete]);
   const activeRequest = useRef<AbortController | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
+  useEffect(() => () => activeRequest.current?.abort(), []);
   useEffect(() => {
-    if (state.kind !== "loading") {
-      heading.current?.focus();
-      return;
-    }
-    const controller = new AbortController();
-    activeRequest.current = controller;
-    async function load() {
-      let next: SearchState;
-      try {
-        const response = await fetch("/api/product-search", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
-          signal: controller.signal,
-        });
-        const data: unknown = await response.json();
-        next = { kind: "result", result: productSearchResultSchema.parse(data) };
-      } catch {
-        next = { kind: "error", message: "เชื่อมต่อการค้นหาไม่ได้ กรุณาลองอีกครั้ง" };
-      }
-      if (!controller.signal.aborted) {
-        if (next.kind === "result" && next.result.kind === "web" && next.result.picks.length)
-          onComplete.current?.(query, next.result);
-        setState((current) => (current === state ? next : current));
-      }
-    }
-    void load();
-    return () => controller.abort();
-  }, [state, query]);
+    heading.current?.focus();
+  }, [state]);
 
-  function edit() {
+  function goHome(query: string) {
     activeRequest.current?.abort();
-    setState({ kind: "home" });
+    activeRequest.current = null;
+    setState({ kind: "home", query });
     setAnswer("");
     requestAnimationFrame(() => document.getElementById("query")?.focus());
   }
 
-  function reset() {
-    setQuery("");
-    edit();
+  function edit() {
+    goHome(state.query);
   }
 
-  function search(raw: string) {
-    const next = raw.trim();
-    if (!next) return;
+  async function search(raw: string) {
+    const query = raw.trim();
+    if (!query) return;
     activeRequest.current?.abort();
-    setQuery(next);
+    const controller = new AbortController();
+    activeRequest.current = controller;
     setAnswer("");
-    setState({ kind: "loading" });
+    setState({ kind: "loading", query });
+
+    let next: SearchState;
+    try {
+      const response = await fetch("/api/product-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+        signal: controller.signal,
+      });
+      const data: unknown = await response.json();
+      next = { kind: "result", query, result: productSearchResultSchema.parse(data) };
+    } catch {
+      next = { kind: "error", query };
+    }
+    if (controller.signal.aborted) return;
+    activeRequest.current = null;
+    if (next.kind === "result" && next.result.kind === "web" && next.result.picks.length) {
+      onSearchComplete(query, next.result);
+    }
+    setState(next);
   }
 
+  const { query } = state;
   const result = state.kind === "result" ? state.result : null;
+  const searchResult = result?.kind === "web" || result?.kind === "demo" ? result : null;
+  const comparison = searchResult?.picks.length ? searchResult : null;
+  const recoveryMessage = state.kind === "error"
+    ? "เชื่อมต่อการค้นหาไม่ได้ กรุณาลองอีกครั้ง"
+    : result?.kind === "unavailable" ? result.message : searchResult?.note;
   const phase = state.kind === "home" ? "home"
     : state.kind === "loading" ? "search"
     : result?.kind === "clarify" ? "clarify"
-    : result?.kind === "web" || result?.kind === "demo" ? "result"
+    : comparison ? "result"
     : "unsupported";
 
   return (
-    <main className={"phone " + phase} data-font={fontTheme}>
+    <main className={phase === "unsupported" ? "phone" : "phone " + phase} data-font={fontTheme}>
       <Mascot phase={phase} />
-      {phase === "home" && <HomeForm initial={query} history={history} onSubmit={search}
-        action={<Link className="evidence-link" href={fontTheme === "line" ? "/compare?font=line" : "/compare"}>
-          เปรียบเทียบจากรีวิวใน Arena →
-        </Link>} />}
+      {phase === "home" && (
+        <HomeForm
+          initial={query}
+          onSubmit={search}
+          action={
+            <Link className="evidence-link" href={fontTheme === "line" ? "/compare?font=line" : "/compare"}>
+              เปรียบเทียบจากรีวิวใน Arena →
+            </Link>
+          }
+          history={history.length > 0 && (
+            <HomeHistory
+              items={history}
+              onOpen={(entry) => setState({ kind: "result", query: entry.query, result: entry.response })}
+            />
+          )}
+        />
+      )}
       {phase === "search" && <>
         <button className="edit-result" type="button" onClick={edit}>← แก้โจทย์</button>
         <section className="search-copy" role="status">
@@ -128,7 +136,7 @@ export default function SearchHome({
           </div>
           <form id="question-form" onSubmit={(event) => {
             event.preventDefault();
-            if (answer.trim()) search(query + "\n" + result.question + "\nคำตอบ: " + answer.trim());
+            if (answer.trim()) void search(query + "\n" + result.question + "\nคำตอบ: " + answer.trim());
           }}>
             <label className="custom-label">คำตอบของคุณ
               <textarea autoFocus rows={1} value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="พิมพ์คำตอบของคุณ" required />
@@ -139,12 +147,14 @@ export default function SearchHome({
           <button className="primary" type="submit" form="question-form" disabled={!answer.trim()}>เริ่มค้นหาต่อ</button>
         </div>
       </section>}
-      {(result?.kind === "web" || result?.kind === "demo") && <Results result={liveResult(query, result)} onReset={reset} onBack={edit} onConditions={() => {}} />}
+      {comparison && <Results result={liveResult(query, comparison)} onReset={() => goHome("")} onBack={edit} onConditions={() => {}} />}
       {phase === "unsupported" && <section className="unsupported">
-        <h1 ref={heading} tabIndex={-1}>ยังตรวจเรื่องนี้ไม่ได้</h1>
-        <p role={state.kind === "error" ? "alert" : undefined}>{state.kind === "error" ? state.message : result?.kind === "unavailable" ? result.message : "ยังไม่พบข้อมูลที่ยืนยันได้"}</p>
-        <button className="primary" onClick={() => search(query)}>ลองค้นอีกครั้ง</button>
-        <button className="primary secondary" onClick={edit}>แก้โจทย์</button>
+        <h1 ref={heading} tabIndex={-1}>{searchResult ? "ยังไม่มีรุ่นที่ยืนยันได้" : "ยังตรวจเรื่องนี้ไม่ได้"}</h1>
+        {searchResult && <span className="demo-label">{searchResult.kind === "demo" ? "โหมดกฎ · ข้อมูลเดโม" : "ค้นจากเว็บ"}</span>}
+        <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>คำค้น: {query}</p>
+        {recoveryMessage && <p role={state.kind === "error" ? "alert" : undefined}>{recoveryMessage}</p>}
+        <button className="primary" type="button" onClick={() => void search(query)}>ลองค้นอีกครั้ง</button>
+        <button className="primary secondary" type="button" onClick={edit}>แก้โจทย์</button>
       </section>}
     </main>
   );
