@@ -1,6 +1,6 @@
 import { byCategory } from "../catalog";
 import { labelWithRules } from "../labeling/rules";
-import { fit, rank, requirementResult, reviewWeight, validLabels } from "../scoring";
+import { fit, rank, requirementResult, reviewWeight, eligibleLabels } from "../scoring";
 import type { AgentEvent, ArenaResult, CategoryPack, Label, Product, Requirement } from "../types";
 import { createTools, type ArenaAgent } from "./tools";
 import { runLlmAgent } from "./llm";
@@ -21,7 +21,7 @@ export async function runArena({ pack, requirements, linkedProductId, products: 
       const labels = labelWithRules(product, [...requirements, ...product.claims.filter((claim) => claim.checkable)]);
       const results = requirements.map((requirement) => requirementResult(product, requirement, labels));
       const requirementIds = new Set(requirements.map((requirement) => requirement.id));
-      const confirmations = validLabels(product, labels)
+      const confirmations = eligibleLabels(product, requirements, labels)
         .filter((label) => requirementIds.has(label.subjectId) && label.stance === "confirm").length;
       return { product, labels, results, confirmations, fit: fit(requirements, results) };
     });
@@ -41,7 +41,7 @@ export async function runArena({ pack, requirements, linkedProductId, products: 
         tools.propose(product.id, labels);
         continue;
       }
-      const objections = validLabels(product, labels).filter((label) => label.stance === "contradict")
+      const objections = eligibleLabels(product, requirements, labels).filter((label) => label.stance === "contradict")
         .toSorted((a, b) => reviewWeight(product.reviews.find((review) => review.id === b.reviewId)!) -
           reviewWeight(product.reviews.find((review) => review.id === a.reviewId)!)).slice(0, 1);
       if (objections.length) tools.propose(product.id, objections);
@@ -83,7 +83,7 @@ export async function runArena({ pack, requirements, linkedProductId, products: 
   await role("skeptic", topIds);
   for (const [id, labels] of roleResults.get("skeptic") ?? []) merged[id] = [...(merged[id] ?? []), ...labels];
   const ranked = rank(candidates, requirements, merged, products).map((row) => ({
-    ...row, objections: validLabels(products.find((product) => product.id === row.productId)!, roleResults.get("skeptic")?.get(row.productId) ?? []),
+    ...row, objections: eligibleLabels(products.find((product) => product.id === row.productId)!, requirements, roleResults.get("skeptic")?.get(row.productId) ?? []),
   }));
   return { requirements, ranked, events, mode };
 }

@@ -30,7 +30,7 @@ it("corrects a rejected quote on the next model turn", async () => {
   const fixture = await import("../../../data/products/_example.json");
   const product = ProductSchema.parse(fixture.default);
   const tools = createTools({ agent: "fit", products: [product], requirements: [], emit: () => {} });
-  const label = { reviewId: "r1", subjectId: "c1", stance: "confirm", target: "product", quote: "fabricated" };
+  const label = { reviewId: "r1", subjectId: "c1", stance: "confirm", target: "product", usage: "short", specific: true, quote: "fabricated" };
   const call = (quote: string, id: string) => ({
     output: [{ type: "function_call", name: "propose", arguments: JSON.stringify({
       id: product.id, labels: [{ ...label, quote }],

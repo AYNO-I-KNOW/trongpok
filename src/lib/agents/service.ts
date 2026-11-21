@@ -5,7 +5,7 @@ import { loadPacks, loadProducts, findByLink } from "../catalog";
 import { requirementsFromAnswers, requirementsFromText } from "../needs";
 import type { AgentEvent, ArenaResult } from "../types";
 import { runArena } from "./arena";
-import { cacheHash, requestCacheKey, readArenaCache, writeArenaCache, readRequestCache, writeRequestCache } from "./cache";
+import { scoringVersion, cacheHash, requestCacheKey, readArenaCache, writeArenaCache, readRequestCache, writeRequestCache } from "./cache";
 import { judge } from "./judge";
 
 export const ArenaRequestSchema = z.object({
@@ -38,7 +38,7 @@ export async function runArenaRequest(input: z.infer<typeof ArenaRequestSchema>,
   if (!pack) throw new Error("กรุณาระบุหมวดสินค้า");
   const requirements = request.answers ? requirementsFromAnswers(pack, request.answers) : await requirementsFromText(pack, request.needText ?? "");
   const linkedProductId = linked?.status === "found" ? linked.product.id : undefined;
-  const key = cacheHash([requirements, linkedProductId, pack.id, version]);
+  const key = cacheHash([scoringVersion, requirements, linkedProductId, pack.id, version]);
   const cached = await readArenaCache(cacheRoot, key);
   if (cached) {
     await writeRequestCache(cacheRoot, requestKey, key, options.strictCache);

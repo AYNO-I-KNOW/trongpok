@@ -29,7 +29,7 @@ it("omits verifier without a link and handles an empty catalog", async () => {
 it("rejects invented quotes and out-of-scope products", () => {
   const emit = vi.fn();
   const tools = createTools({ agent: "skeptic", products: [product], requirements: [], allowedIds: [product.id], emit });
-  expect(tools.propose(product.id, [{ reviewId: "r1", subjectId: "c1", stance: "contradict", target: "product", quote: "invented" }]).accepted).toBe(false);
+  expect(tools.propose(product.id, [{ reviewId: "r1", subjectId: "c1", stance: "contradict", target: "product", usage: "short", specific: true, quote: "invented" }])).toEqual({ accepted: false, reason: "หลักฐานหรือข้อความอ้างอิงไม่ถูกต้อง" });
   expect(tools.propose("other", []).accepted).toBe(false);
   expect(tools.proposals.size).toBe(0);
   expect(emit).toHaveBeenCalled();
@@ -107,4 +107,28 @@ it("orders equally fitting products by evidence independently of input order", a
       event.agent === "fit" && event.type === "candidate").map((event) => event.productId));
   }
   expect(candidateOrders).toEqual([["stronger", "cheaper"], ["stronger", "cheaper"]]);
+});
+
+it("rejects short-use skeptic evidence for a long-use requirement", () => {
+  const requirement = { id: "durable", text: "ใช้ได้นาน", kind: "must" as const, longUse: true };
+  const tools = createTools({ agent: "skeptic", products: [product], requirements: [requirement], emit: () => {} });
+  const label = { reviewId: product.reviews[0].id, subjectId: requirement.id, stance: "contradict" as const,
+    target: "product" as const, quote: product.reviews[0].text, usage: "short" as const, specific: true };
+  expect(tools.propose(product.id, [label]).accepted).toBe(false);
+  expect(tools.propose(product.id, [{ ...label, usage: "long" }]).accepted).toBe(true);
+});
+
+it("preserves long-use warnings in schema-validated arena results", async () => {
+  vi.stubEnv("OPENAI_API_KEY", "");
+  const { ArenaResultSchema } = await import("../types");
+  const reviews = Array.from({ length: 5 }, (_, index) => ({
+    ...product.reviews[0], id: String(index), text: "แกะกล่องแล้วสวยดีมาก", isTemplate: false,
+  }));
+  const result = ArenaResultSchema.parse(await runArena({
+    pack, products: [{ ...product, reviews }],
+    requirements: [{ id: "duration", text: "ใช้นาน", kind: "must", longUse: true }],
+  }));
+  expect(result.ranked[0].requirements[0]).toMatchObject({ status: "unknown", message: "ยังไม่มีรีวิวจากคนที่ใช้นานพอ" });
+  expect(result.ranked[0].reviewQualityWarning?.percent).toBe(100);
+  expect(result.ranked[0].requirements[0].quotes).toEqual([]);
 });

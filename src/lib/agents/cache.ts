@@ -3,6 +3,8 @@ import { mkdir, readFile, rename, writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { ArenaResultSchema, type ArenaResult, type CategoryPack, type Product } from "../types";
 
+export const scoringVersion = "review-quality-v2";
+
 export function cacheHash(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
@@ -50,5 +52,5 @@ export async function writeRequestCache(root: string, key: string, target: strin
 }
 
 export function requestCacheKey(request: unknown, packs: CategoryPack[], products: Product[]) {
-  return cacheHash(["request", request, cacheHash([packs, products])]);
+  return cacheHash(["request", scoringVersion, request, cacheHash([packs, products])]);
 }

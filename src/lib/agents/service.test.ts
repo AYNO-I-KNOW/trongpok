@@ -52,3 +52,8 @@ it("streams two fixture products and replays the persona request without model c
   expect(runLlmAgent).toHaveBeenCalledTimes(calls);
   expect(requirementsFromText).toHaveBeenCalledTimes(1);
 });
+
+it("does not reuse request cache keys from the previous scoring formula", async () => {
+  const { cacheHash, requestCacheKey } = await import("./cache");
+  expect(requestCacheKey({}, [], [])).not.toBe(cacheHash(["request", {}, cacheHash([[], []])]));
+});

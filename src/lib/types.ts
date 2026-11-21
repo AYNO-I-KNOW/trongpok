@@ -10,6 +10,7 @@ export const RequirementSchema = z.object({
   id: textSchema,
   text: textSchema,
   kind: z.enum(["must", "nice", "budget"]),
+  longUse: z.boolean().optional(),
   value: z.number().nonnegative().optional(),
   spec: z.object({
     key: textSchema,
@@ -99,6 +100,8 @@ export const LabelSchema = z.object({
   stance: StanceSchema,
   target: TargetSchema,
   quote: z.string(),
+  usage: z.enum(["unboxing", "short", "long"]),
+  specific: z.boolean(),
 });
 export type Label = z.infer<typeof LabelSchema>;
 
@@ -111,6 +114,7 @@ export const RequirementResultSchema = z.object({
   requirementId: textSchema,
   status: RequirementStatusSchema,
   score: ratioSchema,
+  message: z.string().optional(),
   quotes: z.array(LabelSchema),
 });
 export type RequirementResult = z.infer<typeof RequirementResultSchema>;
@@ -129,6 +133,7 @@ export const RankedSchema = z.object({
   unusedFeatures: z.array(textSchema),
   objections: z.array(LabelSchema),
   why: z.string(),
+  reviewQualityWarning: z.object({ message: z.string(), percent: percentSchema }).nullable().optional(),
   tradeoff: z.string().optional(),
 });
 export type Ranked = z.infer<typeof RankedSchema>;
