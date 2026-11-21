@@ -154,12 +154,7 @@ export default function TrongPok({
         });
     }
   }
-  const phase =
-    screen.kind === "preview"
-      ? "result"
-      : screen.kind === "error"
-        ? "unsupported"
-        : screen.kind;
+  const phase = screen.kind === "preview" ? "result" : screen.kind;
   return (
     <main className={"phone " + phase} data-font={fontTheme}>
       <Mascot phase={phase} />
@@ -263,19 +258,21 @@ export default function TrongPok({
         </>
       )}{" "}
       {screen.kind === "error" && (
-        <section className="unsupported">
-          <h1>ตรวจข้อมูลไม่สำเร็จ</h1>
+        <section className="arena-error" aria-labelledby="arena-error-heading">
+          <h1 id="arena-error-heading">ตรวจข้อมูลไม่สำเร็จ</h1>
           <p role="alert">{screen.message}</p>
-          <button
-            className="primary"
-            type="button"
-            onClick={() => void run(screen.answers)}
-          >
-            ลองอีกครั้ง
-          </button>
-          <button className="back" type="button" onClick={back}>
-            กลับไปแก้โจทย์
-          </button>
+          <div className="arena-error-actions">
+            <button
+              className="primary"
+              type="button"
+              onClick={() => void run(screen.answers)}
+            >
+              ลองอีกครั้ง
+            </button>
+            <button className="primary secondary" type="button" onClick={back}>
+              กลับไปแก้โจทย์
+            </button>
+          </div>
         </section>
       )}
     </main>
