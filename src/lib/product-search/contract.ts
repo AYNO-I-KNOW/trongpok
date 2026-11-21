@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sourceUrl } from "./domain";
 
 const text = z.string().trim().min(1);
 const source = z.union([
@@ -7,6 +8,7 @@ const source = z.union([
 ]);
 const productPickSchema = z.object({
   model: text,
+  image: z.string().refine((value) => sourceUrl(value) !== null).optional(),
   url: source,
   price: z
     .object({

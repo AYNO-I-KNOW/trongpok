@@ -143,6 +143,7 @@ export function rankProducts(
         family: modelKey(offer),
         pick: {
           model: offer.model,
+          ...(offer.image && sourceUrl(offer.image) ? { image: offer.image } : {}),
           url: offer.url,
           price,
           unknowns,

@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { verifyProductPages } from "./pages";
 import type { SearchCandidate } from "./domain";
+import { rankProducts } from "../scoring/product-search";
+import { productSearchResultSchema } from "./contract";
 const url = "https://www.jib.co.th/product/logitech-m240";
 function candidate(): SearchCandidate {
   return {
@@ -321,4 +323,40 @@ it("corroborates search tool table syntax only when the store places those cells
   expect(verified.evidence.map((entry) => entry.excerpt)).toEqual([
     "ความจุ  | 1.70ลิตร",
   ]);
+});
+
+it("carries only the verified primary same-model product photo through ranking and the public contract", async () => {
+  const image = "https://statice.homepro.co.th/homepro/ARTICLE_IMAGE/11/372/1137295/447x447/25082022_1137295$Imagec1.jpg";
+  const html = page() + `<script type="application/ld+json">${JSON.stringify([
+    { "@type": "Product", name: "Logitech M241", image: "https://www.jib.co.th/images/wrong.jpg" },
+    { "@type": "Product", name: "Logitech M240", image: [{ url: image }] },
+  ])}</script>`;
+  const fetcher = vi.fn().mockResolvedValue(new Response(html));
+  vi.stubGlobal("fetch", fetcher);
+  const verified = await verifyProductPages([candidate()], new Set([url]));
+  const picks = rankProducts(verified, { category: "mouse", budget: null, must: [], nice: [], clarification: null }, new Set([url]), "2026-11-21T03:00:00Z");
+  const result = productSearchResultSchema.parse({ kind: "web", picks, note: "", searchCalls: 1, searchRounds: 1 });
+  expect(result.kind === "web" && result.picks[0].image).toBe(image);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  "https://shopee.co.th/m240.jpg",
+  "http://www.jib.co.th/m240.jpg",
+  "https://www.jib.co.th.evil.com/m240.jpg",
+  "https://www.jib.co.th:8443/m240.jpg",
+  "https://user:password@www.jib.co.th/m240.jpg",
+  "https://unknown-cdn.com/m240.jpg",
+])("drops unsafe product photos: %s", async (image) => {
+  const html = page() + `<script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: "Logitech M240", image })}</script>`;
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(html)));
+  const [verified] = await verifyProductPages([{ ...candidate(), image: "https://www.jib.co.th/invented.jpg" }], new Set([url]));
+  expect(verified.image).toBeUndefined();
+});
+
+it("does not borrow OG or unrelated product photos", async () => {
+  const html = page() + `<meta property="og:image" content="https://www.jib.co.th/stock.jpg"><script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: "Logitech M241", image: "https://www.jib.co.th/wrong.jpg" })}</script>`;
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(html)));
+  const [verified] = await verifyProductPages([candidate()], new Set([url]));
+  expect(verified.image).toBeUndefined();
 });

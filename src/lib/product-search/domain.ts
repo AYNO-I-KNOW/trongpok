@@ -72,7 +72,7 @@ export const candidateSchema = z.object({
   }),
   evidence: z.array(evidenceSchema),
 });
-export type SearchCandidate = z.infer<typeof candidateSchema>;
+export type SearchCandidate = z.infer<typeof candidateSchema> & { image?: string };
 export function sourceUrl(raw: string): string | null {
   try {
     const url = new URL(raw);

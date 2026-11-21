@@ -8,6 +8,7 @@ const productSchema = z
     model: z.union([z.string(), z.object({ name: z.string() })]).optional(),
     sku: z.string().optional(),
     offers: z.unknown().optional(),
+    image: z.unknown().optional(),
   })
   .passthrough();
 const offerSchema = z.object({
@@ -97,6 +98,12 @@ function productText(html: string, includeSpecRows = false) {
       .join(" | "),
   );
   return [visible, ...rows].join("\n");
+}
+function productImages(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(productImages);
+  const image = z.object({ url: z.string() }).safeParse(value);
+  return image.success ? [image.data.url] : [];
 }
 function inspect(html: string, model: string) {
   const products = [
@@ -206,6 +213,7 @@ function inspect(html: string, model: string) {
     }
   }
   return {
+    image: same.flatMap((product) => productImages(product.image)).map(safeUrl).find((url) => url !== null),
     price: prices.length === 1 ? prices[0] : null,
     inStock: offers.some((offer) =>
       /\/InStock$/i.test(offer.availability ?? ""),
@@ -367,6 +375,7 @@ export async function verifyProductPages(
     }
     return {
       ...candidate,
+      image: proof?.image,
       evidence,
       pageModel: candidate.model,
       price,
