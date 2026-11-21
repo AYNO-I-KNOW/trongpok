@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HISTORY_KEY, historyResult, readHistory, rememberSearch } from './history';
+import { HISTORY_KEY, historyResult, readHistory, readSearchHistory, rememberSearch } from './history';
 import type { ProductSearchResult } from '../../../lib/product-search/contract';
 
 const response: Extract<ProductSearchResult, { kind: 'web' }> = {
@@ -28,14 +28,28 @@ describe('recent searches', () => {
   expect(entries[1]).toEqual(legacy);
   expect(historyResult(entries[1]).plan.target).toBe('electrolux');
  });
+ it('excludes synthetic entries from the homepage without removing them from shared storage', () => {
+  const saved = { version: 3, key: 'saved', query: 'นาฬิกาไว้เดินป่า', response };
+  localStorage.setItem(HISTORY_KEY, JSON.stringify([legacy, saved]));
+  expect(readSearchHistory()).toEqual([saved]);
+  expect(rememberSearch('นาฬิกากันน้ำ', response).map(entry => entry.query)).toEqual(['นาฬิกากันน้ำ', saved.query]);
+  expect(readHistory()).toContainEqual(legacy);
+ });
+ it('does not display prices saved by the previous verifier', () => {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify([
+   { version: 2, key: 'old-verifier', query: 'นาฬิกาไว้เดินป่า', response },
+  ]));
+  expect(readSearchHistory()).toEqual([]);
+ });
  it('deduplicates and bounds results to three entries', () => {
   for (const query of ['one', 'two', 'three', 'four', 'four']) rememberSearch(query, response);
-  expect(readHistory().map(entry => entry.version === 2 && entry.query)).toEqual(['four', 'three', 'two']);
+  expect(readHistory().map(entry => entry.version === 3 && entry.query)).toEqual(['four', 'three', 'two']);
  });
  it('skips empty results and invalid entries while retaining valid history', () => {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify([null, {}, { version: 2, key: 'bad', query: 'watch', response: { ...response, picks: [] } }, legacy]));
-  expect(rememberSearch('watch', { ...response, picks: [] })).toEqual([legacy]);
-  expect(rememberSearch(' ', response)).toEqual([legacy]);
+  const saved = { version: 3, key: 'saved', query: 'นาฬิกาไว้เดินป่า', response };
+  localStorage.setItem(HISTORY_KEY, JSON.stringify([null, {}, { version: 3, key: 'bad', query: 'watch', response: { ...response, picks: [] } }, legacy, saved]));
+  expect(rememberSearch('watch', { ...response, picks: [] })).toEqual([saved]);
+  expect(rememberSearch(' ', response)).toEqual([saved]);
  });
  it('handles malformed and disabled storage', () => {
   for (const value of ['broken', '{}', 'null']) {

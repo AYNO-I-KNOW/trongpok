@@ -13,7 +13,7 @@ const legacyEntrySchema = z.object({
  conditions: z.object({ cubes: amount, container: z.enum(['bottle600', 'mainJar', 'grinder', 'unknown']), pulse: amount, budget: amount }),
 });
 const webEntrySchema = z.object({
- version: z.literal(2), key: z.string(), query: z.string().trim().min(1),
+ version: z.literal(3), key: z.string(), query: z.string().trim().min(1),
  response: productSearchResultSchema.transform((response, context) => {
   if (response.kind === 'web' && response.picks.length) return response;
   context.addIssue({ code: 'custom', message: 'Expected a nonempty web result' });
@@ -22,9 +22,10 @@ const webEntrySchema = z.object({
 });
 const entrySchema = z.discriminatedUnion('version', [legacyEntrySchema, webEntrySchema]);
 export type HistoryEntry = z.infer<typeof entrySchema>;
+export type SearchHistoryEntry = Extract<HistoryEntry, { version: 3 }>;
 
 export function historyResult(entry: HistoryEntry): ResearchResult {
- return entry.version === 2 ? liveResult(entry.query, entry.response) : researchDesignPreview({ raw: '', target: entry.target, supported: true, ice: entry.ice, conditions: entry.conditions, needsContext: false, designPreview: true });
+ return entry.version === 3 ? liveResult(entry.query, entry.response) : researchDesignPreview({ raw: '', target: entry.target, supported: true, ice: entry.ice, conditions: entry.conditions, needsContext: false, designPreview: true });
 }
 
 export function readHistory(): HistoryEntry[] {
@@ -35,15 +36,23 @@ export function readHistory(): HistoryEntry[] {
  } catch { return []; }
 }
 
+function isSearchEntry(entry: HistoryEntry): entry is SearchHistoryEntry {
+ return entry.version === 3;
+}
+
+export function readSearchHistory(): SearchHistoryEntry[] {
+ return readHistory().filter(isSearchEntry);
+}
+
 function rememberEntry(entry: HistoryEntry): HistoryEntry[] {
  const list = [entry, ...readHistory().filter(previous => previous.key !== entry.key)].slice(0, 3);
  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch {}
  return list;
 }
 
-export function rememberSearch(query: string, response: Extract<ProductSearchResult, { kind: 'web' }>): HistoryEntry[] {
- if (!query.trim() || !response.picks.length) return readHistory();
- return rememberEntry({ version: 2, key: JSON.stringify([query, response]), query, response });
+export function rememberSearch(query: string, response: Extract<ProductSearchResult, { kind: 'web' }>): SearchHistoryEntry[] {
+ if (!query.trim() || !response.picks.length) return readSearchHistory();
+ return rememberEntry({ version: 3, key: JSON.stringify([query, response]), query, response }).filter(isSearchEntry);
 }
 
 export function rememberHistory(result: ResearchResult): HistoryEntry[] {

@@ -79,6 +79,76 @@ describe("independent retail page verification", () => {
       ),
     ).toEqual([]);
   });
+  it("publishes the verified retail page, not a guessed blocked same-model primary URL", async () => {
+    const offerUrl = "https://www.homepro.co.th/p/123";
+    const item = candidate();
+    item.price = { ...item.price!, url: offerUrl };
+    item.evidence = [{
+      requirement: "silent",
+      stance: "yes",
+      text: "Logitech M240 คลิกเงียบ",
+      excerpt: "SilentTouch",
+      url,
+      pageModel: item.model,
+    }];
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (link: string) =>
+      link === url ? new Response(null, { status: 403 }) : new Response(page()),
+    ));
+    const sources = new Set([url, offerUrl]);
+    const verified = await verifyProductPages([item], sources);
+    expect(verified[0].stock).toEqual({
+      status: "in_stock",
+      url: offerUrl,
+      pageModel: item.model,
+    });
+    const goal = { category: "mouse", budget: null, must: [], nice: [], clarification: null };
+    expect(rankProducts(verified, goal, sources, "now")).toMatchObject([
+      { model: item.model, url: offerUrl, price: { baht: 799, url: offerUrl }, reasons: [{ url: offerUrl }] },
+    ]);
+    expect(rankProducts(verified, { ...goal, must: ["silent"] }, sources, "now")).toEqual([]);
+  });
+  it("keeps a verified spec from the unpriced page when the same-model retailer supplies the price", async () => {
+    const offerUrl = "https://www.homepro.co.th/p/123";
+    const item = candidate();
+    item.price = { ...item.price!, url: offerUrl };
+    item.evidence = [{
+      requirement: "silent",
+      stance: "yes",
+      text: "คลิกเงียบ",
+      excerpt: "SilentTouch",
+      url,
+      pageModel: item.model,
+    }];
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (link: string) =>
+      new Response(link === url ? "<title>Logitech M240</title><main>SilentTouch</main>" : page()),
+    ));
+    const sources = new Set([url, offerUrl]);
+    const verified = await verifyProductPages([item], sources);
+    const goal = { category: "mouse", budget: 1000, must: ["silent"], nice: [], clarification: null };
+    expect(rankProducts(verified, goal, sources, "now")).toMatchObject([
+      { url: offerUrl, price: { baht: 799, url: offerUrl }, reasons: [{ url }] },
+    ]);
+  });
+  it.each(["/manual/logitech-m240", "/category/logitech-m240", "/plp/logitech-m240"])(
+    "rejects a same-model amount from a non-product page (%s) directly and through redirects",
+    async (path) => {
+      const nonProduct = `https://www.jib.co.th${path}`;
+      const offerUrl = "https://www.jib.co.th/product/logitech-m240-offer";
+      vi.stubGlobal("fetch", vi.fn().mockImplementation(async (link: string) => {
+        if (link === url) return new Response("<title>Logitech M240</title>Product details");
+        if (link === offerUrl)
+          return new Response(null, { status: 302, headers: { location: nonProduct } });
+        return new Response(page());
+      }));
+      const item = candidate();
+      const sources = new Set([url, offerUrl, nonProduct]);
+      for (const priceUrl of [nonProduct, offerUrl]) {
+        item.price = { ...item.price!, url: priceUrl };
+        const [verified] = await verifyProductPages([item], sources);
+        expect(verified.price).toBeNull();
+      }
+    },
+  );
   it("does not borrow a different model price", async () => {
     const priceUrl = "https://www.jib.co.th/product/logitech-m241";
     vi.stubGlobal(
@@ -108,7 +178,7 @@ describe("independent retail page verification", () => {
         .fn()
         .mockResolvedValue(
           new Response(
-            "<title>Logitech M240</title><h1>Logitech M240</h1><p>฿799</p>",
+            '<title>Logitech M240</title><meta content="product" property="og:type"><h1>Logitech M240</h1><p>฿799</p>',
           ),
         ),
     );
@@ -120,13 +190,23 @@ describe("independent retail page verification", () => {
       vi
         .fn()
         .mockResolvedValue(
-          new Response("<title>Logitech M240</title><p>ผ่อน ฿99 / เดือน</p>"),
+          new Response('<title>Logitech M240</title><meta property="og:type" content="product"><p>ผ่อน ฿99 / เดือน</p>'),
         ),
     );
     expect(
       (await verifyProductPages([candidate()], new Set([url])))[0].price,
     ).toBeNull();
   });
+  it.each(["฿799–999", "799 - ฿999", "฿799 ถึง ฿999"])(
+    "does not use an endpoint of the displayed range %s as a price",
+    async (range) => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+        new Response(`<title>Logitech M240</title><meta property="og:type" content="product"><h1>Logitech M240</h1><p>${range}</p>`),
+      ));
+      const [verified] = await verifyProductPages([candidate()], new Set([url]));
+      expect(verified.price).toBeNull();
+    },
+  );
   it("ignores unrelated recommended-product stock but honors explicit tool stock", async () => {
     vi.stubGlobal(
       "fetch",
@@ -430,6 +510,28 @@ it("carries only the verified primary same-model product photo through ranking a
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
+it("rejects unpriced live picks and live links outside the source allowlist", () => {
+  const pick = {
+    model: "Logitech M240",
+    url,
+    price: { baht: 799, url, observedAt: "2026-11-21T03:00:00Z" },
+    reasons: [{ text: "Logitech M240", url }],
+    unknowns: [],
+  };
+  const external = "https://jib.co.th.evil.com/m240";
+  const result = { kind: "web", note: "", searchCalls: 1, searchRounds: 1 };
+  expect(productSearchResultSchema.safeParse({ ...result, picks: [pick] }).success).toBe(true);
+  for (const invalid of [
+    { ...pick, price: null },
+    { ...pick, url: external },
+    { ...pick, price: { ...pick.price, url: external } },
+    { ...pick, reasons: [{ text: "Logitech M240", url: external }] },
+    { ...pick, url: "/api/demo-products/m240" },
+  ]) {
+    expect(productSearchResultSchema.safeParse({ ...result, picks: [invalid] }).success).toBe(false);
+  }
+});
+
 it.each([
   "https://shopee.co.th/m240.jpg",
   "http://www.jib.co.th/m240.jpg",
@@ -449,4 +551,16 @@ it("does not borrow OG or unrelated product photos", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(html)));
   const [verified] = await verifyProductPages([candidate()], new Set([url]));
   expect(verified.image).toBeUndefined();
+});
+
+it.each([
+  '<title>Logitech M240 review</title><main><h1>Logitech M240</h1><p>฿799</p></main>',
+  page("Case for Logitech M240"),
+  '<title>Logitech M240</title><meta property="og:type" content="product"><meta property="product:price:amount" content="799"><meta property="product:price:currency" content="THB"><main>฿799–999</main>',
+])("never recommends an article, accessory, or ambiguous metadata price", async (html) => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(html)));
+  const sources = new Set([url]);
+  const verified = await verifyProductPages([candidate()], sources);
+  const goal = { category: "mouse", budget: null, must: [], nice: [], clarification: null };
+  expect(rankProducts(verified, goal, sources, "2026-11-21T03:00:00Z")).toEqual([]);
 });

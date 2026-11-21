@@ -8,13 +8,13 @@ describe("liveResult", () => {
       picks: [
         {
           model: "Watch A",
-          url: "https://example.com/watch",
+          url: "https://www.jib.co.th/product/watch",
           price: {
             baht: 2500,
-            url: "https://example.com/offer",
+            url: "https://www.jib.co.th/product/watch",
             observedAt: "2026-11-21T03:00:00Z",
           },
-          reasons: [{ text: "แบตเตอรี่ 7 วัน", url: "https://example.com/spec" }],
+          reasons: [{ text: "แบตเตอรี่ 7 วัน", url: "https://www.jib.co.th/product/watch" }],
           unknowns: ["ยังไม่ยืนยัน GPS"],
         },
       ],
@@ -26,7 +26,7 @@ describe("liveResult", () => {
     expect(item.product).toMatchObject({
       name: "Watch A",
       price: 2500,
-      storeUrl: "https://example.com/watch",
+      storeUrl: "https://www.jib.co.th/product/watch",
     });
     expect(item.product.image).toBeUndefined();
     expect(item.rank).toBe(1);
@@ -39,7 +39,7 @@ describe("liveResult", () => {
     expect(item.evidence).toContainEqual({
       category: "ข้อมูล",
       summary: "แบตเตอรี่ 7 วัน",
-      url: "https://example.com/spec",
+      url: "https://www.jib.co.th/product/watch",
       label: "ดูแหล่งข้อมูล",
     });
     expect(item.sourceDetails?.priceSource).toContain("2569");
@@ -56,33 +56,24 @@ describe("liveResult", () => {
     expect(result.reason).toContain("โหมดกฎ");
     expect(result.reason).toContain("ข้อมูลสังเคราะห์");
   });
-  it("leaves an unverified price empty", () => {
-    const result = liveResult("Watch", {
-      kind: "web",
-      picks: [
-        {
-          model: "Watch",
-          url: "https://example.com/watch",
-          price: null,
-          reasons: [],
-          unknowns: [],
-        },
-      ],
-      note: "",
-      searchCalls: 1,
-      searchRounds: 1,
-    });
-    expect(result.items[0].product.price).toBeNull();
-    expect(result.items[0].evidence).toEqual([]);
-    expect(result.items[0].sourceDetails?.priceSource).toBe("ยังไม่ยืนยันราคา");
-  });
 });
 
 it("displays a verified product photo and identifies its source", () => {
   const image = "https://www.jib.co.th/images/watch.jpg";
   const result = liveResult("Watch", {
     kind: "web",
-    picks: [{ model: "Watch", url: "https://www.jib.co.th/product/watch", image, price: null, reasons: [], unknowns: [] }],
+    picks: [{
+      model: "Watch",
+      url: "https://www.jib.co.th/product/watch",
+      image,
+      price: {
+        baht: 2500,
+        url: "https://www.jib.co.th/product/watch",
+        observedAt: "2026-11-21T03:00:00Z",
+      },
+      reasons: [],
+      unknowns: [],
+    }],
     note: "", searchCalls: 1, searchRounds: 1,
   });
   expect(result.items[0].product.image).toBe(image);

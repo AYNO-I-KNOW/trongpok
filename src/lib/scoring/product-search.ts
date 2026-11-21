@@ -1,5 +1,6 @@
-import type { ProductPick } from "../product-search/contract";
+import type { WebProductPick } from "../product-search/contract";
 import {
+  isDetailUrl,
   sourceUrl,
   matchesProductModel,
   type SearchCandidate,
@@ -32,25 +33,13 @@ function modelKey(offer: SearchCandidate) {
   );
 }
 
-function isProductPage(raw: string): boolean {
-  const url = new URL(raw);
-  return (
-    url.pathname.length > 1 &&
-    !/(?:^|\/)(?:search|searchresult|category|categories|manuals?|support)(?:\/|$)/i.test(
-      url.pathname,
-    ) &&
-    !url.searchParams.has("search") &&
-    !url.searchParams.has("q")
-  );
-}
-
 export function rankProducts(
   candidates: SearchCandidate[],
   goal: SearchGoal,
   sources: Set<string>,
   observedAt: string,
   titles = new Map<string, string>(),
-): ProductPick[] {
+): WebProductPick[] {
   const sourced = (raw: string) => sources.has(sourceUrl(raw) ?? "");
   const models = new Map<string, SearchCandidate[]>();
   for (const offer of candidates) {
@@ -59,8 +48,8 @@ export function rankProducts(
     if (
       !key ||
       !url ||
-      !sourced(url) ||
-      !isProductPage(url) ||
+      !sources.has(url) ||
+      !isDetailUrl(url) ||
       offer.pageKind !== "product"
     )
       continue;
@@ -72,11 +61,11 @@ export function rankProducts(
     const title = titles.get(url);
     if (title && !matchesProductModel(title, offer.model)) continue;
     const group = models.get(key) ?? [];
-    group.push(offer);
+    group.push(url === offer.url ? offer : { ...offer, url });
     models.set(key, group);
   }
 
-  const ranked: { pick: ProductPick; preferences: number; family: string }[] =
+  const ranked: { pick: WebProductPick; preferences: number; family: string }[] =
     [];
   for (const [key, offers] of models) {
     const evidence = offers
@@ -119,17 +108,16 @@ export function rankProducts(
           ? offer.stock.status
           : "unknown";
       if (stock === "out_of_stock") continue;
-      const amount = offer.price;
-      const price =
-        amount &&
-        amount.currency === "THB" &&
-        amount.baht > 0 &&
-        Number.isFinite(amount.baht) &&
-        sourced(amount.url) &&
-        identity(amount.pageModel) === key
-          ? { baht: amount.baht, url: amount.url, observedAt }
-          : null;
-      if (goal.budget !== null && (!price || price.baht > goal.budget))
+      const { price: amount, url } = offer;
+      if (
+        !amount ||
+        amount.currency !== "THB" ||
+        !Number.isFinite(amount.baht) ||
+        amount.baht <= 0 ||
+        sourceUrl(amount.url) !== url ||
+        identity(amount.pageModel) !== key ||
+        (goal.budget !== null && amount.baht > goal.budget)
+      )
         continue;
       const unknowns = goal.nice
         .filter((need) => !met.includes(need))
@@ -145,15 +133,15 @@ export function rankProducts(
         pick: {
           model: offer.model,
           ...(offer.image && sourceUrl(offer.image) ? { image: offer.image } : {}),
-          url: offer.url,
-          price,
+          url,
+          price: { baht: amount.baht, url, observedAt },
           unknowns,
           reasons: reasons.size
             ? [...reasons.values()]
             : [
                 {
                   text: `หน้าสินค้ายืนยันว่าเป็น${goal.category} รุ่น ${offer.model}`,
-                  url: offer.url,
+                  url,
                 },
               ],
         },
@@ -163,18 +151,17 @@ export function rankProducts(
   ranked.sort(
     (a, b) =>
       b.preferences - a.preferences ||
-      (a.pick.price?.baht ?? Infinity) - (b.pick.price?.baht ?? Infinity) ||
+      a.pick.price.baht - b.pick.price.baht ||
       a.pick.model.localeCompare(b.pick.model) ||
       a.pick.url.localeCompare(b.pick.url),
   );
   const seenModels = new Set<string>();
   const seenPages = new Set<string>();
-  const picks: ProductPick[] = [];
+  const picks: WebProductPick[] = [];
   for (const { pick, family } of ranked) {
-    const page = sourceUrl(pick.url) ?? pick.url;
-    if (seenModels.has(family) || seenPages.has(page)) continue;
+    if (seenModels.has(family) || seenPages.has(pick.url)) continue;
     seenModels.add(family);
-    seenPages.add(page);
+    seenPages.add(pick.url);
     picks.push(pick);
     if (picks.length === 3) break;
   }

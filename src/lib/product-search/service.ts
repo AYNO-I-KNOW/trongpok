@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { rankProducts } from "../scoring/product-search";
-import type { ProductPick, ProductSearchResult } from "./contract";
+import type { ProductSearchResult } from "./contract";
 import { demoFallback } from "./demo";
 import { sourceUrl } from "./domain";
 import { budgetFromQuery } from "./budget";
@@ -63,10 +63,12 @@ export async function searchProducts(
     const unavailableDomains = new Set<string>();
     let searchCalls = 0;
     let expansionFailed = false;
-    let picks: ProductPick[] = [];
     let searchRounds = 0;
     let completedAgents = 0;
     const merge = (result: Awaited<ReturnType<SearchBackend["search"]>>) => {
+      searchCalls += result.searchCalls;
+      result.unavailableDomains?.forEach((domain) => unavailableDomains.add(domain));
+      if (result.usable === false || !result.sources.size) return false;
       candidates.push(
         ...result.candidates
           .filter((candidate) =>
@@ -88,11 +90,10 @@ export async function searchProducts(
           })),
       );
       result.sources.forEach((source) => sources.add(source));
-      result.titles?.forEach((title, url) => titles.set(url, title));
-      searchCalls += result.searchCalls;
-      result.unavailableDomains?.forEach((domain) =>
-        unavailableDomains.add(domain),
-      );
+      result.titles?.forEach((title, url) => {
+        if (result.sources.has(url) && !titles.has(url)) titles.set(url, title);
+      });
+      return true;
     };
     const initial = await Promise.allSettled(
       (["retail", "specs", "value"] as const).map((strategy) =>
@@ -113,7 +114,7 @@ export async function searchProducts(
     }
     if (!completedAgents) throw new Error("All discovery agents failed");
     searchRounds = 1;
-    picks = rankProducts(
+    let picks = rankProducts(
       candidates,
       goal,
       sources,
@@ -139,7 +140,7 @@ export async function searchProducts(
                 .map((candidate) => candidate.modelFamily ?? candidate.model),
             ).size < 3,
         );
-        merge(
+        expansionFailed = !merge(
           await live.search(
             searchText,
             goal,
@@ -195,6 +196,21 @@ export async function searchProducts(
         expansionFailed = true;
       }
     }
+    if (!picks.length && expansionFailed) return demoFallback(searchText);
+    const constraints =
+      `${goal.budget === null ? "" : ` ภายในงบ ${goal.budget.toLocaleString("th-TH")} บาท`}` +
+      `${goal.must.length ? ` และเงื่อนไข ${goal.must.join(" / ")}` : ""}`;
+    const summary =
+      picks.length === 3
+        ? "เรียงตามเงื่อนไขที่ตรงโจทย์ แล้วจึงเทียบราคา"
+        : picks.length
+          ? `ยืนยันรุ่นและราคาได้ ${picks.length} รุ่น${constraints}`
+          : `ยังไม่พบรุ่นที่ยืนยันราคาได้${constraints}`;
+    const searchStatus = expansionFailed
+      ? " · ค้นเพิ่มไม่สำเร็จ"
+      : completedAgents < initial.length
+        ? " · ค้นเว็บได้ไม่ครบทุกส่วน"
+        : "";
     return {
       kind: "web",
       picks,
@@ -211,10 +227,7 @@ export async function searchProducts(
         sources: sources.size,
         followUp: searchRounds === 2,
       },
-      note:
-        picks.length === 3
-          ? "เรียงตามเงื่อนไขที่ตรงโจทย์ แล้วจึงเทียบราคา"
-          : `${expansionFailed ? "ค้นเพิ่มไม่สำเร็จ" : "ค้นเพิ่มแล้วแต่ข้อมูลยังไม่พอ"}${goal.budget === null ? "" : ` ภายในงบ ${goal.budget.toLocaleString("th-TH")} บาท`}${goal.must.length ? ` และเงื่อนไข ${goal.must.join(" / ")}` : ""}`,
+      note: summary + searchStatus,
     };
   } catch (error) {
     signal?.throwIfAborted();
