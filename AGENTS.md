@@ -1,0 +1,55 @@
+# trongpok (ตรงปก): เหมาะกับเราไหม
+
+Hackathon build, Sea x OpenAI, 2026-11-21, 10:00–17:00. Only work committed in this window counts.
+
+## Product
+
+A buyer pastes a product link or types a need ("เครื่องปั่นไว้ปั่นน้ำแข็งเปิดร้าน", "smartwatch"). The app asks a few tap-to-answer questions from the category pack and turns the answers into requirements (must / nice / budget). Four agents then race in a visible arena:
+
+| Agent | Goal |
+|---|---|
+| Verifier | Check the linked product against every requirement. Exact instructions only. |
+| Fit | Find the products that satisfy the most requirements with the strongest review evidence. |
+| Value | Find the cheapest products that pass every must requirement. |
+| Skeptic | After the others propose, attack the current top 3 with contradicting review quotes. |
+
+Code merges their labels, scores and ranks the products (`docs/scoring.md`), and a judge LLM writes one line per pick explaining why it ranked there and what the buyer gives up. The result is one large card (rank 1) and three small cards in one row. Each card shows "เหมาะ X%", per-requirement status with quotes, Skeptic objections, trust (ตรงปก) or "ข้อมูลไม่พอ", and "ประหยัด ฿X" versus the highest-starred product. The user decides.
+
+Pitch line: a 4.8★ means other people were happy using it their way. It doesn't say the product fits you. People who returned it can't rate it at all.
+
+## Hard rules
+
+- Never fetch, scrape, or automate shopee.co.th. Products come from `data/products/*.json` (files starting with `_` are skipped). Linking to Shopee is allowed.
+- LLMs never produce scores or rankings. They return stance labels, candidate ids, quotes, extracted requirements, and explanation text. All numbers and the order come from `src/lib/scoring`.
+- Every quote shown must be an exact substring of a review. Drop any label whose quote is not.
+- Below 10 evidence reviews, trust shows "ข้อมูลไม่พอ", never a percent.
+- Agents may only call the tools in `src/lib/agents/tools.ts`. Web search is used only by `verify_spec_web` and must return a source URL. With no URL, treat the result as `unknown`.
+- The app must work with no `OPENAI_API_KEY`. Rule-based agents produce the same output shape, and the UI says "โหมดกฎ". A missing key, a missing `OPENAI_MODEL`, or a failed call all fall back to the rules.
+- Read the OpenAI docs (Agents SDK or Responses API, tool calling, structured outputs, web search) before writing LLM code. Do not guess model ids or APIs from memory. The model comes from `OPENAI_MODEL`.
+- No checkout or payment. UI text is Thai. Mobile first.
+
+## Stack
+
+Next.js App Router, TypeScript strict, Vitest, zod, `openai` SDK. Server-Sent Events for the arena stream. Deploy on Vercel.
+
+## Layout
+
+```
+data/categories/*.json   question packs → requirements
+data/products/*.json     demo products
+data/personas.csv        human top-3 per persona
+data/cache/              cached arena runs and eval report, committed
+src/lib/types.ts
+src/lib/catalog/         load, validate, search, link parsing
+src/lib/needs/           answers → requirements, free text → requirements
+src/lib/labeling/        rules.ts, llm.ts, index.ts (cache → llm → rules)
+src/lib/scoring/         pure functions from docs/scoring.md
+src/lib/agents/          tools.ts, verifier.ts, fit.ts, value.ts, skeptic.ts, judge.ts, arena.ts
+src/lib/eval/            persona eval and baselines
+src/app/                 pages and route handlers
+```
+
+## Working
+
+- One slice from `docs/codex-prompts.md` per task. Finish with `npm test` and `npm run build` passing, then commit with the slice id in the subject, e.g. `feat(s02): fit scoring`.
+- No code comments. Small pure functions. Tests for scoring, fallbacks, and the quote check.

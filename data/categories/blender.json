@@ -1,0 +1,45 @@
+{
+  "id": "blender",
+  "name": "เครื่องปั่น",
+  "keywords": ["เครื่องปั่น", "ปั่นน้ำผลไม้", "ปั่นสมูทตี้", "blender"],
+  "questions": [
+    {
+      "id": "use",
+      "text": "จะเอาไปใช้ทำอะไร",
+      "multi": true,
+      "options": [
+        { "label": "ปั่นสมูทตี้ที่บ้าน", "requirement": { "id": "smoothie", "text": "ปั่นผลไม้ให้เนียน", "kind": "must" } },
+        { "label": "ปั่นน้ำแข็ง / เปิดร้าน", "requirement": { "id": "ice", "text": "ปั่นน้ำแข็งได้ต่อเนื่องโดยมอเตอร์ไม่ไหม้", "kind": "must", "spec": { "key": "watt", "op": ">=", "value": 1000 } } },
+        { "label": "บดเมล็ด / ถั่ว", "requirement": { "id": "grind", "text": "บดของแห้งได้", "kind": "nice", "spec": { "key": "dryGrinder", "op": "==", "value": true } } }
+      ]
+    },
+    {
+      "id": "volume",
+      "text": "ปั่นครั้งละกี่แก้ว",
+      "multi": false,
+      "options": [
+        { "label": "1–2 แก้ว", "requirement": { "id": "cap-small", "text": "โถอย่างน้อย 0.6 ลิตร", "kind": "nice", "spec": { "key": "capacityL", "op": ">=", "value": 0.6 } } },
+        { "label": "4 แก้วขึ้นไป", "requirement": { "id": "cap-large", "text": "โถอย่างน้อย 1.5 ลิตร", "kind": "must", "spec": { "key": "capacityL", "op": ">=", "value": 1.5 } } }
+      ]
+    },
+    {
+      "id": "noise",
+      "text": "เรื่องเสียงสำคัญไหม",
+      "multi": false,
+      "options": [
+        { "label": "ต้องเงียบ (คอนโด / เช้ามืด)", "requirement": { "id": "quiet", "text": "เสียงไม่ดัง", "kind": "nice" } },
+        { "label": "ไม่ซีเรียส", "requirement": null }
+      ]
+    },
+    {
+      "id": "budget",
+      "text": "งบเท่าไหร่",
+      "multi": false,
+      "options": [
+        { "label": "ไม่เกิน 1,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 1,000 บาท", "kind": "budget", "value": 1000 } },
+        { "label": "ไม่เกิน 3,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 3,000 บาท", "kind": "budget", "value": 3000 } },
+        { "label": "ไม่เกิน 6,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 6,000 บาท", "kind": "budget", "value": 6000 } }
+      ]
+    }
+  ]
+}

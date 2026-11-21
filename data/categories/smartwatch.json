@@ -1,0 +1,47 @@
+{
+  "id": "smartwatch",
+  "name": "สมาร์ทวอทช์",
+  "keywords": ["นาฬิกา", "smartwatch", "สมาร์ทวอทช์", "นาฬิกาอัจฉริยะ"],
+  "questions": [
+    {
+      "id": "use",
+      "text": "อยากให้นาฬิกาช่วยเรื่องอะไร",
+      "multi": true,
+      "options": [
+        { "label": "แจ้งเตือน LINE เป็นภาษาไทย", "requirement": { "id": "line-th", "text": "แจ้งเตือน LINE แสดงภาษาไทยได้", "kind": "must", "spec": { "key": "thaiNotifications", "op": "==", "value": true } } },
+        { "label": "นับก้าว / การนอน", "requirement": { "id": "health-basic", "text": "นับก้าวและวัดการนอนแม่น", "kind": "must" } },
+        { "label": "วิ่ง / ปั่นจักรยานกลางแจ้ง", "requirement": { "id": "gps", "text": "มี GPS ในตัว", "kind": "must", "spec": { "key": "gps", "op": "==", "value": true } } },
+        { "label": "ว่ายน้ำ", "requirement": { "id": "swim", "text": "กันน้ำ 5ATM ขึ้นไป", "kind": "must", "spec": { "key": "waterAtm", "op": ">=", "value": 5 } } },
+        { "label": "รับสายจากข้อมือ", "requirement": { "id": "call", "text": "รับสายผ่านนาฬิกาได้", "kind": "nice", "spec": { "key": "bluetoothCall", "op": "==", "value": true } } }
+      ]
+    },
+    {
+      "id": "battery",
+      "text": "ชาร์จบ่อยได้แค่ไหน",
+      "multi": false,
+      "options": [
+        { "label": "ชาร์จทุกวันได้", "requirement": null },
+        { "label": "อยากได้ 7 วันขึ้นไป", "requirement": { "id": "battery-7d", "text": "แบตอยู่ได้อย่างน้อย 7 วันในการใช้จริง", "kind": "must", "spec": { "key": "batteryDays", "op": ">=", "value": 7 } } }
+      ]
+    },
+    {
+      "id": "phone",
+      "text": "ใช้มือถืออะไร",
+      "multi": false,
+      "options": [
+        { "label": "iPhone", "requirement": { "id": "ios", "text": "ใช้กับ iPhone ได้ครบ", "kind": "must", "spec": { "key": "platforms", "op": "includes", "value": "ios" } } },
+        { "label": "Android", "requirement": { "id": "android", "text": "ใช้กับ Android ได้ครบ", "kind": "must", "spec": { "key": "platforms", "op": "includes", "value": "android" } } }
+      ]
+    },
+    {
+      "id": "budget",
+      "text": "งบเท่าไหร่",
+      "multi": false,
+      "options": [
+        { "label": "ไม่เกิน 2,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 2,000 บาท", "kind": "budget", "value": 2000 } },
+        { "label": "ไม่เกิน 5,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 5,000 บาท", "kind": "budget", "value": 5000 } },
+        { "label": "ไม่เกิน 15,000", "requirement": { "id": "budget", "text": "ราคาไม่เกิน 15,000 บาท", "kind": "budget", "value": 15000 } }
+      ]
+    }
+  ]
+}

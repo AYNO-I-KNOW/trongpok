@@ -1,0 +1,44 @@
+{
+  "id": "blender-smoothie-pro",
+  "category": "blender",
+  "keywords": ["เครื่องปั่น", "เครื่องปั่นน้ำผลไม้", "blender"],
+  "title": "เครื่องปั่นสมูทตี้ 1.5 ลิตร 600W ใบมีด 6 แฉก",
+  "brand": "Freshmix",
+  "priceThb": 890,
+  "imageUrl": "",
+  "shopeeUrl": "",
+  "stars": 4.8,
+  "ratingCount": 3120,
+  "specs": {
+    "watt": 600,
+    "capacityL": 1.5,
+    "iceCrush": true,
+    "jarMaterial": "plastic",
+    "speeds": 2,
+    "warrantyMonths": 6
+  },
+  "features": ["ปั่นสมูทตี้", "ปั่นน้ำแข็ง", "โถพกพา", "ล็อกนิรภัย"],
+  "shop": {
+    "id": "shop-freshmix-official",
+    "name": "Freshmix Official",
+    "years": 3,
+    "badRatePct": 2,
+    "official": true,
+    "preferredPlus": false,
+    "verified": false,
+    "chatResponsePct": 95
+  },
+  "claims": [
+    { "id": "c1", "text": "ปั่นน้ำแข็งละเอียดได้", "source": "description", "checkable": true },
+    { "id": "c2", "text": "เสียงเบา", "source": "description", "checkable": true },
+    { "id": "c3", "text": "มอเตอร์ทองแดงแท้ 100%", "source": "description", "checkable": false }
+  ],
+  "reviews": [
+    { "id": "r1", "stars": 5, "text": "ปั่นสมูทตี้ทุกเช้า เนียนดี ล้างง่าย", "hasMedia": true, "daysAgo": 20, "isTemplate": false },
+    { "id": "r2", "stars": 5, "text": "ใช้ปั่นน้ำแข็งขายกาแฟเย็นได้สามวัน มอเตอร์มีกลิ่นไหม้แล้วดับ", "hasMedia": false, "daysAgo": 15, "isTemplate": false },
+    { "id": "r3", "stars": 4, "text": "น้ำแข็งก้อนใหญ่ปั่นไม่ละเอียด ต้องใส่น้ำเยอะ", "hasMedia": true, "daysAgo": 45, "isTemplate": false },
+    { "id": "r4", "stars": 5, "text": "ส่งไวมาก กล่องสวย", "hasMedia": false, "daysAgo": 10, "isTemplate": false },
+    { "id": "r5", "stars": 5, "text": "สินค้าคุณภาพดี ทางร้านมีการแพ็คสินค้ามาอย่างดี", "hasMedia": false, "daysAgo": 30, "isTemplate": true },
+    { "id": "r6", "stars": 3, "text": "เสียงดังพอสมควร แต่ปั่นผลไม้โอเค", "hasMedia": false, "daysAgo": 100, "isTemplate": false }
+  ]
+}
