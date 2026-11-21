@@ -21,7 +21,7 @@ function arabicDigits(text: string) {
 
 function explicitBudget(text: string) {
   const normalized = arabicDigits(text);
-  const match = normalized.match(/(?:งบ(?:ประมาณ)?(?:ไม่เกิน)?|ราคาไม่เกิน)\s*(\S+)/)
+  const match = normalized.match(/(?:งบ(?:ประมาณ)?\s*(?:ไม่เกิน)?|ราคาไม่เกิน)\s*(\S+)/)
     ?? normalized.match(/ไม่เกิน\s*(\S+?)(?=\s*บาท)/);
   if (!match) return undefined;
   const token = match[1].replace(/บาท$/, "");

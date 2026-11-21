@@ -47,6 +47,11 @@ it("translates designer answers and keeps explicit text budget", () => {
   ]);
 });
 
+it.each(["งบไม่เกิน 3000 บาท", "งบ ไม่เกิน 3000 บาท", "งบประมาณ ไม่เกิน 3000 บาท"])("keeps the designer budget from %s", (text) => {
+  const requirements = requirementsFromAnswers(pack, { blenderUsage: "ice", iceCubes: "5", container: "bottle600" }, text);
+  expect(requirements.filter((requirement) => requirement.kind === "budget").map((requirement) => requirement.value)).toEqual([3000]);
+});
+
 it("allows ordinary ice crushing with review evidence without requiring commercial wattage", () => {
   const product = ProductSchema.parse(smoothiePro);
   const requirements = requirementsFromAnswers(pack, { blenderUsage: "ice", iceCubes: "5", container: "bottle600" });
@@ -101,7 +106,7 @@ it.each(["8–10 ก้อน", "8.5 ก้อน", "8 ก้อนขึ้น�
   expect(requirement.text).toBe(`ปั่นน้ำแข็ง ${iceCubes} ในโถหลัก`);
 });
 
-it.each(["งบ 2,50 บาท", "งบ 3000.50.1 บาท", "งบ 1e3 บาท", "งบ 1000-2000 บาท", "งบ 1000 - 2000 บาท", "ขอแบบไม่เกิน 8 ก้อน"])("avoids partial budget from %s", (text) => {
+it.each(["งบ 2,50 บาท", "งบ 3000.50.1 บาท", "งบ 1e3 บาท", "งบ 1000-2000 บาท", "งบ 1000 - 2000 บาท", "งบ ไม่เกิน 1000 - 2000 บาท", "งบประมาณ ไม่เกิน 2,50 บาท", "ขอแบบไม่เกิน 8 ก้อน"])("avoids partial budget from %s", (text) => {
   expect(requirementsFromAnswers(pack, { blenderUsage: "ice", iceCubes: "8", container: "mainJar" }, text).some((requirement) => requirement.kind === "budget")).toBe(false);
 });
 
