@@ -25,6 +25,12 @@ Code compares the proposals and objections, scores and ranks the products (`docs
 
 Pitch line: a 4.8★ means other people were happy using it their way. It doesn't say the product fits you. People who returned it can't rate it at all.
 
+## Design
+
+- `origin/thanid-design` is the only UI reference. Fetch that branch and record its current SHA before changing the UI. Use that SHA for implementation and visual review. Ignore older screenshots, preview branches, and layout instructions that conflict with it.
+- Reuse the homepage, question card, search progress, comparison table, and evidence dialog for the mobile flow. Compare up to three models. If the linked product is not recommended, label its column "รุ่นที่คุณส่งมา" and show up to two alternatives. Open review quotes and Skeptic objections in the evidence dialog.
+- Use the branch as a visual reference, not as the application code base. Keep runtime data on the live search and Arena paths. Never ship preview prices, scores, verdicts, or reviews as real results.
+
 ## Hard rules
 
 - Never fetch, scrape, or automate shopee.co.th. Live product search uses the manufacturer and retailer allowlist in `src/lib/product-search/domain.ts`. The Arena and rule-based fallback use `data/products/*.json` (files starting with `_` are skipped). Linking to Shopee is allowed.
