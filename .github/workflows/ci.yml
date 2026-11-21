@@ -1,0 +1,103 @@
+{
+  "name": "CI",
+  "on": {
+    "push": {
+      "branches": [
+        "main",
+        "codex/dev2-integration"
+      ]
+    },
+    "pull_request": {
+      "branches": [
+        "main"
+      ]
+    },
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "ci-${{ github.ref }}",
+    "cancel-in-progress": true
+  },
+  "jobs": {
+    "validate": {
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 20,
+      "env": {
+        "CI": "true",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "OPENAI_API_KEY": "",
+        "OPENAI_MODEL": ""
+      },
+      "steps": [
+        {
+          "name": "Check out source",
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Set up Node",
+          "uses": "actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1",
+          "with": {
+            "node-version": "24.9.0",
+            "package-manager-cache": false
+          }
+        },
+        {
+          "name": "Install locked dependencies",
+          "id": "install",
+          "run": "npm ci --no-audit --no-fund"
+        },
+        {
+          "name": "Unit tests",
+          "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
+          "run": "npm test"
+        },
+        {
+          "name": "UI and rules integration tests",
+          "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
+          "run": "npm run test:ui"
+        },
+        {
+          "name": "Publisher checks",
+          "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
+          "run": "npm run test:publish"
+        },
+        {
+          "name": "Lint",
+          "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
+          "run": "npm run lint"
+        },
+        {
+          "name": "Production build",
+          "id": "build",
+          "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
+          "run": "npm run build"
+        },
+        {
+          "name": "TypeScript diagnostics",
+          "if": "${{ !cancelled() && steps.build.outcome == 'failure' }}",
+          "run": "npm exec -- tsc --noEmit --pretty false"
+        },
+        {
+          "name": "Install browser verification tools",
+          "if": "${{ !cancelled() && steps.build.outcome == 'success' }}",
+          "run": "npm install --prefix \"$RUNNER_TEMP/dev2-browser\" --no-package-lock --ignore-scripts playwright@1.65.1\n\"$RUNNER_TEMP/dev2-browser/node_modules/.bin/playwright\" install --with-deps chromium",
+          "id": "browser_tools"
+        },
+        {
+          "name": "Production browser smoke",
+          "if": "${{ !cancelled() && steps.build.outcome == 'success' && steps.browser_tools.outcome == 'success' }}",
+          "env": {
+            "PLAYWRIGHT_ROOT": "${{ runner.temp }}/dev2-browser"
+          },
+          "run": "node scripts/dev2-browser.check.mjs"
+        }
+      ]
+    }
+  }
+}
