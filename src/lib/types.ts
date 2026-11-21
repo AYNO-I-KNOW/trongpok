@@ -129,6 +129,7 @@ export const RankedSchema = z.object({
   unusedFeatures: z.array(textSchema),
   objections: z.array(LabelSchema),
   why: z.string(),
+  tradeoff: z.string().optional(),
 });
 export type Ranked = z.infer<typeof RankedSchema>;
 
