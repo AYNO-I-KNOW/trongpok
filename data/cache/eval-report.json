@@ -1,0 +1,48 @@
+{
+  "provenance": {
+    "dataset": "synthetic",
+    "mode": "demo-rules"
+  },
+  "n": 6,
+  "interLabelerTop1Agreement": 0.3333333333333333,
+  "interLabelerN": 6,
+  "methods": {
+    "ours": {
+      "n": 6,
+      "top1HitRate": 0.5,
+      "meanTop3Overlap": 2.3333333333333335,
+      "mustFailureRate": null,
+      "mustFailureN": 0
+    },
+    "ours-rules": {
+      "n": 6,
+      "top1HitRate": 0.5,
+      "meanTop3Overlap": 2.6666666666666665,
+      "mustFailureRate": null,
+      "mustFailureN": 0
+    },
+    "stars": {
+      "n": 6,
+      "top1HitRate": 0,
+      "meanTop3Overlap": 1.3333333333333333,
+      "mustFailureRate": null,
+      "mustFailureN": 0
+    },
+    "popular": {
+      "n": 6,
+      "top1HitRate": 0,
+      "meanTop3Overlap": 1.5,
+      "mustFailureRate": null,
+      "mustFailureN": 0
+    },
+    "plain-llm": {
+      "n": 0,
+      "top1HitRate": null,
+      "meanTop3Overlap": null,
+      "mustFailureRate": null,
+      "mustFailureN": 0
+    }
+  },
+  "meanSavingsVsStars": -1633.3333333333333,
+  "savingsN": 6
+}
