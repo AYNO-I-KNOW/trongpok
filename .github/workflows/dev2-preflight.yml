@@ -4,6 +4,9 @@
     "push": {
       "branches": [
         "codex/dev2-preflight-20261121"
+      ],
+      "paths": [
+        ".github/workflows/dev2-preflight.yml"
       ]
     }
   },
@@ -26,16 +29,16 @@
       },
       "steps": [
         {
-          "name": "Check out baseline",
-          "uses": "actions/checkout@v7.0.1",
+          "name": "Check out source",
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
           "with": {
-            "ref": "c288e11a8792df20453edfa42cd3e600126d051e",
-            "persist-credentials": false
+            "persist-credentials": false,
+            "ref": "07b2d4bcc357713ecff575a2d7a708393613f602"
           }
         },
         {
           "name": "Set up Node",
-          "uses": "actions/setup-node@v7.1.0",
+          "uses": "actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1",
           "with": {
             "node-version": "24.9.0",
             "package-manager-cache": false
@@ -44,9 +47,9 @@
         {
           "name": "Apply and verify the staged patch",
           "env": {
-            "PATCH_BLOB": "81fd69b17a97c696821be7578c0a13e95ebb204a",
-            "PATCH_SHA256": "3566c27338043f8d8c5e76ed4cec121a086678b26ec82f8a97c318271e1520f7",
-            "EXPECTED_TREE": "e3865fd1fa14a858438a09318dead98e49660f37",
+            "PATCH_BLOB": "2be6f2f4bd475cda300a25d53a1a006cdcbb7d24",
+            "PATCH_SHA256": "340d6e51aec612d5aaabff0381de00ba3734f30dd808911fedf836a67a749618",
+            "EXPECTED_TREE": "9ff3aff9a1a0499c30964479fdd3f2520ec8d7d2",
             "REPOSITORY": "${{ github.repository }}",
             "GITHUB_TOKEN": "${{ github.token }}"
           },
@@ -68,6 +71,11 @@
           "run": "npm run test:ui"
         },
         {
+          "name": "Publisher checks",
+          "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
+          "run": "npm run test:publish"
+        },
+        {
           "name": "Lint",
           "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
           "run": "npm run lint"
@@ -77,6 +85,11 @@
           "id": "build",
           "if": "${{ !cancelled() && steps.install.outcome == 'success' }}",
           "run": "npm run build"
+        },
+        {
+          "name": "TypeScript diagnostics",
+          "if": "${{ !cancelled() && steps.build.outcome == 'failure' }}",
+          "run": "npm exec -- tsc --noEmit --pretty false"
         },
         {
           "name": "Install browser verification tools",
@@ -90,7 +103,7 @@
           "env": {
             "PLAYWRIGHT_ROOT": "${{ runner.temp }}/dev2-browser"
           },
-          "run": "node --input-type=module <<'NODE'\nimport assert from \"node:assert/strict\";\nimport { spawn } from \"node:child_process\";\nimport { readFileSync } from \"node:fs\";\nimport { join } from \"node:path\";\nimport { createRequire } from \"node:module\";\nconst require = createRequire(join(process.env.PLAYWRIGHT_ROOT, \"package.json\"));\nconst { chromium } = require(\"playwright\");\nconst pack = JSON.parse(readFileSync(\"data/categories/blender.json\", \"utf8\"));\nconst ice = pack.questions.flatMap((question) => question.options).find((option) => option.requirement?.id === \"ice\");\nconst budget = pack.questions.flatMap((question) => question.options).find((option) => option.requirement?.kind === \"budget\" && option.requirement.value === 3000);\nconst base = \"http://127.0.0.1:3000\";\nconst server = spawn(process.execPath, [\"node_modules/next/dist/bin/next\", \"start\", \"--hostname\", \"127.0.0.1\", \"--port\", \"3000\"], { stdio: \"inherit\" });\nlet browser;\nlet page;\nconst errors = [];\ntry {\n  let ready = false;\n  for (let attempt = 0; attempt < 60; attempt++) {\n    if (server.exitCode !== null) throw new Error(\"Production server exited\");\n    try { ready = (await fetch(base)).ok; } catch {}\n    if (ready) break;\n    await new Promise((resolve) => setTimeout(resolve, 500));\n  }\n  assert.ok(ready, \"Production server did not become ready\");\n  browser = await chromium.launch({ headless: true });\n  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });\n  page = await context.newPage();\n  page.setDefaultTimeout(20000);\n  page.on(\"pageerror\", (error) => errors.push(error.message));\n  await page.goto(base);\n  await page.getByRole(\"textbox\", { name: \"คำถามหรือลิงก์สินค้า\", exact: true }).fill(\"เครื่องปั่นปั่นน้ำแข็ง\");\n  await page.getByRole(\"button\", { name: \"เริ่มค้นหา\", exact: true }).click();\n  await page.waitForURL((url) => url.pathname === \"/compare\");\n  await page.getByRole(\"heading\", { name: \"แบบไหนที่เหมาะกับคุณ\" }).waitFor();\n  const iceButton = page.getByRole(\"button\", { name: ice.label, exact: true });\n  if (await iceButton.getAttribute(\"aria-pressed\") !== \"true\") await iceButton.click();\n  await page.getByRole(\"button\", { name: budget.label, exact: true }).click();\n  await page.getByRole(\"button\", { name: /ตรวจความต้องการ/ }).click();\n  const reviewedIce = page.locator(\".requirement-edit\").filter({ hasText: ice.requirement.text });\n  await reviewedIce.getByRole(\"button\", { name: /เปลี่ยนเป็นมีก็ดี/ }).click();\n  const requestPromise = page.waitForRequest((request) => new URL(request.url()).pathname === \"/api/arena\" && request.method() === \"POST\");\n  await page.getByRole(\"button\", { name: /เริ่มเปรียบเทียบ/ }).click();\n  const sent = (await requestPromise).postDataJSON();\n  assert.equal(sent.requirements.find((item) => item.id === \"ice\").kind, \"nice\");\n  assert.equal(sent.requirements.find((item) => item.kind === \"budget\").value, 3000);\n  await page.waitForURL((url) => url.pathname === \"/results\", { timeout: 45000 });\n  await page.locator(\".top-pick\").waitFor();\n  assert.ok(await page.locator(\".small-pick\").count() > 0);\n  const resultsUrl = page.url();\n  const emptyTab = await context.newPage();\n  await emptyTab.goto(resultsUrl);\n  await emptyTab.getByRole(\"heading\", { name: \"ยังไม่พบผลเปรียบเทียบนี้\" }).waitFor();\n  await emptyTab.close();\n  await page.getByRole(\"link\", { name: /ดูหลักฐานทั้งหมด/ }).click();\n  await page.waitForURL((url) => url.pathname.startsWith(\"/p/\"));\n  await page.locator(\".evidence-card\").first().waitFor();\n  await page.reload();\n  await page.locator(\".evidence-card\").first().waitFor();\n  await page.getByRole(\"link\", { name: /กลับไปดูตัวเลือกทั้งหมด/ }).click();\n  await page.locator(\".top-pick\").waitFor();\n  await page.reload();\n  await page.locator(\".top-pick\").waitFor();\n  await page.setViewportSize({ width: 390, height: 844 });\n  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 2), \"Result board overflows a 390px viewport\");\n  await page.goto(base + \"/compare?q=\" + encodeURIComponent(\"https://shopee.co.th/product/999999999/999999999\"));\n  await page.getByRole(\"alert\").filter({ hasText: \"ลิงก์นี้ยังไม่อยู่ในชุดเดโม\" }).waitFor();\n  await page.goto(base + \"/compare\");\n  await page.getByRole(\"button\", { name: /ลองข้อมูลตัวอย่าง/ }).click();\n  const previewIce = page.getByRole(\"button\", { name: ice.label, exact: true });\n  await previewIce.focus();\n  await previewIce.press(\"Enter\");\n  assert.equal(await previewIce.getAttribute(\"aria-pressed\"), \"true\");\n  await page.getByRole(\"button\", { name: /ตรวจความต้องการ/ }).click();\n  await page.getByRole(\"button\", { name: /เริ่มเปรียบเทียบ/ }).click();\n  await page.waitForURL((url) => url.pathname === \"/results\", { timeout: 45000 });\n  await page.locator(\".top-pick\").waitFor();\n  await page.locator(\".preview-notice\").filter({ hasText: \"สินค้า ราคา และรีวิวจำลอง\" }).waitFor();\n  assert.equal(await page.locator(\".pick-actions a[target='_blank']\").count(), 0);\n  assert.deepEqual(errors, []);\n  console.log(\"Browser smoke passed: home, reviewed requirements, live Arena, results, detail, reload, empty-tab recovery, 390px viewport, unknown link, keyboard, and explicit preview.\");\n} catch (error) {\n  if (page) console.error(\"Page state: \" + (await page.locator(\"body\").innerText().catch(() => \"\")).slice(0,3000));\n  throw error;\n} finally {\n  if (browser) await browser.close();\n  server.kill(\"SIGTERM\");\n}\nNODE"
+          "run": "node scripts/dev2-browser.check.mjs"
         }
       ]
     }
