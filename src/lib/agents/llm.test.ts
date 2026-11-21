@@ -1,7 +1,7 @@
 import { expect, it, vi, afterEach } from "vitest";
 import iceStation from "../../../data/products/blender-ice-station.json";
 import example from "../../../data/products/_example.json";
-import { ProductSchema } from "../types";
+import { ProductSchema, type Requirement } from "../types";
 import { runLlmAgent } from "./llm";
 import { createTools } from "./tools";
 
@@ -104,4 +104,25 @@ it("propagates a failed structured response for the rules fallback", async () =>
   parse.mockResolvedValue({ output_parsed: null });
   const tools = createTools({ agent: "fit", products: [product], requirements, emit: () => {} });
   await expect(runLlmAgent({ agent: "fit", category: "blender", requirements, tools })).rejects.toThrow("Missing agent evidence");
+});
+
+
+it.each([
+  { name: "one review requirement with explicit specs", model: "gpt-6-luna", reviewCount: 1, specOnly: true, effort: "none" },
+  { name: "multiple review requirements with specs", model: "gpt-6-luna", reviewCount: 2, specOnly: true, effort: "low" },
+  { name: "one review requirement without specs", model: "gpt-6-luna", reviewCount: 1, specOnly: false, effort: "low" },
+  { name: "another model with one review requirement and specs", model: "test-model", reviewCount: 1, specOnly: true, effort: "low" },
+])("uses $effort reasoning for $name", async ({ model, reviewCount, specOnly, effort }) => {
+  configure();
+  vi.stubEnv("OPENAI_MODEL", model);
+  const selected: Requirement[] = Array.from({ length: reviewCount }, (_, index) => ({
+    id: `review-${index}`, text: "ใช้ต่อเนื่องได้", kind: "must",
+  }));
+  selected.push({ id: "budget", text: "ไม่เกิน 5000 บาท", kind: "budget", value: 5000 });
+  if (specOnly) selected.push({ id: "capacity", text: "โถ 2 ลิตร", kind: "must", specOnly: true });
+  parse.mockResolvedValue({ output_parsed: { proposals: [] } });
+  const tools = createTools({ agent: "value", products: [product], requirements: selected, emit: () => {} });
+  await runLlmAgent({ agent: "value", category: "blender", needText: "ใช้ต่อเนื่องได้", requirements: selected, tools });
+  expect(parse).toHaveBeenCalledTimes(1);
+  expect(parse.mock.calls[0][0].reasoning).toEqual({ effort });
 });
