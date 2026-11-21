@@ -1,0 +1,78 @@
+{
+  "name": "Dev 2 preflight",
+  "on": {
+    "push": {
+      "branches": [
+        "codex/dev2-preflight-20261121"
+      ]
+    }
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "dev2-preflight",
+    "cancel-in-progress": true
+  },
+  "jobs": {
+    "validate": {
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 20,
+      "env": {
+        "CI": "true",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "OPENAI_API_KEY": "",
+        "OPENAI_MODEL": ""
+      },
+      "steps": [
+        {
+          "name": "Check out baseline",
+          "uses": "actions/checkout@v7.0.1",
+          "with": {
+            "ref": "c288e11a8792df20453edfa42cd3e600126d051e",
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Set up Node",
+          "uses": "actions/setup-node@v7.1.0",
+          "with": {
+            "node-version": "24.9.0",
+            "package-manager-cache": false
+          }
+        },
+        {
+          "name": "Apply and verify the staged patch",
+          "env": {
+            "PATCH_BLOB": "2372fd7efaec051fb06793697ad6ead7433819c9",
+            "PATCH_SHA256": "6affe623598479af6e4018a29ce7d68ab4c18848d83e487262a80f1363a72746",
+            "EXPECTED_TREE": "81374aa57add34fea51e2055e5de222ee2739ba2",
+            "REPOSITORY": "${{ github.repository }}",
+            "GITHUB_TOKEN": "${{ github.token }}"
+          },
+          "run": "node --input-type=module <<'NODE'\nimport { createHash } from \"node:crypto\";\nimport { writeFileSync } from \"node:fs\";\nimport { join } from \"node:path\";\nimport { execFileSync } from \"node:child_process\";\nif (!/^[a-f0-9]{40}$/.test(process.env.PATCH_BLOB)) throw new Error(\"Invalid patch blob\");\nconst response = await fetch(\"https://api.github.com/repos/\" + process.env.REPOSITORY + \"/git/blobs/\" + process.env.PATCH_BLOB, {\n  headers: { Authorization: \"Bearer \" + process.env.GITHUB_TOKEN, Accept: \"application/vnd.github+json\" }\n});\nif (!response.ok) throw new Error(\"Patch download failed: \" + response.status);\nconst blob = await response.json();\nif (blob.encoding !== \"base64\") throw new Error(\"Unexpected blob encoding\");\nconst patch = Buffer.from(blob.content, \"base64\");\nif (createHash(\"sha256\").update(patch).digest(\"hex\") !== process.env.PATCH_SHA256) throw new Error(\"Patch hash mismatch\");\nconst patchPath = join(process.env.RUNNER_TEMP, \"dev2-preflight.patch\");\nwriteFileSync(patchPath, patch);\nexecFileSync(\"git\", [\"apply\", \"--index\", patchPath], { stdio: \"inherit\" });\nconst tree = execFileSync(\"git\", [\"write-tree\"], { encoding: \"utf8\" }).trim();\nif (tree !== process.env.EXPECTED_TREE) throw new Error(\"The applied source tree differs: \" + tree);\nconsole.log(\"Validated source tree: \" + tree);\nNODE"
+        },
+        {
+          "name": "Install locked dependencies",
+          "run": "npm ci --no-audit --no-fund"
+        },
+        {
+          "name": "Unit tests",
+          "run": "npm test"
+        },
+        {
+          "name": "UI and rules integration tests",
+          "run": "npm run test:ui"
+        },
+        {
+          "name": "Lint",
+          "run": "npm run lint"
+        },
+        {
+          "name": "Production build",
+          "run": "npm run build"
+        }
+      ]
+    }
+  }
+}
