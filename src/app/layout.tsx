@@ -9,6 +9,7 @@ const lineSeed = localFont({
     { path: "./assets/line-seed/line-seed-1.woff2", weight: "700" },
   ],
   display: "swap",
+  variable: "--font-line-seed",
   adjustFontFallback: false,
   fallback: ["Sukhumvit Set", "system-ui", "sans-serif"],
 });
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="th">
-      <body className={lineSeed.className}>{children}</body>
+      <body className={lineSeed.variable}>{children}</body>
     </html>
   );
 }
