@@ -5,7 +5,7 @@ import { loadPacks, loadProducts, findByLink } from "../catalog";
 import { requirementsFromAnswers } from "../needs/answers";
 import { requirementsFromText } from "../needs";
 import { eligibleLabels } from "../scoring";
-import type { AgentEvent, ArenaResult, Product } from "../types";
+import { RequirementSchema, type AgentEvent, type ArenaResult, type Product } from "../types";
 import { runArena } from "./arena";
 import { scoringVersion, cacheHash, requestCacheKey, readArenaCache, writeArenaCache, readRequestCache, writeRequestCache } from "./cache";
 import { judge } from "./judge";
@@ -46,7 +46,19 @@ function cacheMatchesCatalog(result: ArenaResult, products: Product[]) {
   return objectionsByProduct.size === 0;
 }
 
-export async function runArenaRequest(input: z.infer<typeof InternalArenaRequestSchema>, emit: (event: AgentEvent) => void = () => {}, options: { dataRoot?: string; cacheRoot?: string; replayDelayMs?: number; strictCache?: boolean } = {}): Promise<ArenaResult> {
+export async function runArenaRequest(
+  input: z.infer<typeof InternalArenaRequestSchema>,
+  emit: (event: AgentEvent) => void = () => {},
+  options: {
+    dataRoot?: string;
+    cacheRoot?: string;
+    replayDelayMs?: number;
+    strictCache?: boolean;
+    signal?: AbortSignal;
+    onMode?: (mode: ArenaResult["mode"]) => void;
+  } = {},
+): Promise<ArenaResult> {
+  options.signal?.throwIfAborted();
   const request = InternalArenaRequestSchema.parse(input);
   const dataRoot = options.dataRoot ?? join(process.cwd(), "data");
   const cacheRoot = options.cacheRoot ?? join(dataRoot, "cache", "arena");
@@ -59,13 +71,18 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
     (hasModel || (result.mode === "rules" && !result.modelContributed)) &&
     cacheMatchesCatalog(result, products);
   const replay = async (result: ArenaResult & { mode: "llm" | "rules" }): Promise<ArenaResult> => {
+    options.signal?.throwIfAborted();
+    options.onMode?.("cache");
     for (const event of result.events) {
       await setTimeout(options.replayDelayMs ?? 15, undefined, { signal: options.signal });
+      options.signal?.throwIfAborted();
       emit(event);
     }
+    options.signal?.throwIfAborted();
     return { ...result, mode: "cache", cachedMode: result.mode };
   };
   const indexed = await readRequestCache(cacheRoot, requestKey);
+  options.signal?.throwIfAborted();
   if (canReplay(indexed)) return replay(indexed);
   const linked = request.link ? await findByLink(request.link, dataRoot) : null;
   if (linked?.status === "not-in-demo") throw new Error("ลิงก์นี้ไม่อยู่ในชุดเดโม");
@@ -82,12 +99,12 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
   const linkedProductId = selectedProduct?.id;
   const key = cacheHash([scoringVersion, requirements, request.needText, linkedProductId, pack.id, version]);
   const cached = await readArenaCache(cacheRoot, key);
+  options.signal?.throwIfAborted();
   if (canReplay(cached)) {
     await writeRequestCache(cacheRoot, requestKey, key, options.strictCache);
     return replay(cached);
   }
-  options.signal?.throwIfAborted();
-  options.onMode?.(process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL ? "llm" : "rules");
+  options.onMode?.(hasModel ? "llm" : "rules");
   const { usedModel, ...result } = await runArena({ pack, requirements, needText: request.needText, linkedProductId, products }, (event) => {
     options.signal?.throwIfAborted();
     if (event.text === "ใช้โหมดกฎ") options.onMode?.("rules");
@@ -97,12 +114,14 @@ export async function runArenaRequest(input: z.infer<typeof InternalArenaRequest
   emit({ agent: "judge", type: "start", text: "กำลังสรุปเหตุผล" });
   result.events.push({ agent: "judge", type: "start", text: "กำลังสรุปเหตุผล" });
   const summary = await judge(result.ranked, requirements, usedModel ? "llm" : "rules", request.needText, result.events);
+  options.signal?.throwIfAborted();
   const judged = {
     ...result,
     ranked: summary.ranked,
     mode: result.mode === "rules" ? result.mode : summary.mode,
     ...(usedModel ? { modelContributed: true } : {}),
   };
+  options.onMode?.(judged.mode);
   const done: AgentEvent = { agent: "judge", type: "done", text: "สรุปผลแล้ว" };
   judged.events.push(done);
   emit(done);

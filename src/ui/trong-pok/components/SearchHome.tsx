@@ -102,9 +102,14 @@ export default function SearchHome({
           initial={query}
           onSubmit={search}
           introAction={
-            <Link className="evidence-link arena-entry" href={fontTheme === "line" ? "/arena?font=line" : "/arena"} prefetch={false}>
-              ลอง Arena · เดโมเปรียบเทียบเครื่องปั่น ↗
-            </Link>
+            <>
+              <Link className="evidence-link arena-entry" href={fontTheme === "line" ? "/arena?font=line" : "/arena"} prefetch={false}>
+                ลอง Arena · เดโมเปรียบเทียบเครื่องปั่น ↗
+              </Link>
+              <Link className="evidence-link arena-entry" href={fontTheme === "line" ? "/compare?font=line" : "/compare"} prefetch={false}>
+                เปรียบเทียบจากรีวิวใน Arena →
+              </Link>
+            </>
           }
           history={history.length > 0 && (
             <HomeHistory

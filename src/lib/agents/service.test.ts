@@ -5,10 +5,12 @@ import { afterEach, expect, it, vi } from "vitest";
 import example from "../../../data/products/_example.json";
 import category from "../../../data/categories/blender.json";
 import { POST } from "../../app/api/arena/route";
+import { readArenaStream } from "../../ui/trong-pok/lib/arena-stream";
 import { loadPacks, loadProducts } from "../catalog";
 import { runLlmAgent } from "./llm";
 import { requirementsFromText } from "../needs";
-import type { ArenaResult } from "../types";
+import { RequirementSchema, type AgentEvent, type ArenaResult } from "../types";
+import { consumeArena } from "../ui/arena-response";
 import { cacheHash, requestCacheKey, writeArenaCache } from "./cache";
 import { runArenaRequest } from "./service";
 
@@ -62,18 +64,28 @@ it("streams two fixture products and replays the persona request without model c
   const last = JSON.parse(frames.at(-1)!.split("\ndata: ")[1]);
   expect(last.ranked).toHaveLength(2);
   expect(last.mode).toBe("rules");
+  expect(frames[0]).toBe('event: mode\ndata: {"mode":"llm"}');
+  expect(frames.at(-3)).toBe('event: mode\ndata: {"mode":"rules"}');
   expect(frames.some((frame) => frame.includes('"agent":"judge"'))).toBe(true);
   const calls = vi.mocked(runLlmAgent).mock.calls.length;
   expect(calls).toBeGreaterThan(0);
   vi.stubEnv("OPENAI_API_KEY", "");
   vi.stubEnv("VERCEL", "1");
   const replay = await POST(request());
-  const replayFrames = (await replay.text()).trim().split("\n\n");
+  const [reviewedResult, landingResult, wire] = await Promise.all([
+    consumeArena(replay.clone(), () => {}),
+    readArenaStream(replay.clone(), () => {}),
+    replay.text(),
+  ]);
+  const replayFrames = wire.trim().split("\n\n");
   const cached = JSON.parse(replayFrames.at(-1)!.split("\ndata: ")[1]);
   expect(cached.mode).toBe("cache");
   expect(cached.ranked).toEqual(last.ranked);
-  expect(replayFrames.slice(0, -1)).toEqual(frames.slice(0, -1));
+  expect(replayFrames.filter((frame) => frame.startsWith("event: agent\n"))).toEqual(frames.filter((frame) => frame.startsWith("event: agent\n")));
+  expect(replayFrames[0]).toBe('event: mode\ndata: {"mode":"cache"}');
   expect(cached.cachedMode).toBe("rules");
+  expect(reviewedResult).toEqual(cached);
+  expect(landingResult).toEqual(cached);
   expect(runLlmAgent).toHaveBeenCalledTimes(calls);
   expect(requirementsFromText).toHaveBeenCalledTimes(1);
 });
@@ -279,4 +291,21 @@ it("stops cancelled requests before catalog access", async () => {
   const controller = new AbortController();
   controller.abort();
   await expect(runArenaRequest({ category: "blender" }, undefined, { signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
+});
+
+it.each(["first", "last"] as const)("stops cached replay when cancelled on the %s agent event", async (point) => {
+  await fixtureRoot();
+  const input = { category: "blender", answers: { use: "ice" } };
+  const options = { dataRoot: join(root, "data"), replayDelayMs: 0 };
+  const first = await runArenaRequest(input, undefined, options);
+  const controller = new AbortController();
+  const events: AgentEvent[] = [];
+  const stopAfter = point === "first" ? 1 : first.events.length;
+  const mode = vi.fn();
+  await expect(runArenaRequest(input, (event) => {
+    events.push(event);
+    if (events.length === stopAfter) controller.abort();
+  }, { ...options, signal: controller.signal, onMode: mode })).rejects.toMatchObject({ name: "AbortError" });
+  expect(events).toEqual(first.events.slice(0, stopAfter));
+  expect(mode.mock.calls).toEqual([["cache"]]);
 });

@@ -62,13 +62,34 @@ try {
   await comparison().getByRole("link", { name: /^ดูข้อมูลเดโม / }).first().waitFor();
   const designerWidth = await page.locator("main.phone.result").evaluate((node) => getComputedStyle(node).maxWidth);
 
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + "/arena");
-  await homeSearch().fill("เครื่องปั่นปั่นน้ำแข็ง");
+  await homeSearch().fill("เครื่องปั่นไว้ปั่นน้ำแข็งเปิดร้าน งบ 3,000 บาท");
   await submitSearch();
-  await page.getByRole("heading", { name: "อยากใช้ปั่นอะไร?", exact: true }).waitFor();
   await page.getByRole("radio", { name: "บดน้ำแข็ง", exact: true }).check();
   await page.getByRole("button", { name: "ถัดไป", exact: true }).click();
-  await page.getByRole("heading", { name: "ใช้น้ำแข็งกี่ก้อน?", exact: true }).waitFor();
+  await page.getByRole("radio", { name: "8 ก้อน", exact: true }).check();
+  await page.getByRole("button", { name: "ถัดไป", exact: true }).click();
+  await page.getByRole("radio", { name: "โถปั่นหลัก", exact: true }).check();
+  await page.getByRole("button", { name: "ดูสรุปเงื่อนไข", exact: true }).click();
+  await page.getByRole("heading", { name: "เงื่อนไขที่จะใช้เปรียบเทียบ" }).waitFor();
+  await page.getByText(/งบ.*3,000 บาท/).waitFor();
+  await page.getByRole("button", { name: "เริ่มค้นหาต่อ", exact: true }).click();
+  await comparison().waitFor();
+  await page.locator(".demo-label").filter({ hasText: "ราคาและรีวิวไม่ใช่ข้อมูลจริง" }).waitFor();
+  await page.locator(".demo-label").filter({ hasText: "โหมดกฎ" }).waitFor();
+  await page.getByRole("button", { name: "เหตุผลและหลักฐาน", exact: true }).click();
+  await page.getByRole("button", { name: /^ดูหลักฐาน เครื่องปั่นครอบลดเสียง/ }).click();
+  const skeptic = page.getByRole("dialog");
+  const sourceLink = await skeptic.getByRole("link", { name: /เปิดข้อมูลต้นทาง/ }).getAttribute("href");
+  assert.equal(sourceLink, "/api/demo-products/blender-quiet-daily");
+  const catalog = await page.request.get(base + sourceLink);
+  assert.ok(catalog.ok());
+  const review = (await catalog.json()).product.reviews.find(({ id }) => id === "r5");
+  assert.ok(review);
+  await skeptic.getByText(/รีวิวต้นทาง r5/).waitFor();
+  await skeptic.getByText(review.text, { exact: true }).waitFor();
+  await page.setViewportSize({ width: 1280, height: 900 });
 
   await page.goto(base);
   await page.getByRole("link", { name: /เปรียบเทียบจากรีวิวใน Arena/ }).click();
