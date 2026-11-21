@@ -1,4 +1,4 @@
-import { requirementResult, specCheck } from "../scoring";
+import { eligibleLabels, requirementResult, specCheck } from "../scoring";
 import type { AgentEvent, Label, Product, Requirement } from "../types";
 
 export type ArenaAgent = Exclude<AgentEvent["agent"], "judge">;
@@ -40,6 +40,7 @@ export function createTools({ agent, products, requirements, allowedIds, emit }:
           || (agent === "skeptic" && (label.stance !== "contradict" || label.target !== "product"));
       });
       if (invalid) return { accepted: false, reason: "หลักฐานหรือข้อความอ้างอิงไม่ถูกต้อง" };
+      if (agent === "skeptic" && eligibleLabels(product, requirements, labels).length !== labels.length) return { accepted: false, reason: "หลักฐานยังไม่ผ่านระยะเวลาการใช้งาน" };
       proposals.set(productId, labels);
       emit({ agent, type: agent === "skeptic" ? "objection" : "candidate", text: "พบสินค้าพร้อมหลักฐาน", productId, ...(agent === "skeptic" && labels[0] ? { quote: labels[0].quote } : {}) });
       return { accepted: true };

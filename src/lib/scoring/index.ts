@@ -1,7 +1,8 @@
+import { reviewUsage } from "../labeling/rules";
 import type { Label, Product, Ranked, Requirement, RequirementResult, Review, Shop } from "../types";
 
-export function reviewWeight(review: Review) {
-  return (review.hasMedia ? 1.5 : 1) * (review.daysAgo <= 90 ? 1.2 : 1);
+export function reviewWeight(review: Review, label?: Pick<Label, "stance" | "specific">) {
+  return (review.hasMedia ? 1.5 : 1) * (review.daysAgo <= 90 ? 1.2 : 1) * (label?.stance === "confirm" && !label.specific ? 0.3 : 1);
 }
 
 export function validLabels(product: Product, labels: Label[]) {
@@ -12,6 +13,46 @@ export function validLabels(product: Product, labels: Label[]) {
     unique.set(JSON.stringify([label.reviewId, label.subjectId]), label);
   }
   return [...unique.values()];
+}
+
+const thaiWords = new Intl.Segmenter("th", { granularity: "word" });
+
+function appearanceClaim(text: string) {
+  return /สวย|รูปลักษณ์|หน้าตา|appearance|color/i.test(text) ||
+    [...thaiWords.segment(text)].some((part) => part.segment === "สี");
+}
+
+export function eligibleLabels(product: Product, requirements: Requirement[], labels: Label[]) {
+  return validLabels(product, labels).filter((label) => {
+    const requirement = requirements.find((item) => item.id === label.subjectId);
+    if (requirement) return label.usage !== "unboxing" && (!requirement.longUse || label.usage === "long");
+    const claim = product.claims.find((item) => item.id === label.subjectId && item.checkable);
+    return Boolean(claim && (label.usage !== "unboxing" || appearanceClaim(claim.text)));
+  });
+}
+
+export function reviewQualityWarning(product: Product, requirements: Requirement[], labels: Label[]) {
+  const reviews = product.reviews.filter((review) => !review.isTemplate);
+  if (!reviews.length) return null;
+  const subjects = new Set([...requirements.map((item) => item.id), ...product.claims.map((item) => item.id)]);
+  const metadata = new Map<string, Label[]>();
+  for (const label of labels) {
+    const review = reviews.find((item) => item.id === label.reviewId);
+    if (!review || !subjects.has(label.subjectId) || !label.quote.trim() || !review.text.includes(label.quote)) continue;
+    const entries = metadata.get(review.id) ?? [];
+    entries.push(label);
+    metadata.set(review.id, entries);
+  }
+  const poor = reviews.filter((review) => {
+    const entries = metadata.get(review.id);
+    if (!entries) return reviewUsage(review.text) === "unboxing";
+    return entries.some((label) => label.usage === "unboxing" ||
+      (label.target === "product" && label.stance === "confirm" && !label.specific));
+  }).length;
+  return poor / reviews.length >= 0.6 ? {
+    message: "รีวิวส่วนใหญ่เขียนตอนเพิ่งได้ของ หรือชมแบบไม่มีรายละเอียด",
+    percent: Math.round(100 * poor / reviews.length),
+  } : null;
 }
 
 export function specCheck(product: Product, requirement: Requirement): "pass" | "fail" | "unknown" {
@@ -29,12 +70,12 @@ export function specCheck(product: Product, requirement: Requirement): "pass" | 
 }
 
 function ratio(product: Product, labels: Label[]) {
-  const weighted = labels.map((label) => ({ label, weight: reviewWeight(product.reviews.find((review) => review.id === label.reviewId)!) }));
+  const weighted = labels.map((label) => ({ label, weight: reviewWeight(product.reviews.find((review) => review.id === label.reviewId)!, label) }));
   return weighted.reduce((sum, item) => sum + (item.label.stance === "confirm" ? item.weight : 0), 0) / weighted.reduce((sum, item) => sum + item.weight, 0);
 }
 
 export function requirementResult(product: Product, requirement: Requirement, labels: Label[]): RequirementResult {
-  const quotes = validLabels(product, labels).filter((label) => label.subjectId === requirement.id);
+  const quotes = eligibleLabels(product, [requirement], labels).filter((label) => label.subjectId === requirement.id);
   const result = (status: RequirementResult["status"], score: number): RequirementResult => ({ requirementId: requirement.id, status, score, quotes });
   if (requirement.kind === "budget" && requirement.value !== undefined) return product.priceThb <= requirement.value ? result("pass", 1) : result("fail", 0);
   const spec = specCheck(product, requirement);
@@ -43,7 +84,11 @@ export function requirementResult(product: Product, requirement: Requirement, la
     const score = ratio(product, quotes);
     return result(score < 0.4 ? "contradicted" : score >= 0.6 ? "pass" : "mixed", score);
   }
-  return spec === "pass" ? result("spec-only", 0.6) : result("unknown", 0.4);
+  const fallback = spec === "pass" ? result("spec-only", 0.6) : result("unknown", 0.4);
+  if (requirement.longUse) fallback.message = spec === "pass"
+    ? "Shopee ให้รีวิวได้ภายใน 30 วันหลังได้ของ ของที่พังหลังจากนั้นจึงไม่อยู่ในรีวิว"
+    : "ยังไม่มีรีวิวจากคนที่ใช้นานพอ";
+  return fallback;
 }
 
 export function fit(requirements: Requirement[], results: RequirementResult[]) {
@@ -63,12 +108,12 @@ export function shopScore(shop: Shop) {
 
 export function evidenceCount(product: Product, requirements: Requirement[], labels: Label[]) {
   const subjects = new Set([...requirements.map((item) => item.id), ...product.claims.filter((claim) => claim.checkable).map((claim) => claim.id)]);
-  return new Set(validLabels(product, labels).filter((label) => subjects.has(label.subjectId)).map((label) => label.reviewId)).size;
+  return new Set(eligibleLabels(product, requirements, labels).filter((label) => subjects.has(label.subjectId)).map((label) => label.reviewId)).size;
 }
 
 export function trust(product: Product, requirements: Requirement[], labels: Label[]) {
   if (evidenceCount(product, requirements, labels) < 10) return null;
-  const valid = validLabels(product, labels);
+  const valid = eligibleLabels(product, requirements, labels);
   const scores = product.claims.filter((claim) => claim.checkable).map((claim) => {
     const evidence = valid.filter((label) => label.subjectId === claim.id);
     return evidence.length < 3 ? 0.4 : ratio(product, evidence);
@@ -105,6 +150,7 @@ export function rank(products: Product[], requirements: Requirement[], labelsByP
       unusedFeatures: [],
       objections: [],
       why: "",
+      reviewQualityWarning: reviewQualityWarning(product, requirements, labels),
     } satisfies Ranked };
   });
   const sorted = rows.toSorted((a, b) => Number(b.row.mustOk) - Number(a.row.mustOk) || b.row.rankScore - a.row.rankScore || a.product.priceThb - b.product.priceThb);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import example from "../../../data/products/_example.json";
 import { ProductSchema, type Label, type Product, type Requirement } from "../types";
-import { evidenceCount, fit, rank, requirementResult, reviewWeight, shopScore, specCheck, trust } from "./index";
+import { evidenceCount, fit, rank, requirementResult, reviewWeight, reviewQualityWarning, shopScore, specCheck, trust } from "./index";
 
 const base = ProductSchema.parse(example);
 const need: Requirement = { id: "ice", text: "ปั่นน้ำแข็ง", kind: "must" };
@@ -9,7 +9,7 @@ function product(count = 4): Product {
   return { ...base, reviews: Array.from({ length: count }, (_, i) => ({ id: `r${i}`, text: "ปั่นน้ำแข็งดี", stars: 5, hasMedia: false, daysAgo: 100, isTemplate: false })) };
 }
 function labels(stances: Label["stance"][], subjectId = "ice"): Label[] {
-  return stances.map((stance, i) => ({ reviewId: `r${i}`, subjectId, stance, target: "product", quote: "ปั่นน้ำแข็ง" }));
+  return stances.map((stance, i) => ({ reviewId: `r${i}`, subjectId, stance, target: "product", usage: "short", specific: true, quote: "ปั่นน้ำแข็ง" }));
 }
 
 describe("requirement scoring", () => {
@@ -100,4 +100,73 @@ it("computes rankScore from unrounded fit", () => {
   const result = rank([p], [need], { [p.id]: evidence });
   expect(result[0].fitPct).toBe(67);
   expect(result[0].rankScore).toBeCloseTo(0.6 * (2 / 3) + 0.25 * 0.4 + 0.15 * 0.5, 12);
+});
+
+
+it("excludes unboxing and short use from durability requirements with correct fallback messages", () => {
+  const longNeed = { ...need, longUse: true };
+  const evidence = labels(["confirm", "confirm", "confirm", "confirm"]);
+  evidence[0].usage = "unboxing";
+  expect(requirementResult(product(), need, evidence).quotes).toHaveLength(3);
+  expect(requirementResult(product(), longNeed, evidence)).toMatchObject({ status: "unknown", score: 0.4, message: "ยังไม่มีรีวิวจากคนที่ใช้นานพอ" });
+  const specNeed = { ...longNeed, spec: { key: "watt", op: ">=" as const, value: 600 } };
+  expect(requirementResult(product(), specNeed, evidence)).toMatchObject({ status: "spec-only", score: 0.6, message: "Shopee ให้รีวิวได้ภายใน 30 วันหลังได้ของ ของที่พังหลังจากนั้นจึงไม่อยู่ในรีวิว" });
+  evidence.forEach((label) => { label.usage = "long"; });
+  expect(requirementResult(product(), longNeed, evidence).status).toBe("pass");
+});
+it("discounts generic confirmation but preserves contradiction weight", () => {
+  const evidence = labels(["confirm", "confirm", "contradict"]);
+  evidence.forEach((label) => { label.specific = false; });
+  expect(requirementResult(product(), need, evidence).score).toBeCloseTo(0.6 / 1.6);
+  expect(reviewWeight(base.reviews[0], evidence[0])).toBeCloseTo(1.8 * 0.3);
+  expect(reviewWeight(base.reviews[0], evidence[2])).toBeCloseTo(1.8);
+});
+it("warns at sixty percent without changing scores and ignores templates and duplicates", () => {
+  const p = product(5);
+  const evidence = labels(["confirm", "confirm", "confirm"]);
+  evidence.forEach((label) => { label.specific = false; });
+  expect(reviewQualityWarning(p, [need], [...evidence, ...evidence])).toMatchObject({ percent: 60 });
+  expect(reviewQualityWarning(product(6), [need], evidence)).toBeNull();
+  p.reviews[0].isTemplate = true;
+  expect(reviewQualityWarning(p, [need], evidence)).toBeNull();
+});
+it("keeps unboxing evidence only for appearance claims and counts each eligible review once", () => {
+  const p = product(10);
+  const evidence = labels(Array(10).fill("confirm"), "c1").map((label) => ({ ...label, usage: "unboxing" as const }));
+  expect(evidenceCount(p, [], evidence)).toBe(0);
+  expect(trust(p, [], evidence)).toBeNull();
+  p.claims = [{ id: "c1", text: "เสียงเบา", source: "description", checkable: true }];
+  expect(evidenceCount(p, [], evidence)).toBe(0);
+  p.claims = [{ id: "c1", text: "สีสวย", source: "description", checkable: true }];
+  expect(evidenceCount(p, [], [...evidence, ...evidence])).toBe(10);
+  expect(trust(p, [], evidence)).not.toBeNull();
+});
+
+it("weights claim trust confirmations while preserving full contradiction weight", () => {
+  const p = product(10);
+  p.claims = [{ id: "c1", text: "ปั่นน้ำแข็ง", source: "description", checkable: true }];
+  const evidence = labels([...Array(9).fill("confirm"), "contradict"], "c1")
+    .map((label) => ({ ...label, specific: false }));
+  expect(trust(p, [], evidence)).toBeCloseTo(0.7 * (2.7 / 3.7) + 0.3 * shopScore(p.shop));
+});
+it("requires three eligible long-use reviews and gives failed specs priority", () => {
+  const longNeed = { ...need, longUse: true };
+  const evidence = labels(["confirm", "confirm", "confirm"]).map((label) => ({ ...label, usage: "long" as const }));
+  expect(requirementResult(product(), longNeed, evidence.slice(0, 2)).status).toBe("unknown");
+  expect(requirementResult(product(), longNeed, evidence).status).toBe("pass");
+  expect(requirementResult(product(), {
+    ...longNeed, spec: { key: "watt", op: ">=", value: 1000 },
+  }, evidence)).toMatchObject({ status: "fail", score: 0 });
+});
+it("counts unlabeled unboxing once and warns without reducing computed scores", () => {
+  const p = product(5);
+  p.reviews.slice(0, 3).forEach((review) => { review.text = "แกะกล่องแล้วสวย"; });
+  const before = rank([p], [need], {})[0];
+  expect(before.reviewQualityWarning).toMatchObject({ percent: 60 });
+  const clean = { ...p, reviews: p.reviews.map((review) => ({ ...review, text: "ลองใช้งานแล้ว" })) };
+  const after = rank([clean], [need], {})[0];
+  expect(after.reviewQualityWarning).toBeNull();
+  expect(before.rankScore).toBe(after.rankScore);
+  p.reviews.push({ ...p.reviews[4], id: "extra" });
+  expect(reviewQualityWarning(p, [need], [])).toBeNull();
 });
