@@ -22,3 +22,15 @@ it("uses need text when persona answers are empty", async () => {
   const persona = parsePersonas("persona_id,category,need_text,answers,labeler_a_top3,labeler_b_top3,human_top3,must_notes\np1,blender,ice,,,,,\n")[0];
   expect(personaRequest(persona)).toEqual({ category: "blender", needText: "ice" });
 });
+
+it("reads current persona links and multi-answer and ranking separators", async () => {
+  const { personaRequest } = await import("./index");
+  const header = "persona_id,category,need_text,link_product_id,answers,labeler_a_top3,labeler_b_top3,human_top3,must_notes\n";
+  const persona = parsePersonas(header + "p1,blender,ice,linked,use=ice+smoothie,a>b,c|d,a > c,\n")[0];
+  expect(persona.labeler_a_top3).toBe("a|b");
+  expect(persona.human_top3).toBe("a|c");
+  expect(personaRequest(persona)).toEqual({
+    category: "blender", needText: "ice", linkedProductId: "linked",
+    answers: { use: ["ice", "smoothie"] },
+  });
+});

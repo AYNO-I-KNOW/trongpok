@@ -47,7 +47,7 @@ Among non-template reviews, count the ones that are `unboxing`, or confirm witho
 ## Fit
 
 - `fit = Σ(weight × score) / Σweight`, with must = 2, nice = 1, budget = 2.
-- `mustOk` = no must or budget requirement is `fail` or `contradicted`.
+- `mustOk` = no must or budget requirement is `fail` or `contradicted`. Two or more distinct, specific contradictory reviews also block this flag for a must that is `unknown` or `spec-only` when every eligible review contradicts it.
 - `fitPct = round(100 × fit)`.
 
 ## Trust (ตรงปก, spec 2026-10-23 §5.3)
@@ -65,7 +65,7 @@ Among non-template reviews, count the ones that are `unboxing`, or confirm witho
 
 - `value = budget ? clamp(1 − price / budget, 0, 1) : 0.5`
 - `rankScore = 0.6·fit + 0.25·(trust ?? 0.4) + 0.15·value`
-- Order: `mustOk` products first, then `rankScore` descending. Ties go to the lower price.
+- Order: `mustOk` products first, then `fit` descending, then the number of specific supporting reviews for must requirements, then `rankScore` descending. Ties go to the lower price.
 - Skeptic objections do not change the numbers directly. An objection whose quotes pass the substring check adds contradict labels, and the score is recomputed.
 
 ## Savings

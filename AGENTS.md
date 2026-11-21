@@ -11,18 +11,17 @@ Regional Codex Hackathon Thailand (Sea × OpenAI), 2026-11-21. Official hacking 
 
 ## Product
 
-The homepage accepts free-text shopping requests in any category. It shows up to three verified models with source links and confirmed Thai prices. The demo Arena follows the category-pack flow below.
+The homepage accepts free-text shopping requests in any category. It shows up to three verified models with source links and confirmed Thai prices. The demo Arena at `/arena` follows the category-pack flow below.
 
-In the Arena, a buyer pastes a product link or types a need ("เครื่องปั่นไว้ปั่นน้ำแข็งเปิดร้าน", "smartwatch"). The app asks a few tap-to-answer questions from the category pack and turns the answers into requirements (must / nice / budget). Four agents then race in a visible arena:
+In the Arena, a buyer pastes a product link or types a need ("เครื่องปั่นไว้ปั่นน้ำแข็งเปิดร้าน", "smartwatch"). The app asks a few tap-to-answer questions from the category pack and turns the answers into requirements (must / nice / budget). Three agents then review the same request in parallel:
 
 | Agent | Goal |
 |---|---|
-| Verifier | Check the linked product against every requirement. Exact instructions only. |
-| Fit | Find the products that satisfy the most requirements with the strongest review evidence. |
+| Fit | Find the products that satisfy the most requirements with the strongest review evidence, including evidence on the linked product. |
 | Value | Find the cheapest products that pass every must requirement. |
-| Skeptic | After the others propose, attack the current top 3 with contradicting review quotes. |
+| Skeptic | Check the candidates for review evidence that contradicts a buyer requirement. |
 
-Code merges their labels, scores and ranks the products (`docs/scoring.md`), and a judge LLM writes one line per pick explaining why it ranked there and what the buyer gives up. The result is one large card (rank 1) and three small cards in one row. Each card shows "เหมาะ X%", per-requirement status with quotes, Skeptic objections, trust (ตรงปก) or "ข้อมูลไม่พอ", and "ประหยัด ฿X" versus the highest-starred product. The user decides.
+Code compares the proposals and objections, scores and ranks the products (`docs/scoring.md`), and the judge explains the top three and their trade-offs. The results show "เหมาะ X%", per-requirement status with quotes, Skeptic objections, trust (ตรงปก) or "ข้อมูลไม่พอ", and "ประหยัด ฿X" versus the highest-starred product. The user decides.
 
 Pitch line: a 4.8★ means other people were happy using it their way. It doesn't say the product fits you. People who returned it can't rate it at all.
 

@@ -69,7 +69,7 @@ it("uses the remaining 25-character specificity boundary", async () => {
   expect(reviewSpecific("ดีมากค่ะ" + "ก".repeat(25))).toBe(true);
 });
 it.each(["ละลาย", "เยิ้ม", "เหม็น", "กลับมา"])("recognizes the complaint %s", (complaint) => {
-  const custom = { ...product, reviews: [{ ...product.reviews[0], text: "น้ำแข็ง" + complaint }] };
+  const custom = { ...product, category: "car-damping", reviews: [{ ...product.reviews[0], text: "น้ำแข็ง" + complaint }] };
   expect(labelWithRules(custom, subjects)[0].stance).toBe("contradict");
 });
 it("rejects labels missing usage and specificity", async () => {
@@ -94,7 +94,7 @@ it("allows appearance evidence on unboxing while keeping damaged packages logist
   expect(labels[1].target).toBe("logistics");
 });
 it.each(["ไม่ละลาย", "ไม่เยิ้ม", "ไม่เหม็น", "ไม่กลับมา"])("treats desired absence %s as confirmation", (absence) => {
-  const custom = { ...product, reviews: [{ ...product.reviews[0], text: "น้ำแข็ง" + absence }] };
+  const custom = { ...product, category: "car-damping", reviews: [{ ...product.reviews[0], text: "น้ำแข็ง" + absence }] };
   expect(labelWithRules(custom, subjects)[0].stance).toBe("confirm");
 });
 it.each(["สองสัปดาห์", "หนึ่งเดือน", "๒ สัปดาห์"])("reads Thai duration %s", async (duration) => {
@@ -116,4 +116,52 @@ it.each([
 ])("distinguishes actual use duration in %s", async (text, usage) => {
   const { reviewUsage } = await import("./rules");
   expect(reviewUsage(text)).toBe(usage);
+});
+
+it("labels concrete daily ice use without mistaking successful absence for failure", async () => {
+  const { default: station } = await import("../../../data/products/blender-ice-station.json");
+  const labels = labelWithRules(ProductSchema.parse(station), subjects);
+  for (const id of ["r1", "r3", "r14"]) {
+    const review = station.reviews.find((review) => review.id === id)!;
+    expect(labels.find((label) => label.reviewId === id)).toMatchObject({
+      stance: "confirm", usage: "long", specific: true, quote: review.text,
+    });
+  }
+  expect(labels.find((label) => label.reviewId === "r9")?.stance).toBe("none");
+});
+
+it("treats blender noise carrying to another room as a quiet requirement failure", async () => {
+  const { default: noisy } = await import("../../../data/products/blender-smoothie-pro.json");
+  const { default: quieter } = await import("../../../data/products/blender-quiet-daily.json");
+  const quiet = [{ id: "quiet", text: "เสียงไม่ดัง", kind: "must" as const }];
+  expect(labelWithRules(ProductSchema.parse(noisy), quiet).find(({ reviewId }) => reviewId === "r12")?.stance).toBe("contradict");
+  expect(labelWithRules(ProductSchema.parse(quieter), quiet).find(({ reviewId }) => reviewId === "r1")?.stance).toBe("confirm");
+});
+
+it("keeps everyday smoothie praise and absent ice outcomes out of ice evidence", () => {
+  const custom = { ...product, reviews: [
+    { ...product.reviews[0], id: "smoothie", text: "ใช้มา 2 เดือน ปั่นกล้วยเนียน ลูกค้าไม่เจอเม็ด" },
+    { ...product.reviews[0], id: "generic", text: "น้ำแข็ง ใช้มา 2 เดือน ดีค่ะ แนะนำ" },
+    { ...product.reviews[0], id: "delivery", text: "ขนส่งไว ปั่นน้ำแข็งเนียนมา 2 เดือน" },
+  ] };
+  expect(labelWithRules(custom, subjects).map((label) => label.stance)).toEqual(["none", "none", "none"]);
+});
+
+it("retains actual ice burnout, cutting-out and stuck-blade complaints", () => {
+  const custom = { ...product, reviews: [
+    { ...product.reviews[0], text: "ใช้มา 4 วัน ลองน้ำแข็งแล้วเครื่องตัด" },
+    { ...product.reviews[0], text: "ปั่นน้ำแข็งมีกลิ่นไหม้" },
+    { ...product.reviews[0], text: "น้ำแข็งก้อนใหญ่แล้วใบมีดติด" },
+  ] };
+  expect(labelWithRules(custom, subjects).map((label) => label.stance)).toEqual(["contradict", "contradict", "contradict"]);
+});
+
+
+it("requires an actual operational outcome for indirect commercial ice evidence", () => {
+  const custom = { ...product, reviews: [
+    { ...product.reviews[0], text: "ขายสมูทตี้มา 3 เดือน วันละห้าสิบแก้ว เนียนดี" },
+    { ...product.reviews[0], text: "เตรียมเปิดร้าน อยากใช้วันละห้าสิบแก้ว มอเตอร์ไม่ไหม้แน่นอน" },
+    { ...product.reviews[0], text: "ทำร้านมา 4 เดือน ใช้วันละสี่สิบถึงห้าสิบแก้ว ยังไม่เคยเครื่องตัด" },
+  ] };
+  expect(labelWithRules(custom, subjects).map((label) => label.stance)).toEqual(["none", "none", "confirm"]);
 });
