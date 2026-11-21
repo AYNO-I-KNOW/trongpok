@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
-import { ArenaResultSchema, type ArenaResult } from "../types";
+import { ArenaResultSchema, type ArenaResult, type CategoryPack, type Product } from "../types";
 
 export function cacheHash(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -47,4 +47,8 @@ export async function writeRequestCache(root: string, key: string, target: strin
     await unlink(temporary).catch(() => {});
     if (strict || !(error instanceof Error && "code" in error && ["EROFS", "EACCES", "EPERM"].includes(String(error.code)))) throw error;
   }
+}
+
+export function requestCacheKey(request: unknown, packs: CategoryPack[], products: Product[]) {
+  return cacheHash(["request", request, cacheHash([packs, products])]);
 }

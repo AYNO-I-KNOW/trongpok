@@ -5,7 +5,7 @@ import { loadPacks, loadProducts, findByLink } from "../catalog";
 import { requirementsFromAnswers, requirementsFromText } from "../needs";
 import type { AgentEvent, ArenaResult } from "../types";
 import { runArena } from "./arena";
-import { cacheHash, readArenaCache, writeArenaCache, readRequestCache, writeRequestCache } from "./cache";
+import { cacheHash, requestCacheKey, readArenaCache, writeArenaCache, readRequestCache, writeRequestCache } from "./cache";
 import { judge } from "./judge";
 
 export const ArenaRequestSchema = z.object({
@@ -21,7 +21,7 @@ export async function runArenaRequest(input: z.infer<typeof ArenaRequestSchema>,
   const cacheRoot = options.cacheRoot ?? join(dataRoot, "cache", "arena");
   const [packs, products] = await Promise.all([loadPacks(dataRoot), loadProducts(dataRoot)]);
   const version = cacheHash([packs, products]);
-  const requestKey = cacheHash(["request", request, version]);
+  const requestKey = requestCacheKey(request, packs, products);
   const replay = async (result: ArenaResult): Promise<ArenaResult> => {
     for (const event of result.events) {
       await setTimeout(options.replayDelayMs ?? 15);

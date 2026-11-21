@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "vitest run",
     "lint": "eslint",
-    "arena:all": "tsx scripts/arena-all.ts"
+    "arena:all": "tsx scripts/arena-all.ts",
+    "eval": "tsx scripts/eval.ts"
   },
   "dependencies": {
     "@next/env": "16.4.6",
