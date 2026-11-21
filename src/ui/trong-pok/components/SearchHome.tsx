@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import {
   productSearchResultSchema,
   type ProductSearchResult,
@@ -101,7 +102,10 @@ export default function SearchHome({
   return (
     <main className={"phone " + phase} data-font={fontTheme}>
       <Mascot phase={phase} />
-      {phase === "home" && <HomeForm initial={query} history={history} onSubmit={search} />}
+      {phase === "home" && <HomeForm initial={query} history={history} onSubmit={search}
+        action={<Link className="evidence-link" href={fontTheme === "line" ? "/compare?font=line" : "/compare"}>
+          เปรียบเทียบจากรีวิวใน Arena →
+        </Link>} />}
       {phase === "search" && <>
         <button className="edit-result" type="button" onClick={edit}>← แก้โจทย์</button>
         <section className="search-copy" role="status">

@@ -11,7 +11,7 @@ import {
 import type { Conditions } from "@/ui/trong-pok/lib/types";
 import HomeHistory from "./HomeHistory";
 import Results from "./Results";
-import Mascot from "./Mascot";
+import DesignerScreen from "./DesignerScreen";
 import SearchHome from "./SearchHome";
 
 export default function TrongPok({
@@ -71,15 +71,15 @@ export default function TrongPok({
 
   if (example)
     return (
-      <main className="phone result" data-font={fontTheme}>
-        <Mascot phase="result" />
+      <DesignerScreen phase="result" font={fontTheme}>
+        {rankingDemo && <p className="prototype-label" role="status">ตัวอย่างดีไซน์ · ค่าความเหมาะสำหรับทดลองหน้าจอ</p>}
         <Results
           result={example}
           onReset={() => exitExample()}
           onBack={() => exitExample(example.plan.raw)}
           onConditions={searchWithConditions}
         />
-      </main>
+      </DesignerScreen>
     );
 
   return (

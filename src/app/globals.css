@@ -472,3 +472,20 @@ button,select,.scenario-control,.question-nav,.eyebrow{font-weight:500}
   background: var(--peach);
   color: var(--brown);
 }
+
+.prototype-label{position:fixed;z-index:20;top:12px;left:50%;transform:translateX(-50%);max-width:90%;border-radius:12px;padding:8px 14px;background:#fff3df;color:#70582e;font-size:12px;text-align:center}
+
+.compare-entry-options{padding-bottom:136px}
+.compare-entry-options .method{margin-bottom:0}
+.requirement-edit{padding:12px 0}
+.requirement-edit button+button{margin-left:16px}
+.linked-result{font-size:14px;margin-bottom:16px}
+.comparison blockquote,.dialog-content blockquote,.linked-result blockquote,.arena-log blockquote{margin:6px 0;color:var(--brown)}
+.arena-back{display:grid;place-items:center;text-decoration:none}
+.arena-search{position:static;padding:calc(50svh - 44px) 0 28px}
+.arena-search .method{text-align:left}
+.arena-agent-status{list-style:none;margin:12px 0;padding:0;text-align:left}
+.arena-agent-status li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:6px 0;font-size:13px}
+.arena-agent-status li span:last-child{color:var(--muted)}
+.arena-log{max-height:180px;overflow:auto;padding-left:24px;margin:0}
+.arena-log li{padding:3px 0}

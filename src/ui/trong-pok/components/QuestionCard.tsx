@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import QuestionStep from "./QuestionStep";
 export type BlenderAnswers = {
   blenderUsage: string;
   iceCubes: string;
@@ -74,108 +75,49 @@ export default function QuestionCard({
       container: values[2],
     });
   }
-  return (
-    <section className="clarify">
-      <nav className="question-nav" aria-label="ความคืบหน้าคำถาม">
-        <button
-          type="button"
-          className="back"
-          onClick={() => {
-            if (step) {
-              setDirection("back");
-              setStep(step - 1);
-            } else onBack();
-          }}
-          aria-label="ย้อนกลับ"
-        >
-          ←
-        </button>
-        <div
-          className="question-progress"
-          role="progressbar"
-          aria-label="คำถามเพิ่มเติม"
-          aria-valuemin={0}
-          aria-valuemax={cards.length}
-          aria-valuenow={step + 1}
-        >
-          <span
-            className="question-progress-fill"
-            style={{ transform: `scaleX(${(step + 1) / cards.length})` }}
+  return <QuestionStep step={step} total={cards.length} direction={direction}
+    title={card.title} description={card.description} action={step === cards.length - 1 ? "เริ่มค้นหาต่อ" : "ถัดไป"}
+    disabled={!valid} onNext={next} onBack={() => {
+      if (step === 0) { onBack(); return; }
+      setDirection("back");
+      setStep(step - 1);
+    }}>
+      <fieldset>
+        <legend className="sr-only">{card.title}</legend>
+        {[...card.choices, ["custom", "กรอกเอง"]].map(([value, label]) => (
+          <label
+            key={value}
+            className={"choice " + (choice === value ? "selected" : "")}
+          >
+            <input
+              type="radio"
+              name={"answer-" + step}
+              value={value}
+              checked={choice === value}
+              onChange={() => select(value)}
+            />
+            <span className="check" aria-hidden="true">
+              {choice === value ? "✓" : ""}
+            </span>
+            <span>{label}</span>
+          </label>
+        ))}
+      </fieldset>
+      {choice === "custom" && (
+        <label className="custom-label">
+          {card.label}
+          <textarea
+            autoFocus
+            rows={1}
+            value={custom[step]}
+            onChange={(e) =>
+              setCustom((a) =>
+                a.map((old, i) => (i === step ? e.target.value : old)),
+              )
+            }
+            placeholder={card.placeholder}
           />
-        </div>
-        <span>
-          {step + 1} จาก {cards.length}
-        </span>
-      </nav>
-      <div
-        className="question-step"
-        key={step}
-        style={
-          {
-            "--question-enter-x": direction === "next" ? "8px" : "-8px",
-          } as React.CSSProperties
-        }
-      >
-        <div className="question-copy">
-          <h1>{card.title}</h1>
-          <p>{card.description}</p>
-        </div>
-        <form
-          id="question-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            next();
-          }}
-        >
-          <fieldset>
-            <legend className="sr-only">{card.title}</legend>
-            {[...card.choices, ["custom", "กรอกเอง"]].map(([value, label]) => (
-              <label
-                key={value}
-                className={"choice " + (choice === value ? "selected" : "")}
-              >
-                <input
-                  type="radio"
-                  name={"answer-" + step}
-                  value={value}
-                  checked={choice === value}
-                  onChange={() => select(value)}
-                />
-                <span className="check" aria-hidden="true">
-                  {choice === value ? "✓" : ""}
-                </span>
-                <span>{label}</span>
-              </label>
-            ))}
-          </fieldset>
-          {choice === "custom" && (
-            <label className="custom-label">
-              {card.label}
-              <textarea
-                autoFocus
-                rows={1}
-                value={custom[step]}
-                onChange={(e) =>
-                  setCustom((a) =>
-                    a.map((old, i) => (i === step ? e.target.value : old)),
-                  )
-                }
-                placeholder={card.placeholder}
-              />
-            </label>
-          )}
-        </form>
-      </div>
-      <div className="question-footer">
-        <button
-          className="primary"
-          type="submit"
-          form="question-form"
-          disabled={!valid}
-        >
-          {step === cards.length - 1 ? "เริ่มค้นหาต่อ" : "ถัดไป"}
-        </button>
-      </div>
-    </section>
-  );
+        </label>
+      )}
+  </QuestionStep>;
 }
