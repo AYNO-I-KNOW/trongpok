@@ -50,17 +50,40 @@ try {
   await page.locator("main.phone.home img[src='/assets/home.png']").waitFor();
   const homeSearch = () => page.getByRole("textbox", { name: "คำถามหรือลิงก์สินค้า", exact: true });
   const submitSearch = () => page.getByRole("button", { name: "เริ่มค้นหา", exact: true }).click();
-  const searchResponse = page.waitForResponse((response) =>
+  const nextSearchResponse = () => page.waitForResponse((response) =>
     new URL(response.url()).pathname === "/api/product-search" && response.request().method() === "POST");
+  const searchResponse = nextSearchResponse();
   await homeSearch().fill("เครื่องปั่น");
   await submitSearch();
-  const fallback = await (await searchResponse).json();
-  assert.equal(fallback.kind, "demo", "Homepage search keeps the new product-search fallback");
+  const clarification = await (await searchResponse).json();
+  assert.equal(clarification.kind, "clarify", "A broad catalog search asks about the intended use");
+  await page.getByRole("heading", { name: clarification.question, exact: true }).waitFor();
+  for (const choice of clarification.choices) {
+    await page.getByRole("radio", { name: choice, exact: true }).waitFor();
+  }
+  await page.getByRole("radio", { name: "อื่น ๆ", exact: true }).check();
+  const answer = "ใช้ทั่วไป งบ 999 บาท";
+  await page.getByRole("textbox", { name: "คำตอบของคุณ", exact: true }).fill(answer);
+  const answeredSearch = nextSearchResponse();
+  await page.getByRole("button", { name: "เริ่มค้นหาต่อ", exact: true }).click();
+  const answered = await answeredSearch;
+  assert.equal(answered.request().postDataJSON().query, `เครื่องปั่น\n${clarification.question}\nคำตอบ: ${answer}`);
+  const fallback = await answered.json();
+  assert.equal(fallback.kind, "demo", "Homepage search continues after the buyer answers");
   assert.ok(fallback.picks.length > 0);
   await comparison().waitFor();
   assert.equal(await comparison().locator(".fit-score-row").count(), 0);
   await comparison().getByRole("link", { name: /^ดูข้อมูลเดโม / }).first().waitFor();
   const designerWidth = await page.locator("main.phone.result").evaluate((node) => getComputedStyle(node).maxWidth);
+
+  await page.goto(base);
+  const completeSearch = nextSearchResponse();
+  await homeSearch().fill("เครื่องปั่น งบ 999 บาท");
+  await submitSearch();
+  const directResult = await (await completeSearch).json();
+  assert.equal(directResult.kind, "demo", "An explicit budget can proceed without a follow-up");
+  assert.ok(directResult.picks.length > 0);
+  await comparison().waitFor();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + "/arena");
